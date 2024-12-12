@@ -35,6 +35,7 @@ exports.createEmployee = async (req, res) => {
   try {
     console.log("Create Employee Request:", req.body);
     const employee = new Employee(req.body);
+    console.log(employee)
     await employee.save();
     res
       .status(201)
