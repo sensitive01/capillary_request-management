@@ -78,6 +78,17 @@ export const updateVendorData = async (id,formData) => {
 };
 
 
+export const getVenorIndividualData = async (vendorId) => {
+  try {
+    console.log("loading....")
+    const response = await adminServices.get(`/vendors/get-vendor-data/${vendorId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
 
 // ............................VENDOR SIDE..........................................................
 

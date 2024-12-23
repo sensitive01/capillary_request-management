@@ -15,7 +15,7 @@ router.get('/get-new-vendorid', getNewVendorId);
 
 router.post('/create', createVendor); 
 router.get('/get-all', getAllVendors); 
-router.get('/get/:id', getVendorById); 
+router.get('/get-vendor-data/:id', getVendorById); 
 router.put('/update/:id', updateVendor);
 router.delete('/delete/:id', deleteVendor);
 router.put('/update-many', updateManyVendors); 

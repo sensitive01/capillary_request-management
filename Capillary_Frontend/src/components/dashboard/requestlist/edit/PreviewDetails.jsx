@@ -8,6 +8,7 @@ import {
   FileText,
   ArrowLeft,
   Save,
+  FileIcon,
 } from "lucide-react";
 
 const PreviewDetails = ({ formData, onSubmit, onBack }) => {
@@ -70,6 +71,46 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
     );
   };
 
+  const renderUploadedFiles = (uploadedFiles) => {
+    if (!uploadedFiles || Object.keys(uploadedFiles).length === 0) {
+      return <div className="text-gray-500">No files uploaded</div>;
+    }
+
+    return (
+      <div className="mt-4 space-y-2">
+        {Object.entries(uploadedFiles).map(
+          ([key, files]) =>
+            files &&
+            files.length > 0 && (
+              <div key={key} className="bg-gray-50 p-3 rounded-lg">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2 capitalize">
+                  {key.replace(/([A-Z])/g, " $1").toLowerCase()}
+                </h4>
+                <div className="space-y-1">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center text-sm text-gray-700"
+                    >
+                      <FileIcon className="mr-2 text-primary" size={16} />
+                      <a
+                        href={file}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary underline"
+                      >
+                        View File {index + 1}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+        )}
+      </div>
+    );
+  };
+
   const renderSectionContent = () => {
     switch (activeSection) {
       case "commercials":
@@ -84,6 +125,10 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
                   {[
                     { label: "Amount", value: formData.commercials.amount },
                     { label: "Bill To", value: formData.commercials.billTo },
+                    {
+                      label: "Business Unit",
+                      value: formData.commercials.businessUnit,
+                    },
                     { label: "City", value: formData.commercials.city },
                     {
                       label: "Cost Centre",
@@ -96,15 +141,27 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
                     },
                     { label: "Entity", value: formData.commercials.entity },
                     {
-                      label: "Payment Type",
-                      value: formData.commercials.paymentType,
+                      label: "Head of Department",
+                      value: formData.commercials.hod,
                     },
+                    {
+                      label: "Credit Card Selected",
+                      value: formData.commercials.isCreditCardSelected
+                        ? "Yes"
+                        : "No",
+                    },
+                    {
+                      label: "Payment Mode",
+                      value: formData.commercials.paymentMode,
+                    },
+                    { label: "Ship To", value: formData.commercials.shipTo },
+                    { label: "Site", value: formData.commercials.site },
                   ]
                     .filter((item) => item.value)
                     .map((item, index) => (
                       <div
                         key={index}
-                        className="flex justify-between p-3  rounded-lg"
+                        className="flex justify-between p-3 rounded-lg"
                       >
                         <span className="text-gray-600 font-medium">
                           {item.label}
@@ -163,7 +220,7 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
               Object.values(formData.procurements).some((value) => value) && (
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
-                    { label: "Vendor", value: formData.procurements.vendor },
+                    { label: "Vendor ID", value: formData.procurements.vendor },
                     {
                       label: "Quotation Number",
                       value: formData.procurements.quotationNumber,
@@ -172,13 +229,18 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
                       label: "Quotation Date",
                       value: formData.procurements.quotationDate,
                     },
+                    
                     {
-                      label: "Expected Delivery",
-                      value: formData.procurements.expectedDeliveryDate,
+                      label: "Service Period",
+                      value: formData.procurements.servicePeriod,
                     },
                     {
-                      label: "PO Expiry Date",
-                      value: formData.procurements.poExpiryDate,
+                      label: "PO Valid From",
+                      value: formData.procurements.poValidFrom,
+                    },
+                    {
+                      label: "PO Valid To",
+                      value: formData.procurements.poValidTo,
                     },
                   ]
                     .filter((item) => item.value)
@@ -198,21 +260,25 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
                 </div>
               )}
 
-            {formData.procurements?.competitiveQuotations?.length > 0 ? (
+            {formData.procurements?.uploadedFiles && (
               <div className="mt-6">
                 <h3 className="text-xl font-semibold text-primary mb-4">
-                  Competitive Quotations
+                  Uploaded Files
                 </h3>
                 <div className="bg-white shadow-md rounded-lg p-4">
-                  <div className="text-green-600 flex items-center">
-                    <CheckCircle2 className="mr-2" size={20} />
-                    Files uploaded successfully
-                  </div>
+                  {Object.keys(formData.procurements.uploadedFiles).length >
+                  0 ? (
+                    <div className="text-green-600 flex items-center mb-4">
+                      <CheckCircle2 className="mr-2" size={20} />
+                      Files uploaded successfully
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 flex items-center">
+                      No files uploaded
+                    </div>
+                  )}
+                  {renderUploadedFiles(formData.procurements.uploadedFiles)}
                 </div>
-              </div>
-            ) : (
-              <div className="text-gray-500 flex items-center">
-                No files uploaded
               </div>
             )}
           </div>
@@ -246,20 +312,40 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
                         <th className="p-3 text-left text-primary">
                           Product Name
                         </th>
+                        <th className="p-3 text-left text-primary">
+                          Description
+                        </th>
                         <th className="p-3 text-left text-primary">Quantity</th>
                         <th className="p-3 text-left text-primary">Price</th>
+                        <th className="p-3 text-left text-primary">Tax (%)</th>
+                        <th className="p-3 text-left text-primary">Total</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {formData.supplies.services.map((service, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-3">
-                            {service.productName || "N/A"}
-                          </td>
-                          <td className="p-3">{service.quantity || "N/A"}</td>
-                          <td className="p-3">{service.price || "N/A"}</td>
-                        </tr>
-                      ))}
+                      {formData.supplies.services.map((service, index) => {
+                        // Calculate the total for each service
+                        const quantity = parseFloat(service.quantity) || 0;
+                        const price = parseFloat(service.price) || 0;
+                        const tax = parseFloat(service.tax) || 0;
+                        const total = quantity * price * (1 + tax / 100);
+
+                        return (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="p-3">
+                              {service.productName || "N/A"}
+                            </td>
+                            <td className="p-3">
+                              {service.productDescription || "N/A"}
+                            </td>
+                            <td className="p-3">{service.quantity || "N/A"}</td>
+                            <td className="p-3">{service.price || "N/A"}</td>
+                            <td className="p-3">{service.tax || "N/A"}</td>
+                            <td className="p-3 font-semibold">
+                              {total.toFixed(2) || "N/A"}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

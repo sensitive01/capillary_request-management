@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { FileText, Truck, CreditCard, Check } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import { createNewRequest, fetchIndividualReq, updateRequest } from "../../../../api/service/adminServices";
+import {
+  fetchIndividualReq,
+  updateRequest,
+} from "../../../../api/service/adminServices";
 import CommercialsDetails from "./CommercialsDetails";
 import ProcurementsDetails from "./ProcurementsDetails";
 import SuppliesDetails from "./SuppliesDetails";
@@ -21,11 +24,9 @@ const EditRequestForm = () => {
   useEffect(() => {
     const fetchResponse = async () => {
       const response = await fetchIndividualReq(id);
-      console.log(response.data.data);
-      if(response.status===200){
-      
-        setFormData(response.data.data)
-
+      console.log("response.data.data", response.data.data);
+      if (response.status === 200) {
+        setFormData(response.data.data);
       }
     };
     fetchResponse();
@@ -95,7 +96,8 @@ const EditRequestForm = () => {
           setFormData={(data) =>
             setFormData((prev) => ({
               ...prev,
-              supplies: typeof data === "function" ? data(prev?.supplies) : data,
+              supplies:
+                typeof data === "function" ? data(prev?.supplies) : data,
             }))
           }
           remarks={formData?.remarks}

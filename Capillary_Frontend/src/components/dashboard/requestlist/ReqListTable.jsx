@@ -13,7 +13,7 @@ import {
   deleteReq,
   getAdminReqListEmployee,
   getReqListEmployee,
-  getReqListHR,
+
 } from "../../../api/service/adminServices";
 
 const ReqListTable = () => {
@@ -42,8 +42,8 @@ const ReqListTable = () => {
 
       if (response && response.data) {
         console.log(response);
-        // Assuming the response structure is as per your data example
-        setUsers(response.data.data); // Adjust if response structure differs
+
+        setUsers(response.data.data); 
       }
     };
 
@@ -65,7 +65,7 @@ const ReqListTable = () => {
   };
 
   const onDelete = async (e, id) => {
-    // Stop event propagation to prevent row click
+ 
     e.stopPropagation();
     
     setUsers(users?.filter((person) => person?._id !== id));
@@ -74,7 +74,7 @@ const ReqListTable = () => {
   };
 
   const onEdit = (e, user) => {
-    // Stop event propagation to prevent row click
+
     e.stopPropagation();
     
     navigate(`/req-list-table/edit-req/${user._id}`);

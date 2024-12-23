@@ -1,15 +1,23 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
-import { fetchAllVendorData } from "../../../api/service/adminServices";
-import { uploadCloudinary } from "../../../utils/cloudinaryUtils";
+import { useState, useRef, useEffect } from "react";
+import { fetchAllVendorData } from "../../../../api/service/adminServices";
+import { uploadCloudinary } from "../../../../utils/cloudinaryUtils";
+import { formatDateToDDMMYY } from "../../../../utils/dateFormat";
 
-const Procurements = ({ formData, setFormData, onBack, onNext }) => {
+const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
   const [vendors, setVendors] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newVendor, setNewVendor] = useState({ name: "", email: "" });
-  const [filesData, setFilesData] = useState([
-    { fileType: "", otherType: "", file: null },
-  ]);
+  const [isQuatationDate, setIsQuatationDate] = useState(true);
+  const [isPoExpiryDate, setIsPoExpiryDate] = useState(true);
+  const [isPoValidFrom, setIsPoValidFrom] = useState(true);
+
+  const [isPoValidTo, setIsPoValidTo] = useState(true);
+
+  const uploadAreaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const competitiveQuotationsRef = useRef(null);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -27,20 +35,35 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
   }, []);
 
   useEffect(() => {
-    if (!formData.quotationDate) {
+    if (!formData?.quotationDate) {
       const today = new Date().toISOString().split("T")[0];
       setFormData((prevState) => ({
         ...prevState,
         quotationDate: today,
       }));
     }
-  }, [setFormData, formData.quotationDate]);
+  }, [setFormData, formData?.quotationDate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
       [name]: value,
+    }));
+  };
+
+  const handleFileChange = async (e) => {
+    const { name, files } = e.target;
+
+    console.log("name", name);
+    console.log("file", files);
+    const data = await uploadCloudinary(files[0], "final");
+    console.log(data);
+    const { url } = data;
+
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: url,
     }));
   };
 
@@ -68,26 +91,32 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     return date.toISOString().split("T")[0];
   };
 
-  const handleFileTypeChange = (e, index) => {
-    const updatedData = [...filesData];
-    updatedData[index].fileType = e.target.value;
-    if (e.target.value !== "Other") {
-      updatedData[index].otherType = "";
-    }
-    setFilesData(updatedData);
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
   };
 
-  const handleOtherTypeChange = (e, index) => {
-    const updatedData = [...filesData];
-    updatedData[index].otherType = e.target.value;
-    setFilesData(updatedData);
+  const handleDragLeave = () => {
+    setIsDragOver(false);
   };
 
-  const handleAddRow = () => {
-    setFilesData((prev) => [
-      ...prev,
-      { fileType: "", otherType: "", file: null },
-    ]);
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+
+    const uploadedImages = await Promise.all(
+      droppedFiles.map((file) => uploadCloudinary(file))
+    );
+
+    setFormData((prevState) => ({
+      ...prevState,
+      competitiveQuotations: [
+        ...(prevState.competitiveQuotations || []),
+        ...uploadedImages.map((img) => img.url),
+      ],
+    }));
   };
 
   const handleNewVendor = () => {
@@ -119,34 +148,34 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
   const getVendorDisplayName = (vendor) => {
     if (vendor.isNewVendor) {
-      return `${vendor.firstName} -(New Vendor)`;
+      return `${vendor?.firstName} -(New Vendor)`;
     }
-    return `${vendor.vendorId} - ${vendor.firstName}`;
+    return `${vendor?.vendorId} - ${vendor?.firstName}`;
   };
 
-  const handleRemoveFile = (index) => {
-    console.log("Removing file at index:", index);
-    setFormData((prevData) => {
-      const updatedFiles = prevData.competitiveQuotations.filter(
-        (file, i) => i !== index
-      );
-      console.log("Updated files:", updatedFiles);
-      return {
-        ...prevData,
-        competitiveQuotations: updatedFiles,
-      };
-    });
-  };
-
-  const handleRemoveRow = (index) => {
-    console.log(index);
-
-    const updatedFilesData = filesData.filter((_, i) => i !== index);
-
-    setFilesData(updatedFilesData);
+  const handleRemoveFile = (indexToRemove) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      competitiveQuotations: prevState.competitiveQuotations.filter(
+        (_, index) => index !== indexToRemove
+      ),
+    }));
   };
 
   const handleSubmit = () => {
+    const requiredFields = [
+      "vendor",
+      "quotationDate",
+      "quotationNumber",
+      "quotationCopy",
+    ];
+    const missingFields = requiredFields.filter((field) => !formData[field]);
+
+    if (missingFields.length > 0) {
+      alert(`Please fill in the following fields: ${missingFields.join(", ")}`);
+      return;
+    }
+
     console.log("formData for Procurements stage", formData);
     onNext();
   };
@@ -161,14 +190,14 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
       <div className="p-8 space-y-6">
         <div className="grid grid-cols-1 gap-6">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Choose Vendor
               </label>
               <select
                 name="vendor"
-                value={formData.vendor}
+                value={formData?.vendor}
                 onChange={(e) => {
                   if (e.target.value === "newVendor") {
                     handleNewVendor();
@@ -179,28 +208,41 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               >
                 <option value="">Select Vendor</option>
-                {vendors.map((vendor) => (
-                  <option key={vendor._id} value={vendor._id}>
+                {vendors?.map((vendor) => (
+                  <option key={vendor?._id} value={vendor?._id}>
                     {getVendorDisplayName(vendor)}
                   </option>
                 ))}
-                <option className="bg-primary text-white" value="newVendor">
-                  + New Vendor
-                </option>
+                <option value="newVendor">+ New Vendor</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Quotation Date
               </label>
-              <input
-                type="date"
-                name="quotationDate"
-                value={formData.quotationDate}
-                onChange={handleInputChange}
-                min={getMinDate()}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-              />
+              {isQuatationDate && formData?.quotationDate ? (
+                <input
+                  type="text"
+                  name="quotationDate"
+                  value={formatDateToDDMMYY(formData.quotationDate)}
+                  onChange={handleInputChange}
+                  min={getMinDate()}
+                  onClick={() => setIsQuatationDate(!isQuatationDate)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                />
+              ) : (
+                <input
+                  type="date"
+                  name="quotationDate"
+                  value={formData?.quotationDate || ""}
+                  onChange={handleInputChange}
+                  min={getMinDate()}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -209,85 +251,51 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
               <input
                 type="text"
                 name="quotationNumber"
-                value={formData.quotationNumber}
+                value={formData?.quotationNumber}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                 placeholder="Enter Quotation Number"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Service Period
+                Final Quotation
               </label>
-              <select
-                name="servicePeriod"
-                value={formData.servicePeriod}
-                onChange={(e) => {
-                  handleInputChange(e);
-                  if (e.target.value === "oneTime") {
-                    setFormData((prevData) => ({
-                      ...prevData,
-                      poValidFrom: "",
-                      poValidTo: "",
-                    }));
-                  } else {
-                    setFormData((prevData) => ({
-                      ...prevData,
-                      validityDate: "",
-                    }));
-                  }
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-              >
-                <option value="oneTime">One Time</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
 
-            {formData.servicePeriod === "custom" ? (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    PO Valid From
-                  </label>
-                  <input
-                    type="date"
-                    name="poValidFrom"
-                    value={formData.poValidFrom}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                  />
+              {formData?.quotationCopy ? (
+                <div className="flex items-center space-x-4">
+                  <a
+                    href={formData?.quotationCopy}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Final Quotation Copy
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        quotationCopy: null,
+                      }));
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    PO Valid To
-                  </label>
-                  <input
-                    type="date"
-                    name="poValidTo"
-                    value={formData.poValidTo}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                  />
-                </div>
-              </>
-            ) : (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Validity Date
-                </label>
+              ) : (
                 <input
-                  type="date"
-                  name="validityDate"
-                  value={formData.validityDate}
-                  onChange={handleInputChange}
+                  type="file"
+                  ref={fileInputRef}
+                  name="quotationCopy"
+                  onChange={handleFileChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6 items-start">
@@ -296,100 +304,156 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Quotation Expiry Date
                 </label>
-                <input
-                  type="date"
-                  name="poExpiryDate"
-                  value={formData.poExpiryDate}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                />
+                {isPoExpiryDate && formData?.poExpiryDate ? (
+                  <input
+                    type="text"
+                    name="poExpiryDate"
+                    value={formatDateToDDMMYY(formData.poExpiryDate)}
+                    onClick={() => setIsPoExpiryDate(!isPoExpiryDate)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                  />
+                ) : (
+                  <input
+                    type="date"
+                    name="poExpiryDate"
+                    value={formData?.poExpiryDate || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                  />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  PO Validity Date
+                </label>
+                <div className="flex space-x-4">
+                  <div className="w-full">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      From
+                    </label>
+                    {isPoValidFrom && formData?.poValidityFrom ? (
+                      <input
+                        type="text"
+                        name="poValidityFrom"
+                        value={formatDateToDDMMYY(formData.poValidityFrom)}
+                        onClick={() => setIsPoValidFrom(!isPoValidFrom)}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                      />
+                    ) : (
+                      <input
+                        type="date"
+                        name="poValidityFrom"
+                        value={formData?.poValidityFrom || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                      />
+                    )}
+                  </div>
+                  <div className="w-full">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      To
+                    </label>
+                    {isPoValidTo && formData?.poValidityTo ? (
+                      <input
+                        type="text"
+                        name="poValidityTo"
+                        value={formatDateToDDMMYY(formData.poValidityTo)}
+                        onClick={() => setIsPoValidTo(!isPoValidTo)}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                      />
+                    ) : (
+                      <input
+                        type="date"
+                        name="poValidityTo"
+                        value={formData?.poValidityTo || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Upload Competitive Quotations
-            </h3>
 
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 border-b-2 border-gray-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      File Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Upload File
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filesData.map((fileData, index) => (
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-gray-50 transition duration-200"
-                    >
-                      <td className="px-4 py-3">
-                        <select
-                          value={fileData.fileType}
-                          onChange={(e) => handleFileTypeChange(e, index)}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Attach Competitive Quotations
+              </label>
+
+              <div
+                className={`border-2 border-dashed rounded-xl p-4 w-full h-40 cursor-pointer transition-colors duration-300 flex flex-col items-center justify-center ${
+                  isDragOver
+                    ? "border-primary bg-primary-light"
+                    : "border-primary hover:border-primary"
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                ref={uploadAreaRef}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-10 h-10 text-primary"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-18 0h18M7.5 12l4.5 4.5L16.5 12"
+                  />
+                </svg>
+                <p className="ml-2 text-lg text-primary mt-2">
+                  Drag and drop files here
+                </p>
+
+                <div className="mt-4">
+                  <input
+                    type="file"
+                    multiple
+                    id="competitiveQuotationsUpload"
+                    name="competitiveQuotations"
+                    ref={competitiveQuotationsRef}
+                    onChange={handleMultiFileChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="competitiveQuotationsUpload"
+                    className="inline-block px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg cursor-pointer hover:bg-primary-dark transition duration-300"
+                  >
+                    Select Files
+                  </label>
+                </div>
+              </div>
+
+              {formData?.competitiveQuotations &&
+                formData?.competitiveQuotations?.length > 0 && (
+                  <ul className="mt-4 space-y-2">
+                    {formData?.competitiveQuotations?.map((fileUrl, index) => (
+                      <li
+                        key={index}
+                        className="flex justify-between items-center text-sm text-black"
+                      >
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-primary underline"
                         >
-                          <option value="">Select File Type</option>
-                          <option value="finalQuotation">
-                            Final Quotation
-                          </option>
-                          <option value="competitive">Competitive</option>
-                          <option value="Other">Other</option>
-                        </select>
-
-                        {fileData.fileType === "Other" && (
-                          <input
-                            type="text"
-                            placeholder="Enter other file type"
-                            value={fileData.otherType}
-                            onChange={(e) => handleOtherTypeChange(e, index)}
-                            className="mt-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                          />
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <input
-                          type="file"
-                          onChange={(e) => handleMultiFileChange(e, index)}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                          multiple 
-                        />
-                      </td>
-
-                      <td className="px-4 py-3 text-right">
+                          {`Competitive Quotations File ${index + 1}`}
+                        </a>
                         <button
-                          onClick={() => handleRemoveRow(index)}
-                          className={`bg-red-500 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300 hover:text-red-700 ${
-                            index === 0 ? "cursor-not-allowed opacity-50" : ""
-                          }`}
-                          disabled={index === 0}
+                          onClick={() => handleRemoveFile(index)}
+                          className="text-red-500 hover:text-red-700"
                         >
                           Remove
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 flex justify-start">
-              <button
-                onClick={handleAddRow}
-                className="bg-primary text-white flex items-center px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300"
-              >
-                Add Row
-              </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
             </div>
           </div>
 
@@ -426,7 +490,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                     type="text"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Enter vendor name"
-                    value={newVendor.name}
+                    value={newVendor?.name}
                     onChange={(e) =>
                       setNewVendor({ ...newVendor, name: e.target.value })
                     }
@@ -441,7 +505,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                     type="email"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Enter vendor email"
-                    value={newVendor.email}
+                    value={newVendor?.email}
                     onChange={(e) =>
                       setNewVendor({ ...newVendor, email: e.target.value })
                     }
@@ -471,4 +535,4 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
   );
 };
 
-export default Procurements;
+export default ProcurementsDetails;

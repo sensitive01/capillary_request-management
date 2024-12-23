@@ -1,24 +1,19 @@
-/* eslint-disable react/prop-types */
-import { useState, useRef, useEffect } from "react";
-import { fetchAllVendorData } from "../../../../api/service/adminServices";
-import { uploadCloudinary } from "../../../../utils/cloudinaryUtils";
-import { formatDateToDDMMYY } from "../../../../utils/dateFormat";
+import { useState, useEffect } from "react";
+import { fetchAllVendorData } from "../../../../api/service/adminServices.js";
+import { uploadCloudinary } from "../../../../utils/cloudinaryUtils.js";
+import { FaFilePdf } from "react-icons/fa";
+import * as Yup from "yup";
+import { toast } from "react-toastify";
 
-const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
-  const [isDragOver, setIsDragOver] = useState(false);
+const Procurements = ({ formData, setFormData, onBack, onNext }) => {
   const [vendors, setVendors] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newVendor, setNewVendor] = useState({ name: "", email: "" });
-  const [isQuatationDate, setIsQuatationDate] = useState(true);
-  const [isPoExpiryDate, setIsPoExpiryDate] = useState(true);
-  const [isPoValidFrom, setIsPoValidFrom] = useState(true);
+  const [filesData, setFilesData] = useState([
+    { id: Date.now(), fileType: "", otherType: "", files: [], urls: [] },
+  ]);
 
-  const [isPoValidTo, setIsPoValidTo] = useState(true);
-
-  const uploadAreaRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const competitiveQuotationsRef = useRef(null);
-
+  // Fetch vendors on component mount
   useEffect(() => {
     const fetchVendor = async () => {
       try {
@@ -34,16 +29,57 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
     fetchVendor();
   }, []);
 
+  // Populate files data from formData when component mounts or formData changes
   useEffect(() => {
-    if (!formData?.quotationDate) {
+    if (
+      formData.uploadedFiles &&
+      Object.keys(formData.uploadedFiles).length > 0
+    ) {
+      const reconstructedFilesData = Object.entries(formData.uploadedFiles).map(
+        ([fileType, urls]) => ({
+          id: Date.now(),
+          fileType: fileType,
+          otherType: fileType === "Other" ? fileType : "",
+          files: [], // Note: original File objects are lost on page refresh
+          urls: urls,
+        })
+      );
+
+      setFilesData(
+        reconstructedFilesData.length > 0
+          ? reconstructedFilesData
+          : [
+              {
+                id: Date.now(),
+                fileType: "",
+                otherType: "",
+                files: [],
+                urls: [],
+              },
+            ]
+      );
+    }
+  }, [formData.uploadedFiles]);
+
+  // Set default quotation date if not already set
+  useEffect(() => {
+    if (!formData.quotationDate) {
       const today = new Date().toISOString().split("T")[0];
       setFormData((prevState) => ({
         ...prevState,
         quotationDate: today,
       }));
     }
-  }, [setFormData, formData?.quotationDate]);
+  }, [setFormData, formData.quotationDate]);
 
+  // Utility method to get effective file type
+  const getEffectiveFileType = (fileData) => {
+    return fileData.fileType === "Other"
+      ? fileData.otherType
+      : fileData.fileType;
+  };
+
+  // Handle input changes for form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
@@ -52,77 +88,19 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
     }));
   };
 
-  const handleFileChange = async (e) => {
-    const { name, files } = e.target;
-
-    console.log("name", name);
-    console.log("file", files);
-    const data = await uploadCloudinary(files[0], "final");
-    console.log(data);
-    const { url } = data;
-
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: url,
-    }));
-  };
-
-  const handleMultiFileChange = async (e) => {
-    const { name, files } = e.target;
-
-    const filesArray = Array.from(files);
-
-    const uploadedImages = await Promise.all(
-      filesArray.map(async (image) => {
-        const data = await uploadCloudinary(image);
-        return data.url;
-      })
-    );
-
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: [...(prevState[name] || []), ...uploadedImages],
-    }));
-  };
-
+  // Get minimum date for quotation (15 days ago)
   const getMinDate = () => {
     const date = new Date();
     date.setDate(date.getDate() - 15);
     return date.toISOString().split("T")[0];
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-
-    const droppedFiles = Array.from(e.dataTransfer.files);
-
-    const uploadedImages = await Promise.all(
-      droppedFiles.map((file) => uploadCloudinary(file))
-    );
-
-    setFormData((prevState) => ({
-      ...prevState,
-      competitiveQuotations: [
-        ...(prevState.competitiveQuotations || []),
-        ...uploadedImages.map((img) => img.url),
-      ],
-    }));
-  };
-
+  // Open new vendor modal
   const handleNewVendor = () => {
     setShowModal(true);
   };
 
+  // Add new vendor
   const handleAddVendor = () => {
     if (newVendor.name && newVendor.email) {
       const newVendorObj = {
@@ -146,37 +124,222 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
     }
   };
 
+  // Get vendor display name
   const getVendorDisplayName = (vendor) => {
     if (vendor.isNewVendor) {
-      return `${vendor?.firstName} -(New Vendor)`;
+      return `${vendor.firstName} -(New Vendor)`;
     }
-    return `${vendor?.vendorId} - ${vendor?.firstName}`;
+    return `${vendor.vendorId} - ${vendor.firstName}`;
   };
 
-  const handleRemoveFile = (indexToRemove) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      competitiveQuotations: prevState.competitiveQuotations.filter(
-        (_, index) => index !== indexToRemove
-      ),
-    }));
-  };
+  // Handle multiple file uploads
+  const handleMultiFileChange = async (e, index) => {
+    const files = Array.from(e.target.files);
+    const currentFileData = filesData[index];
 
-  const handleSubmit = () => {
-    const requiredFields = [
-      "vendor",
-      "quotationDate",
-      "quotationNumber",
-      "quotationCopy",
-    ];
-    const missingFields = requiredFields.filter((field) => !formData[field]);
+    // Determine the file type to use
+    const fileType = getEffectiveFileType(currentFileData);
 
-    if (missingFields.length > 0) {
-      alert(`Please fill in the following fields: ${missingFields.join(", ")}`);
+    if (!fileType) {
+      alert("Please select a file type first");
       return;
     }
 
+    try {
+      const uploadedUrls = await Promise.all(
+        files.map(async (file) => {
+          const data = await uploadCloudinary(file);
+          return data.url;
+        })
+      );
+
+      // Update filesData for the specific row
+      const updatedFilesData = filesData.map((data, idx) => {
+        if (idx === index) {
+          return {
+            ...data,
+            files: [...data.files, ...files],
+            urls: [...data.urls, ...uploadedUrls],
+          };
+        }
+        return data;
+      });
+      setFilesData(updatedFilesData);
+
+      // Update formData
+      setFormData((prevState) => {
+        const currentUploadedFiles = prevState.uploadedFiles || {};
+        return {
+          ...prevState,
+          uploadedFiles: {
+            ...currentUploadedFiles,
+            [fileType]: [
+              ...(currentUploadedFiles[fileType] || []),
+              ...uploadedUrls,
+            ],
+          },
+        };
+      });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      alert("Error uploading files. Please try again.");
+    }
+  };
+
+  // Remove a specific file
+  const handleRemoveFile = (fileType, fileIndex) => {
+    // Remove from formData
+    setFormData((prevState) => {
+      const updatedFiles = { ...prevState.uploadedFiles };
+      if (updatedFiles[fileType]) {
+        updatedFiles[fileType] = updatedFiles[fileType].filter(
+          (_, i) => i !== fileIndex
+        );
+
+        if (updatedFiles[fileType].length === 0) {
+          delete updatedFiles[fileType];
+        }
+      }
+      return {
+        ...prevState,
+        uploadedFiles: updatedFiles,
+      };
+    });
+
+    // Update filesData
+    setFilesData((prevData) =>
+      prevData
+        .map((fileData) => {
+          const currentFileType = getEffectiveFileType(fileData);
+
+          if (currentFileType === fileType) {
+            return {
+              ...fileData,
+              urls: fileData.urls.filter((_, i) => i !== fileIndex),
+            };
+          }
+          return fileData;
+        })
+        .filter(
+          (fileData) => fileData.urls.length > 0 || fileData.fileType === ""
+        )
+    );
+  };
+
+  // Handle file type selection
+  const handleFileTypeChange = (e, index) => {
+    const newFileType = e.target.value;
+
+    setFilesData((prevData) => {
+      const updatedData = [...prevData];
+      updatedData[index] = {
+        ...updatedData[index],
+        fileType: newFileType,
+        otherType: newFileType === "Other" ? updatedData[index].otherType : "",
+        files: [],
+        urls: [],
+      };
+      return updatedData;
+    });
+
+    // Clear any existing files for this row from formData
+    const oldFileType = getEffectiveFileType(filesData[index]);
+
+    if (oldFileType) {
+      setFormData((prevState) => {
+        const updatedFiles = { ...prevState.uploadedFiles };
+        delete updatedFiles[oldFileType];
+        return {
+          ...prevState,
+          uploadedFiles: updatedFiles,
+        };
+      });
+    }
+  };
+
+  // Handle other file type input
+  const handleOtherTypeChange = (e, index) => {
+    const updatedData = [...filesData];
+    updatedData[index].otherType = e.target.value;
+    setFilesData(updatedData);
+  };
+
+  // Add a new file upload row
+  const handleAddRow = () => {
+    setFilesData((prev) => [
+      ...prev,
+      { id: Date.now(), fileType: "", otherType: "", files: [], urls: [] },
+    ]);
+  };
+
+  // Remove a file upload row
+  const handleRemoveRow = (index) => {
+    // Get the file type before removing the row
+    const fileType = getEffectiveFileType(filesData[index]);
+
+    // Remove the row from filesData
+    const updatedFilesData = filesData.filter((_, i) => i !== index);
+    setFilesData(updatedFilesData);
+
+    // Remove corresponding files from formData
+    if (fileType) {
+      setFormData((prevState) => {
+        const updatedFiles = { ...prevState.uploadedFiles };
+        delete updatedFiles[fileType];
+        return {
+          ...prevState,
+          uploadedFiles: updatedFiles,
+        };
+      });
+    }
+  };
+
+  // Render uploaded files for a specific row
+  const renderUploadedFiles = (rowIndex) => {
+    const fileData = filesData[rowIndex];
+    const fileType = getEffectiveFileType(fileData);
+
+    if (!fileType || !fileData.urls.length) return null;
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div>
+          <h3 className="font-semibold mb-2">{fileType}</h3>
+          <div className="flex flex-wrap gap-2">
+            {fileData.urls.map((url, fileIndex) => (
+              <div
+                key={fileIndex}
+                className="flex items-center bg-gray-100 rounded-lg p-2"
+              >
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center"
+                >
+                  <FaFilePdf size={24} className="text-red-500" />
+                </a>
+                <button
+                  onClick={() => handleRemoveFile(fileType, fileIndex)}
+                  className="ml-2 text-red-500 hover:text-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Handle form submission
+  const handleSubmit = () => {
     console.log("formData for Procurements stage", formData);
+    if (!formData.vendor || !formData.servicePeriod) {
+      toast.error("Please select Required Fields");
+      return;
+    }
     onNext();
   };
 
@@ -190,14 +353,14 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
 
       <div className="p-8 space-y-6">
         <div className="grid grid-cols-1 gap-6">
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Choose Vendor
+                Choose Vendor<span className="text-red-500">*</span>
               </label>
               <select
                 name="vendor"
-                value={formData?.vendor}
+                value={formData.vendor || ""}
                 onChange={(e) => {
                   if (e.target.value === "newVendor") {
                     handleNewVendor();
@@ -208,41 +371,28 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               >
                 <option value="">Select Vendor</option>
-                {vendors?.map((vendor) => (
-                  <option key={vendor?._id} value={vendor?._id}>
+                {vendors.map((vendor) => (
+                  <option key={vendor._id} value={vendor._id}>
                     {getVendorDisplayName(vendor)}
                   </option>
                 ))}
-                <option value="newVendor">+ New Vendor</option>
+                <option className="bg-primary text-white" value="newVendor">
+                  + New Vendor
+                </option>
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Quotation Date
               </label>
-              {isQuatationDate && formData?.quotationDate ? (
-                <input
-                  type="text"
-                  name="quotationDate"
-                  value={formatDateToDDMMYY(formData.quotationDate)}
-                  onChange={handleInputChange}
-                  min={getMinDate()}
-                  onClick={() => setIsQuatationDate(!isQuatationDate)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                />
-              ) : (
-                <input
-                  type="date"
-                  name="quotationDate"
-                  value={formData?.quotationDate || ""}
-                  onChange={handleInputChange}
-                  min={getMinDate()}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                />
-              )}
+              <input
+                type="date"
+                name="quotationDate"
+                value={formData.quotationDate || ""}
+                onChange={handleInputChange}
+                min={getMinDate()}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -251,209 +401,188 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
               <input
                 type="text"
                 name="quotationNumber"
-                value={formData?.quotationNumber}
+                value={formData.quotationNumber || ""}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                 placeholder="Enter Quotation Number"
               />
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Final Quotation
-              </label>
-
-              {formData?.quotationCopy ? (
-                <div className="flex items-center space-x-4">
-                  <a
-                    href={formData?.quotationCopy}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Final Quotation Copy
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prevData) => ({
-                        ...prevData,
-                        quotationCopy: null,
-                      }));
-                    }}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  name="quotationCopy"
-                  onChange={handleFileChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                />
-              )}
-            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 items-start">
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Quotation Expiry Date
-                </label>
-                {isPoExpiryDate && formData?.poExpiryDate ? (
-                  <input
-                    type="text"
-                    name="poExpiryDate"
-                    value={formatDateToDDMMYY(formData.poExpiryDate)}
-                    onClick={() => setIsPoExpiryDate(!isPoExpiryDate)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                  />
-                ) : (
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Service Period<span className="text-red-500">*</span>
+              </label>
+              <select
+                name="servicePeriod"
+                value={formData.servicePeriod || "oneTime"}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (e.target.value === "oneTime") {
+                    setFormData((prevData) => ({
+                      ...prevData,
+                      poValidFrom: "",
+                      poValidTo: "",
+                    }));
+                  }
+                }}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              >
+                <option value="oneTime">One Time</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            {formData.servicePeriod === "custom" && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    PO Valid From
+                  </label>
                   <input
                     type="date"
-                    name="poExpiryDate"
-                    value={formData?.poExpiryDate || ""}
+                    name="poValidFrom"
+                    value={formData.poValidFrom || ""}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                   />
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  PO Validity Date
-                </label>
-                <div className="flex space-x-4">
-                  <div className="w-full">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      From
-                    </label>
-                    {isPoValidFrom && formData?.poValidityFrom ? (
-                      <input
-                        type="text"
-                        name="poValidityFrom"
-                        value={formatDateToDDMMYY(formData.poValidityFrom)}
-                        onClick={() => setIsPoValidFrom(!isPoValidFrom)}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                      />
-                    ) : (
-                      <input
-                        type="date"
-                        name="poValidityFrom"
-                        value={formData?.poValidityFrom || ""}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                      />
-                    )}
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      To
-                    </label>
-                    {isPoValidTo && formData?.poValidityTo ? (
-                      <input
-                        type="text"
-                        name="poValidityTo"
-                        value={formatDateToDDMMYY(formData.poValidityTo)}
-                        onClick={() => setIsPoValidTo(!isPoValidTo)}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                      />
-                    ) : (
-                      <input
-                        type="date"
-                        name="poValidityTo"
-                        value={formData?.poValidityTo || ""}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                      />
-                    )}
-                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Attach Competitive Quotations
-              </label>
-
-              <div
-                className={`border-2 border-dashed rounded-xl p-4 w-full h-40 cursor-pointer transition-colors duration-300 flex flex-col items-center justify-center ${
-                  isDragOver
-                    ? "border-primary bg-primary-light"
-                    : "border-primary hover:border-primary"
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                ref={uploadAreaRef}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-10 h-10 text-primary"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-18 0h18M7.5 12l4.5 4.5L16.5 12"
-                  />
-                </svg>
-                <p className="ml-2 text-lg text-primary mt-2">
-                  Drag and drop files here
-                </p>
-
-                <div className="mt-4">
-                  <input
-                    type="file"
-                    multiple
-                    id="competitiveQuotationsUpload"
-                    name="competitiveQuotations"
-                    ref={competitiveQuotationsRef}
-                    onChange={handleMultiFileChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="competitiveQuotationsUpload"
-                    className="inline-block px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg cursor-pointer hover:bg-primary-dark transition duration-300"
-                  >
-                    Select Files
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    PO Valid To
                   </label>
+                  <input
+                    type="date"
+                    name="poValidTo"
+                    value={formData.poValidTo || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                  />
                 </div>
-              </div>
+              </>
+            )}
+          </div>
 
-              {formData?.competitiveQuotations &&
-                formData?.competitiveQuotations?.length > 0 && (
-                  <ul className="mt-4 space-y-2">
-                    {formData?.competitiveQuotations?.map((fileUrl, index) => (
-                      <li
-                        key={index}
-                        className="flex justify-between items-center text-sm text-black"
-                      >
-                        <a
-                          href={fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-primary underline"
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Project Code
+              </label>
+              <input
+                type="text"
+                name="projectCode"
+                value={formData.projectCode || ""}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Client Name
+              </label>
+              <input
+                type="text"
+                name="clientName"
+                value={formData.clientName || ""}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              Upload Documents
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      File Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Upload File
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Uploaded Files
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filesData.map((fileData, index) => (
+                    <tr
+                      key={fileData.id}
+                      className="border-b hover:bg-gray-50 transition duration-200"
+                    >
+                      <td className="px-4 py-3">
+                        <select
+                          value={fileData.fileType}
+                          onChange={(e) => handleFileTypeChange(e, index)}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                         >
-                          {`Competitive Quotations File ${index + 1}`}
-                        </a>
+                          <option value="">Select File Type</option>
+                          <option value="finalQuotation">
+                            Final Quotation
+                          </option>
+                          <option value="competitive">Competitive</option>
+                          <option value="Other">Other</option>
+                        </select>
+
+                        {fileData.fileType === "Other" && (
+                          <input
+                            type="text"
+                            placeholder="Enter other file type"
+                            value={fileData.otherType}
+                            onChange={(e) => handleOtherTypeChange(e, index)}
+                            className="mt-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                          />
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <input
+                          type="file"
+                          onChange={(e) => handleMultiFileChange(e, index)}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                          multiple
+                          disabled={!fileData.fileType}
+                        />
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {renderUploadedFiles(index)}
+                      </td>
+
+                      <td className="px-4 py-3 text-right">
                         <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="text-red-500 hover:text-red-700"
+                          onClick={() => handleRemoveRow(index)}
+                          className={`bg-red-500 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300 ${
+                            index === 0 ? "cursor-not-allowed opacity-50" : ""
+                          }`}
+                          disabled={index === 0}
                         >
                           Remove
                         </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 flex justify-start">
+              <button
+                onClick={handleAddRow}
+                className="bg-primary text-white flex items-center px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300"
+              >
+                Add Row
+              </button>
             </div>
           </div>
 
@@ -471,68 +600,69 @@ const ProcurementsDetails = ({ formData, setFormData, onBack, onNext }) => {
               Next
             </button>
           </div>
-        </div>
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out">
-              <div className="bg-primary text-white p-6 rounded-t-2xl">
-                <h3 className="text-2xl font-bold text-center">
-                  Add New Vendor
-                </h3>
-              </div>
 
-              <div className="p-8 space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vendor Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Enter vendor name"
-                    value={newVendor?.name}
-                    onChange={(e) =>
-                      setNewVendor({ ...newVendor, name: e.target.value })
-                    }
-                  />
+          {showModal && (
+            <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
+              <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out">
+                <div className="bg-primary text-white p-6 rounded-t-2xl">
+                  <h3 className="text-2xl font-bold text-center">
+                    Add New Vendor
+                  </h3>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vendor Email
-                  </label>
-                  <input
-                    type="email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Enter vendor email"
-                    value={newVendor?.email}
-                    onChange={(e) =>
-                      setNewVendor({ ...newVendor, email: e.target.value })
-                    }
-                  />
-                </div>
+                <div className="p-8 space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Vendor Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter vendor name"
+                      value={newVendor.name}
+                      onChange={(e) =>
+                        setNewVendor({ ...newVendor, name: e.target.value })
+                      }
+                    />
+                  </div>
 
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="w-full px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddVendor}
-                    className="w-full px-6 py-3 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition duration-300"
-                  >
-                    Add Vendor
-                  </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Vendor Email
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter vendor email"
+                      value={newVendor.email}
+                      onChange={(e) =>
+                        setNewVendor({ ...newVendor, email: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="w-full px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddVendor}
+                      className="w-full px-6 py-3 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition duration-300"
+                    >
+                      Add Vendor
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default ProcurementsDetails;
+export default Procurements;

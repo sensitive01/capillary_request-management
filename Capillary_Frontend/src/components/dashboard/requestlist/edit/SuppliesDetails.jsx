@@ -1,26 +1,31 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
 import { useState } from "react";
 import { Trash2, PlusCircle, CheckCircle2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 const SuppliesDetails = ({
   formData,
   setFormData,
   onBack,
   onSubmit,
-  handleSubmited,
   onNext,
 }) => {
-  
-  console.log("supploies",formData)
-  
-  const initialService = { productName: "", quantity: "", price: "" };
-  const [services, setServices] = useState(formData?.services || [initialService]);
+  const initialService = { productName: "", productDescription: "", productPurpose: "", quantity: "", price: "", tax: "" };
+  const [services, setServices] = useState(formData.services || [initialService]);
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
 
-  
+  const currencies = [
+    { code: "USD", symbol: "$" },
+    { code: "EUR", symbol: "€" },
+    { code: "GBP", symbol: "£" },
+    { code: "JPY", symbol: "¥" },
+    { code: "CAD", symbol: "C$" },
+    { code: "INR", symbol: "₹" },
+  ];
 
-  // New state to manage submission display
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const formatCurrency = (value) => {
+    const currency = currencies.find(c => c.code === selectedCurrency);
+    return `${currency.symbol}${value.toFixed(2)}`;
+  };
 
   const handleServiceChange = (e, index) => {
     const { name, value } = e.target;
@@ -34,45 +39,35 @@ const SuppliesDetails = ({
   };
 
   const handleRemoveService = (index) => {
-    if (services?.length > 1) {
-      const updatedServices = services?.filter((_, i) => i !== index);
+    if (services.length > 1) {
+      const updatedServices = services.filter((_, i) => i !== index);
       setServices(updatedServices);
     }
   };
 
-  // Calculate total value
-  const totalValue = services?.reduce(
-    (acc, service) =>
-      acc + parseFloat(service.quantity || 0) * parseFloat(service.price || 0),
-    0
-  );
+  const calculateRowTotal = (service) => {
+    const quantity = parseFloat(service.quantity || 0);
+    const price = parseFloat(service.price || 0);
+    const tax = parseFloat(service.tax || 0);
+    return quantity * price * (1 + tax / 100);
+  };
 
-  // Handle form submission
-  const handleSubmit = () => {
-    const submissionData = {
-      ...formData,
-      services,
-      totalValue,
-    };
+  const totalValue = services.reduce((acc, service) => acc + calculateRowTotal(service), 0);
 
-    // Update the formData state
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      ...submissionData,
-    }));
-
-    // Log the submission data
-    console.log("Submission Data:", submissionData);
-
-    // Set submitted state to true to show submission details
-    setIsSubmitted(true);
-
-    // Call onSubmit if provided
-    if (onSubmit) {
-      onSubmit(submissionData);
+  const handleSubmit = async () => {
+    const submissionData = { ...formData, services, totalValue };
+    try {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        ...submissionData,
+      }));
+      if (onSubmit) {
+        onSubmit(submissionData);
+      }
+      onNext();
+    } catch (err) {
+      toast.error("Please fill in all required fields correctly");
     }
-
-    onNext();
   };
 
   return (
@@ -83,152 +78,177 @@ const SuppliesDetails = ({
         </h2>
       </div>
 
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b-2 border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Product Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Quantity
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Price
-                </th>
-                {/* <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Total
-                </th> */}
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {services?.map((service, index) => (
-                <tr
-                  key={index}
-                  className="border-b hover:bg-gray-50 transition duration-200"
-                >
-                  <td className="px-4 py-4">
-                    <textarea
-                      type="text"
-                      name="description"
-                      value={service?.description}
-                      onChange={(e) => handleServiceChange(e, index)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
-                      placeholder="Description"
-                      rows={1}
-                    />
-                  </td>
-                  <td className="px-4 py-4">
-                    <input
-                      type="text"
-                      name="productName"
-                      value={service?.productName}
-                      onChange={(e) => handleServiceChange(e, index)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                      placeholder="Product Name"
-                    />
-                  </td>
-                  <td className="px-4 py-4">
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={service?.quantity}
-                      onChange={(e) => handleServiceChange(e, index)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                      placeholder="Quantity"
-                      min="0"
-                    />
-                  </td>
-                  <td className="px-4 py-4">
-                    <input
-                      type="number"
-                      name="price"
-                      value={service?.price}
-                      onChange={(e) => handleServiceChange(e, index)}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                      placeholder="Price"
-                      min="0"
-                      step="0.01"
-                    />
-                  </td>
-                  {/* <td className="px-4 py-4">
-                    <input
-                      type="number"
-                      name="total"
-                      value={service.total}
-                      readOnly
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
-                      placeholder="Total"
-                    />
-                  </td> */}
-
-                  <td className="px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveService(index)}
-                      className={`text-red-500 hover:text-red-700 transition duration-300 ${
-                        services.length === 1
-                          ? "cursor-not-allowed opacity-50"
-                          : ""
-                      }`}
-                      disabled={services.length === 1}
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-100">
-                <td colSpan="2" className="px-4 py-3">
-                  {}
-                </td>
-                <td
-                  colSpan="2"
-                  className="px-4 py-3 text-right font-bold text-gray-700"
-                >
-                  Total Amount:
-                </td>
-                <td className="px-4 py-3 font-bold text-blue-600">
-                  {totalValue.toLocaleString()}
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
+          <div className="min-w-full inline-block align-middle">
+            <div className="overflow-hidden border rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                      Product Name<span className="text-red-500">*</span>
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Description<span className="text-red-500">*</span>
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Purpose<span className="text-red-500">*</span>
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                      Qty<span className="text-red-500">*</span>
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                      Price<span className="text-red-500">*</span>
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                      Tax (%)
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                      Total
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {services.map((service, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <input
+                          type="text"
+                          name="productName"
+                          value={service.productName}
+                          onChange={(e) => handleServiceChange(e, index)}
+                          className="w-full px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                          placeholder="Name"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <textarea
+                          name="productDescription"
+                          value={service.productDescription}
+                          onChange={(e) => handleServiceChange(e, index)}
+                          className="w-full px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                          placeholder="Description"
+                          rows={2}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <textarea
+                          name="productPurpose"
+                          value={service.productPurpose}
+                          onChange={(e) => handleServiceChange(e, index)}
+                          className="w-full px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                          placeholder="Purpose"
+                          rows={2}
+                        />
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <input
+                          type="number"
+                          name="quantity"
+                          value={service.quantity}
+                          onChange={(e) => handleServiceChange(e, index)}
+                          className="w-20 px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                          min="0"
+                        />
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <input
+                          type="number"
+                          name="price"
+                          value={service.price}
+                          onChange={(e) => handleServiceChange(e, index)}
+                          className="w-24 px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                          min="0"
+                          step="0.01"
+                        />
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <input
+                          type="number"
+                          name="tax"
+                          value={service.tax}
+                          onChange={(e) => handleServiceChange(e, index)}
+                          className="w-20 px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                          min="0"
+                          step="0.01"
+                        />
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={formatCurrency(calculateRowTotal(service))}
+                          readOnly
+                          className="w-24 px-2 py-1 text-sm bg-gray-50 border rounded"
+                        />
+                      </td>
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveService(index)}
+                          className={`text-red-500 hover:text-red-700 transition-colors ${
+                            services.length === 1 ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                          disabled={services.length === 1}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-50">
+                  <tr>
+                    <td colSpan="5" className="px-4 py-3 text-sm font-semibold text-gray-700">
+                      Total Amount:
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={selectedCurrency}
+                        onChange={(e) => setSelectedCurrency(e.target.value)}
+                        className="w-20 px-2 py-1 text-sm border rounded focus:ring-primary focus:border-primary"
+                      >
+                        {currencies.map((currency) => (
+                          <option key={currency.code} value={currency.code}>
+                            {currency.code}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-primary">
+                      {formatCurrency(totalValue)}
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </div>
 
         <div className="mt-4">
           <button
             type="button"
             onClick={handleAddService}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition duration-300 shadow-md hover:shadow-lg"
+            className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            <PlusCircle className="w-5 h-5" />
+            <PlusCircle className="w-4 h-4 mr-2" />
             Add Service
           </button>
         </div>
 
         <div className="mt-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Remarks
           </label>
           <textarea
             name="remarks"
-            value={formData?.remarks}
-            onChange={(e) =>
-              setFormData({ ...formData, remarks: e.target.value })
-            }
+            value={formData.remarks}
+            onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
             rows={4}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition duration-300"
+            className="w-full px-3 py-2 text-sm border rounded-md focus:ring-primary focus:border-primary"
             placeholder="Enter additional remarks or notes here..."
           />
         </div>
@@ -236,15 +256,16 @@ const SuppliesDetails = ({
         <div className="mt-8 flex justify-between">
           <button
             onClick={onBack}
-            className="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primary transition duration-300 ease-in-out"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             Back
           </button>
           <button
             onClick={handleSubmit}
-            className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary transition-colors flex items-center"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            <CheckCircle2 className="mr-2" /> Submit Request
+            <CheckCircle2 className="w-4 h-4 mr-2" />
+            Submit Request
           </button>
         </div>
       </div>

@@ -1,5 +1,3 @@
-/* eslint-disable no-undef */
-/* eslint-disable no-unused-vars */
 import { Search, Download, Filter, Plus, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,11 +11,13 @@ const VendorListTable = (onEdit, onDelete) => {
   const navigate = useNavigate();
   const [personalData, setPersonalData] = useState([]);
   const [vendor, setVendor] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchVendor = async () => {
       try {
-
         const response = await getVendorList();
         console.log(response);
         setPersonalData(response.data);
@@ -27,6 +27,52 @@ const VendorListTable = (onEdit, onDelete) => {
     };
     fetchVendor();
   }, []);
+
+  // Filter data based on search term
+  const filteredData = personalData?.filter(person =>
+    Object.values(person).some(value =>
+      String(value).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  // Calculate pagination
+  const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredData?.slice(startIndex, endIndex);
+
+  // Generate page numbers array
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pageNumbers.push(i);
+        }
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const handleDelete = async (id) => {
     const response = await deleteVendor(id);
     console.log(response);
@@ -37,7 +83,6 @@ const VendorListTable = (onEdit, onDelete) => {
       toast.error(response.data.message);
     }
   };
-  const handleEdit = (id) => {};
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -68,6 +113,11 @@ const VendorListTable = (onEdit, onDelete) => {
             <input
               type="text"
               placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset to first page on search
+              }}
               className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
@@ -152,7 +202,6 @@ const VendorListTable = (onEdit, onDelete) => {
                     >
                       GST Number
                     </th>
-
                     <th
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-xs font-medium text-center text-white uppercase tracking-wider"
@@ -168,8 +217,8 @@ const VendorListTable = (onEdit, onDelete) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {personalData?.length > 0 &&
-                    personalData?.map((person,index) => (
+                  {currentData?.length > 0 &&
+                    currentData?.map((person, index) => (
                       <tr key={person.sno} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <input
@@ -180,37 +229,36 @@ const VendorListTable = (onEdit, onDelete) => {
                           />
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {index+1}
+                          {startIndex + index + 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person?.vendorId}
+                          {person?.vendorId||person.ID}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person?.firstName}
+                          {person?.firstName||person.Name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {person?.phoneNumber}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person?.email}
+                          {person?.email||person.Email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person?.streetAddress1 || "N/A"}
+                          {person?.streetAddress1 || person["Shipping Address"]                       }
                         </td>
-
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person?.gstNumber}
+                          {person?.gstNumber||person["Tax Number"]}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           <div className="flex space-x-4">
-                            <button
+                            {/* <button
                               onClick={() => alert("View Logs clicked")}
                               className="text-blue-600 hover:text-blue-800"
                             >
                               View Logs
-                            </button>
+                            </button> */}
                             <button
-                              onClick={() => alert("View Details clicked")}
+                              onClick={() => navigate(`/vendor-list-table/get-vendor/${person._id}`)}
                               className="text-green-600 hover:text-green-800"
                             >
                               View Details
@@ -244,16 +292,36 @@ const VendorListTable = (onEdit, onDelete) => {
 
       <div className="flex items-center justify-between mt-6 px-2">
         <div className="flex items-center text-sm text-gray-500">
-          Showing 1 to {personalData?.length} of {personalData?.length} entries
+          Showing {startIndex + 1} to {Math.min(endIndex, filteredData?.length || 0)} of {filteredData?.length || 0} entries
         </div>
-        <div className="flex gap-3">
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50">
+        <div className="flex gap-2">
+          <button 
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Previous
           </button>
-          <button className="px-4 py-2 bg-primary text-white rounded-lg text-sm">
-            1
-          </button>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50">
+          
+          {getPageNumbers().map(pageNum => (
+            <button
+              key={pageNum}
+              onClick={() => handlePageChange(pageNum)}
+              className={`px-4 py-2 rounded-lg text-sm ${
+                currentPage === pageNum
+                  ? 'bg-primary text-white'
+                  : 'border border-gray-300'
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Next
           </button>
         </div>

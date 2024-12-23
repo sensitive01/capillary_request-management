@@ -2,58 +2,68 @@
 /* eslint-disable no-unused-vars */
 import { PlusCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-
 import * as Yup from "yup";
+import { toast } from "react-toastify";
 import { getAllEntityData } from "../../../../api/service/adminServices";
 
+const CommercialValidationSchema = Yup.object().shape({
+  businessUnit: Yup.string().required("Business Unit is required"),
+  entity: Yup.string().required("Entity is required"),
+  city: Yup.string().required("City is required"),
+  site: Yup.string().required("Site is required"),
+  department: Yup.string().required("Department is required"),
+  hod: Yup.string().required("Head of Department is required"),
+  paymentMode: Yup.string().required("Payment Mode is required"),
+  billTo: Yup.string().required("Bill To address is required"),
+  shipTo: Yup.string().required("Ship To address is required"),
 
-// const CommercialValidationSchema = Yup.object().shape({
-//   entity: Yup.string().required("Entity is required"),
-//   city: Yup.string().required("City is required"),
-//   site: Yup.string().required("Site is required"),
-//   department: Yup.string().required("Department is required"),
-//   amount: Yup.number()
-//     .required("Amount is required")
-//     .positive("Amount must be a positive number"),
-//   currency: Yup.string().required("Currency is required"),
-//   costCentre: Yup.string().required("Cost Centre is required"),
-//   paymentMode: Yup.string().required("Payment Mode is required"),
-//   paymentTerms: Yup.array()
-//     .of(
-//       Yup.object().shape({
-//         percentageTerm: Yup.number()
-//           .required("Percentage Term is required")
-//           .positive("Percentage Term must be a positive number")
-//           .max(100, "Percentage Term cannot exceed 100"),
-//         paymentTerm: Yup.string().required("Payment Term is required"),
-//         paymentMode: Yup.string().required("Payment Type is required"),
-//       })
-//     )
-//     .min(1, "At least one payment term is required"),
-//   billTo: Yup.string().required("Bill To address is required"),
-//   shipTo: Yup.string().required("Ship To address is required"),
-// });
+  // Validate Payment Terms
+  paymentTerms: Yup.array()
+    .of(
+      Yup.object().shape({
+        percentageTerm: Yup.number()
+          .required("Percentage Term is required")
+          .min(0, "Percentage Term must be at least 0")
+          .max(100, "Percentage Term cannot exceed 100"),
+        paymentTerm: Yup.string().required("Payment Term is required"),
+        paymentType: Yup.string().required("Payment Type is required"),
+      })
+    )
+    .test(
+      "total-percentage",
+      "Total Percentage Terms must equal 100%",
+      function (paymentTerms) {
+        // Skip validation for credit card payment
+        if (this.parent.isCreditCardSelected) return true;
 
+        const totalPercentage = paymentTerms.reduce((sum, term) => {
+          return sum + (parseFloat(term.percentageTerm) || 0);
+        }, 0);
+
+        return totalPercentage === 100;
+      }
+    ),
+});
 
 const CommercialsDetails = ({ formData, setFormData, onNext }) => {
-
-
-  console.log("Formdata in commercial details",formData)
-
+  console.log("Welcome to edit page",formData)
   const [localFormData, setLocalFormData] = useState({
-    
-    entity: formData?.entity||"",
-    city:formData?.city|| "",
-    site:formData?.site||"",
-    department:formData?.department|| "IT Web development",
-    amount:formData?.amount|| "",
-    currency:formData?.currency|| "USD",
-    costCentre:formData?.costCentre|| "CT-ITDT-02",
-    paymentMode:formData?.paymentMode|| "",
-    paymentTerms:formData?.paymentTerms|| [{ percentageTerm: "", paymentTerm: "", paymentType: "" }],
-    billTo:formData?.billTo|| "",
-    shipTo:formData?.shipTo|| "",
-    isCreditCardSelected:formData?.isCreditCardSelected|| false,
+    entity: formData?.entity || "",
+    city: formData?.city || "",
+    site: formData?.site || "",
+    department: formData?.department || "",
+    amount: formData?.amount || "",
+    currency: formData?.currency || "USD",
+    costCentre: formData?.costCentre || "CT-ITDT-02",
+    paymentMode: formData?.paymentMode || "",
+    paymentTerms: formData?.paymentTerms || [
+      { percentageTerm: 0, paymentTerm: "", paymentType: "" },
+    ],
+    billTo: formData?.billTo || "",
+    shipTo: formData?.shipTo || "",
+    hod: formData?.hod || "",
+    businessUnit: formData?.businessUnit || "",
+    isCreditCardSelected: formData?.isCreditCardSelected || false,
   });
   const [entities, setEntities] = useState([]);
   const [selectedEntityDetails, setSelectedEntityDetails] = useState(null);
@@ -72,6 +82,57 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
     };
     fetchEntity();
   }, []);
+
+  useEffect(() => {
+    if (formData) {
+      setLocalFormData({
+        entity: formData.entity || "",
+        city: formData.city || "",
+        site: formData.site || "",
+        department: formData.department || "",
+        amount: formData.amount || "",
+        currency: formData.currency || "USD",
+        costCentre: formData.costCentre || "CT-ITDT-02",
+        paymentMode: formData.paymentMode || "",
+        paymentTerms: formData.paymentTerms || [
+          { percentageTerm: "", paymentTerm: "", paymentType: "" }
+        ],
+        billTo: formData.billTo || "",
+        shipTo: formData.shipTo || "",
+        hod: formData.hod || "",
+        businessUnit: formData.businessUnit || "",
+        isCreditCardSelected: formData.isCreditCardSelected || false
+      });
+    }
+  }, [formData]);
+
+  const validateForm = async () => {
+    try {
+      // Validate the entire form
+      await CommercialValidationSchema.validate(localFormData, {
+        abortEarly: false,
+      });
+      setErrors({});
+      return true;
+    } catch (yupError) {
+      if (yupError.inner) {
+        // Transform Yup errors into a more manageable format
+        const formErrors = yupError.inner.reduce((acc, error) => {
+          acc[error.path] = error.message;
+          return acc;
+        }, {});
+
+        setErrors(formErrors);
+
+        // Show toast for first error
+        const firstErrorKey = Object.keys(formErrors)[0];
+        if (firstErrorKey) {
+          toast.error(formErrors[firstErrorKey]);
+        }
+      }
+      return false;
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -96,6 +157,14 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
 
     setLocalFormData(updatedFormData);
     setFormData(updatedFormData);
+
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleEntityChange = (e) => {
@@ -103,7 +172,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
     console.log("Selected Entity ID:", selectedEntityId);
 
     const matchingEntities = entities.filter(
-      (entity) => entity?.entityName === selectedEntityId
+      (entity) => entity.entityName === selectedEntityId
     );
     console.log("Matching Entities:", matchingEntities);
 
@@ -122,6 +191,14 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
 
       setLocalFormData(updatedFormData);
       setFormData(updatedFormData);
+
+      if (errors.entity) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.entity;
+          return newErrors;
+        });
+      }
     } else {
       console.log("No matching entities found");
     }
@@ -129,6 +206,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
 
   const handlePaymentTermChange = (e, index) => {
     const { name, value } = e.target;
+    console.log("name", name, "value", value);
     const updatedPaymentTerms = [...localFormData.paymentTerms];
     updatedPaymentTerms[index] = {
       ...updatedPaymentTerms[index],
@@ -142,6 +220,15 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
 
     setLocalFormData(updatedFormData);
     setFormData(updatedFormData);
+    if (errors.paymentTerms?.[index]?.[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        if (newErrors.paymentTerms?.[index]) {
+          delete newErrors.paymentTerms[index][name];
+        }
+        return newErrors;
+      });
+    }
   };
 
   const handleAddMorePaymentTerm = () => {
@@ -171,30 +258,29 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
     setFormData(updatedFormData);
   };
 
-  const handleNextStep = async () => {
-    // const isValid = await validateForm();
-    // if (isValid) {
-    // }
-  
-    onNext();
-  };
+  // const handleNextStep = async () => {
+  //   const isValid = await validateForm();
+  //   if (isValid) {
+  //   }
 
-  // const validateForm = async () => {
-  //   try {
-  //     await CommercialValidationSchema.validate(localFormData, {
-  //       abortEarly: false,
-  //     });
-  //     setErrors({});
-  //     return true;
-  //   } catch (yupError) {
-  //     const errorMap = {};
-  //     yupError.inner.forEach((err) => {
-  //       errorMap[err.path] = err.message;
-  //     });
-  //     setErrors(errorMap);
-  //     return false;
+  //   console.log(localFormData);
+  //   const totalSum = localFormData.paymentTerms.reduce((sum, term) => {
+  //     return sum + (parseFloat(term.percentageTerm) || 0);
+  //   }, 0);
+
+  //   if (totalSum !== 100) {
+  //     toast.error("Persentage term is not equal to 100");
+  //     return;
+  //   } else {
+  //     onNext();
   //   }
   // };
+  const handleNextStep = async () => {
+    const isValid = await validateForm();
+    if (isValid) {
+      onNext();
+    }
+  };
 
   return (
     <div className="w-full mx-auto bg-white  shadow-2xl rounded-2xl overflow-hidden ">
@@ -205,20 +291,50 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
       </div>
 
       <div className="p-8 space-y-6">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-4 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-primary mb-2">
+              Business Unit <span className="text-red-500">*</span>
+            </label>
+            <select
+              onChange={handleInputChange}
+              value={localFormData.businessUnit}
+              name="businessUnit"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+            >
+              <option value="">Select Business Unit</option>
+              <option value="Central">Central</option>
+              <option value="China">China</option>
+              <option value="EMEA">EMEA</option>
+              <option value="India-Rest">India : India-Rest</option>
+              <option value="India-North">India : North</option>
+              <option value="India-South">India : South</option>
+              <option value="SEA-IDN">SEA : SEA IDN</option>
+              <option value="SEA-MLY">SEA : SEA MLY</option>
+              <option value="SEA-Rest">SEA : SEA-Rest</option>
+              <option value="SMB">SMB</option>
+              <option value="UK">UK : UK</option>
+              <option value="USA">USA</option>
+            </select>
+
+            {errors.businessUnit && (
+              <p className="text-red-500 text-xs mt-1">{errors.businessUnit}</p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-semibold text-primary mb-2">
               Entity <span className="text-red-500">*</span>
             </label>
             <select
               name="entity"
-              value={localFormData?.entity}
+              value={localFormData.entity}
               onChange={handleEntityChange}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
             >
               <option value="">Select Entity</option>
 
-              {[...new Set(entities?.map((entity) => entity?.entityName))].map(
+              {[...new Set(entities.map((entity) => entity.entityName))].map(
                 (entityName, index) => (
                   <option key={index} value={entityName}>
                     {entityName}
@@ -226,8 +342,8 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                 )
               )}
             </select>
-            {errors?.entity && (
-              <p className="text-red-500 text-xs mt-1">{errors?.entity}</p>
+            {errors.entity && (
+              <p className="text-red-500 text-xs mt-1">{errors.entity}</p>
             )}
           </div>
 
@@ -238,18 +354,16 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
             <input
               type="text"
               name="city"
-              value={localFormData?.city}
+              value={localFormData.city}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               placeholder="Enter City"
             />
-            {errors?.city && (
-              <p className="text-red-500 text-xs mt-1">{errors?.city}</p>
+            {errors.city && (
+              <p className="text-red-500 text-xs mt-1">{errors.city}</p>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Site <span className="text-red-500">*</span>
@@ -257,38 +371,108 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
             <input
               type="text"
               name="site"
-              value={localFormData?.site}
+              value={localFormData.site}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               placeholder="Enter Site"
             />
-            {errors?.site && (
-              <p className="text-red-500 text-xs mt-1">{errors?.site}</p>
+            {errors.site && (
+              <p className="text-red-500 text-xs mt-1">{errors.site}</p>
             )}
           </div>
+        </div>
 
+        <div className="grid grid-cols-4 gap-6">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Department <span className="text-red-500">*</span>
             </label>
             <select
               name="department"
-              value={localFormData?.department}
+              value={localFormData.department}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
             >
-              <option value="" disabled>
-                Select Department
+              <option value="">Select Department</option>
+
+              <option value="Corporate:Corp">Corporate : Corp</option>
+              <option value="Corporate:Finance">Corporate : Finance</option>
+              <option value="Corporate:WorkPlaceSolutions">
+                Corporate : Work Place Solutions
               </option>
-              <option value="hr">Human Resources</option>
-              <option value="it">Information Technology</option>
-              <option value="finance">Finance</option>
-              <option value="marketing">Marketing</option>
+              <option value="CustomerSuccess:AccountManagement">
+                Customer Success : Account Management
+              </option>
+              <option value="CustomerSuccess:DataScience">
+                Customer Success : Data Science
+              </option>
+              <option value="CustomerSuccess:Implementation">
+                Customer Success : Implementation
+              </option>
+              <option value="CustomerSuccess:ProfServices">
+                Customer Success : Prof Services
+              </option>
+              <option value="CustomerSuccess:Solutions">
+                Customer Success : Solutions
+              </option>
+              <option value="HumanResource:PeoplePractice">
+                Human Resource : People Practice
+              </option>
+              <option value="HumanResource:TalentAcquisition">
+                Human Resource : Talent Acquisition
+              </option>
+              <option value="Infra:GatewaySMS">Infra : Gateway SMS</option>
+              <option value="Infra:InformationSecurity">
+                Infra : Information Security
+              </option>
+              <option value="Infra:InformationTechnology">
+                Infra : Information Technology
+              </option>
+              <option value="SalesMarketing:FieldSales">
+                Sales & Marketing : Field Sales
+              </option>
+              <option value="SalesMarketing:InsideSales">
+                Sales & Marketing : Inside Sales
+              </option>
+              <option value="SalesMarketing:Marketing">
+                Sales & Marketing : Marketing
+              </option>
+              <option value="SalesMarketing:PreSales">
+                Sales & Marketing : Pre-Sales
+              </option>
+              <option value="SalesMarketing:SalesOperations">
+                Sales & Marketing : Sales Operations
+              </option>
+              <option value="ServerCosts">Server Costs</option>
+              <option value="Technology:TechCore">
+                Technology : Tech-Core
+              </option>
+              <option value="Technology:TechProduct">
+                Technology : Tech-Product
+              </option>
             </select>
+            {errors.department && (
+              <p className="text-red-500 text-xs mt-1">{errors.department}</p>
+            )}
           </div>
-          {errors?.department && (
-            <p className="text-red-500 text-xs mt-1">{errors?.department}</p>
-          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              HOD <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="hod"
+              value={localFormData.hod}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              placeholder="Selct HOD"
+            />
+            {errors.hod && (
+              <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 ">
               Payment Mode <span className="text-red-500">*</span>
@@ -301,7 +485,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                     name="paymentMode"
                     value={type.toLowerCase().replace(" ", "")}
                     checked={
-                      localFormData?.paymentMode ===
+                      localFormData.paymentMode ===
                       type.toLowerCase().replace(" ", "")
                     }
                     onChange={handleInputChange}
@@ -312,7 +496,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
               ))}
             </div>
             {errors.paymentMode && (
-              <p className="text-red-500 text-xs mt-1">{errors?.paymentMode}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.paymentMode}</p>
             )}
           </div>
         </div>
@@ -320,7 +504,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
         <div className="space-y-4">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Percentage Amount
+              Payment Term
             </h3>
           </div>
 
@@ -344,7 +528,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                 </tr>
               </thead>
               <tbody>
-                {localFormData?.paymentTerms.map((term, index) => (
+                {localFormData.paymentTerms.map((term, index) => (
                   <tr
                     key={index}
                     className="border-b hover:bg-gray-50 transition duration-200"
@@ -353,12 +537,12 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                       <input
                         type="number"
                         name="percentageTerm"
-                        value={term?.percentageTerm}
+                        value={term.percentageTerm}
                         onChange={(e) => handlePaymentTermChange(e, index)}
-                        disabled={localFormData?.isCreditCardSelected}
+                        disabled={localFormData.isCreditCardSelected}
                         className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
             ${
-              localFormData?.isCreditCardSelected
+              localFormData.isCreditCardSelected
                 ? "bg-gray-100 cursor-not-allowed"
                 : "focus:ring-2 focus:ring-primary"
             }
@@ -370,17 +554,22 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                           WebkitAppearance: "none",
                         }}
                       />
+                      {errors.paymentTerms?.[index]?.percentageTerm && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.paymentTerms[index].percentageTerm}
+                        </p>
+                      )}
                     </td>
 
                     <td className="px-4 py-3">
                       <select
                         name="paymentTerm"
-                        value={term?.paymentTerm}
+                        value={term.paymentTerm}
                         onChange={(e) => handlePaymentTermChange(e, index)}
-                        disabled={localFormData?.isCreditCardSelected}
+                        disabled={localFormData.isCreditCardSelected}
                         className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
             ${
-              localFormData?.isCreditCardSelected
+              localFormData.isCreditCardSelected
                 ? "bg-gray-100 cursor-not-allowed"
                 : "focus:ring-2 focus:ring-primary"
             }
@@ -397,18 +586,26 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                         <option value="advance_60">
                           60 days credit period
                         </option>
+                        <option value="advance_60">
+                          90 days credit period
+                        </option>
                       </select>
+                      {errors.paymentTerms?.[index]?.paymentTerm && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.paymentTerms[index].paymentTerm}
+                        </p>
+                      )}
                     </td>
 
                     <td className="px-4 py-3">
                       <select
                         name="paymentType"
-                        value={term?.paymentType}
+                        value={term.paymentType}
                         onChange={(e) => handlePaymentTermChange(e, index)}
-                        disabled={localFormData?.isCreditCardSelected}
+                        disabled={localFormData.isCreditCardSelected}
                         className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
             ${
-              localFormData?.isCreditCardSelected
+              localFormData.isCreditCardSelected
                 ? "bg-gray-100 cursor-not-allowed"
                 : "focus:ring-2 focus:ring-primary"
             }
@@ -418,10 +615,15 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                         <option value="fullPayment">Full Payment</option>
                         <option value="advancePayment">Advance Payment</option>
                         <option value="deliveryPayment">
-                          Delivery Payment
+                          Payment on Delivary
                         </option>
                         <option value="partPayment">Part Payment</option>
                       </select>
+                      {errors.paymentTerms?.[index]?.paymentType && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.paymentTerms[index].paymentType}
+                        </p>
+                      )}
                     </td>
 
                     <td className="px-4 py-3 text-right">
@@ -429,10 +631,12 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
                         <button
                           type="button"
                           onClick={() => handleDeletePaymentTerm(index)}
-                          disabled={localFormData?.isCreditCardSelected}
+                          disabled={
+                            localFormData.isCreditCardSelected || index === 0
+                          }
                           className={`flex items-center px-4 py-2 rounded-lg transition duration-300 
         ${
-          localFormData?.isCreditCardSelected
+          localFormData.isCreditCardSelected || index === 0
             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
             : "bg-red-500 text-white hover:bg-red-700"
         }`}
@@ -452,7 +656,12 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
             <button
               type="button"
               onClick={handleAddMorePaymentTerm}
-              className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition duration-300"
+              className={`${
+                localFormData.isCreditCardSelected
+                  ? "bg-gray-300 text-black"
+                  : "bg-primary text-white"
+              } flex items-center px-4 py-2   rounded-lg hover:bg-primary-dark transition duration-300 `}
+              disabled={localFormData.isCreditCardSelected}
             >
               <PlusCircle size={16} className="mr-2" />
               Add Payment Term
@@ -467,14 +676,14 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
             </label>
             <textarea
               name="billTo"
-              value={localFormData?.billTo}
+              value={localFormData.billTo}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               placeholder="Enter Bill To"
               rows="4"
             ></textarea>
-            {errors?.paymentMode && (
-              <p className="text-red-500 text-xs mt-1">{errors?.billTo}</p>
+            {errors.paymentMode && (
+              <p className="text-red-500 text-xs mt-1">{errors.billTo}</p>
             )}
           </div>
 
@@ -484,19 +693,18 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
             </label>
             <textarea
               name="shipTo"
-              value={localFormData?.shipTo}
+              value={localFormData.shipTo}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               placeholder="Enter Ship To"
               rows="4"
             ></textarea>
-            {errors?.paymentMode && (
-              <p className="text-red-500 text-xs mt-1">{errors?.shipTo}</p>
+            {errors.paymentMode && (
+              <p className="text-red-500 text-xs mt-1">{errors.shipTo}</p>
             )}
           </div>
         </div>
 
-        {/* Submit Button */}
         <div className="mt-8 flex justify-end">
           <button
             type="button"

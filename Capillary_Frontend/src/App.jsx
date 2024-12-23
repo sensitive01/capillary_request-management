@@ -31,6 +31,7 @@ import PreviewTheReq from "./components/dashboard/requestlist/PreviewTheReq";
 import Approvals from "./components/dashboard/approvals/Approvals";
 import EditRequestForm from "./components/dashboard/requestlist/edit/EditRequestForm";
 import QuestionsDetails from "./components/questions/QuestionDetails";
+import VendorPreview from "./components/dashboard/vendor/VendorPreview";
 
 
 function App() {
@@ -68,6 +69,8 @@ function App() {
           <Route path="/vendor-list-table" element={<VendorListTable/>} />
           <Route path="/vendor-list-table/vendor-registration" element={<VendorRegistration/>} />
           <Route path="/vendor-list-table/edit-vendor/:id" element={<EditVendor/>} />
+          <Route path="/vendor-list-table/get-vendor/:vendorId" element={<VendorPreview/>} />
+
 
           <Route path="/employee-list-table" element={<EmployeListTable/>} />
           <Route path="/employee-list-table/employee-reg" element={<EmployeeReg/>} />
