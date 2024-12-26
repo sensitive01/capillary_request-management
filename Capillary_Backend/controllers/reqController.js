@@ -510,86 +510,86 @@ const getApprovedReqData = async (req, res) => {
   }
 };
 
-// const isButtonSDisplay = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     console.log("button==>", id);
-
-//     // Fetch employee's department details
-//     const departmentData = await empModel.findOne(
-//       { _id: id },
-//       { empId: 1, department: 1 }
-//     );
-//     console.log(departmentData);
-//     if (!departmentData) {
-//       return res.status(404).json({ message: "Employee not found" });
-//     }
-
-//     // If the department is "HOD", return true
-//     if (departmentData.department === "Head of Department") {
-//       return res.status(200).json({ display: true });
-//     }
-
-//     // Check if the employee's department matches any nextDepartment in approvals
-//     const isDisplay = await CreateNewReq.exists({
-//       "approvals.nextDepartment": departmentData.department,
-//     });
-//     const isDisable = await CreateNewReq.exists({
-//       "approvals.department": departmentData.department,
-//     });
-
-//     console.log("isDisplay:", isDisplay);
-
-//     if (isDisplay && isDisable) {
-//       return res.status(200).json({ display: true, isDisable: true });
-//     } else {
-//       return res.status(200).json({ display: false, isDisable: false });
-//     }
-//   } catch (err) {
-//     console.log("Error in is display button", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-
 const isButtonSDisplay = async (req, res) => {
   try {
     const { id } = req.params;
     console.log("button==>", id);
 
+    // Fetch employee's department details
     const departmentData = await empModel.findOne(
       { _id: id },
       { empId: 1, department: 1 }
     );
     console.log(departmentData);
-
     if (!departmentData) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    const isApproved = await CreateNewReq.exists({
+    // If the department is "HOD", return true
+    if (departmentData.department === "Head of Department") {
+      return res.status(200).json({ display: true });
+    }
+
+    // Check if the employee's department matches any nextDepartment in approvals
+    const isDisplay = await CreateNewReq.exists({
+      "approvals.nextDepartment": departmentData.department,
+    });
+    const isDisable = await CreateNewReq.exists({
       "approvals.department": departmentData.department,
     });
 
-    const isNextDepartment = await CreateNewReq.exists({
-      "approvals.nextDepartment": departmentData.department,
-    });
+    console.log("isDisplay:", isDisplay);
 
-    console.log("isApproved:", isApproved);
-    console.log("isNextDepartment:", isNextDepartment);
-
-    if (isApproved) {
-      return res.status(200).json({ display: false, isDisable: true });
-    } else if (isNextDepartment) {
-      return res.status(200).json({ display: true, isDisable: false });
+    if (isDisplay && isDisable) {
+      return res.status(200).json({ display: true, isDisable: true });
     } else {
-      return res.status(200).json({ display: false, isDisable: true });
+      return res.status(200).json({ display: false, isDisable: false });
     }
   } catch (err) {
-    console.error("Error in is display button:", err);
+    console.log("Error in is display button", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+// const isButtonSDisplay = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     console.log("button==>", id);
+
+//     const departmentData = await empModel.findOne(
+//       { _id: id },
+//       { empId: 1, department: 1 }
+//     );
+//     console.log(departmentData);
+
+//     if (!departmentData) {
+//       return res.status(404).json({ message: "Employee not found" });
+//     }
+
+//     const isApproved = await CreateNewReq.exists({
+//       "approvals.department": departmentData.department,
+//     });
+
+//     const isNextDepartment = await CreateNewReq.exists({
+//       "approvals.nextDepartment": departmentData.department,
+//     });
+
+//     console.log("isApproved:", isApproved);
+//     console.log("isNextDepartment:", isNextDepartment);
+
+//     if (isApproved) {
+//       return res.status(200).json({ display: false, isDisable: true });
+//     } else if (isNextDepartment) {
+//       return res.status(200).json({ display: true, isDisable: false });
+//     } else {
+//       return res.status(200).json({ display: false, isDisable: true });
+//     }
+//   } catch (err) {
+//     console.error("Error in is display button:", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
 
 
 
