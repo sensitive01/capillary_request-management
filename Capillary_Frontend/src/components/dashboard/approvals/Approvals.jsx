@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Edit, Trash2, Search, Download, Plus, Filter,  FileText, } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import {
-  deleteReq,
-
-  getApprovedReq,
-
- 
-} from "../../../api/service/adminServices";
+  Edit,
+  Trash2,
+  Search,
+  Download,
+  Plus,
+  Filter,
+  FileText,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { deleteReq, getApprovedReq } from "../../../api/service/adminServices";
 
 const Approvals = () => {
   const userId = localStorage.getItem("userId");
@@ -26,12 +28,11 @@ const Approvals = () => {
         // console.log(response);
       } else {
         response = await getApprovedReq(userId);
-        if(response.status===200){
-          setUsers(response.data.reqData)
+        console.log(response);
+        if (response.status === 200) {
+          setUsers(response.data.reqData);
         }
       }
-
-      
     };
 
     fetchReqTable();
@@ -50,14 +51,21 @@ const Approvals = () => {
       prev.includes(sno) ? prev.filter((id) => id !== sno) : [...prev, sno]
     );
   };
-  const onDelete = async (e,id) => {
-    console.log("Delete");
-    e.stopPropagation();
-    setUsers(users?.filter((person) => person?._id !== id));
+  const handleEdit = async (e, userId) => {
+    e.stopPropagation(); // Prevent row click event
+    navigate(`/req-list-table/edit-req/${userId}`);
+  };
 
-
-    const response = await deleteReq(id);
-    console.log(response);
+  const handleDelete = async (e, id) => {
+    e.stopPropagation(); // Prevent row click event
+    try {
+      const response = await deleteReq(id);
+      if (response.status === 200) {
+        setUsers(users.filter((user) => user._id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting request:", error);
+    }
   };
 
   return (
@@ -104,18 +112,6 @@ const Approvals = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-primary">
                   <tr>
-                    <th
-                      scope="col"
-                      className="sticky top-0 w-12 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers?.length === users?.length}
-                        onChange={handleSelectAll}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                    </th>
-
                     <th
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -170,8 +166,7 @@ const Approvals = () => {
                     >
                       Department
                     </th>
-                  
-                   
+
                     <th
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -184,7 +179,7 @@ const Approvals = () => {
                     >
                       PO Document
                     </th>
-                  
+
                     <th
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -196,19 +191,16 @@ const Approvals = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users?.length > 0 ? (
                     users.map((user, index) => (
-                      <tr key={user.sno} className="hover:bg-gray-50"  onClick={() =>
-                        navigate(
-                          `/req-list-table/preview-one-req/${user._id}`
-                        )
-                      } >
-                        <td className="px-6 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.includes(user.sno)}
-                            onChange={() => handleSelectUser(user.sno)}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                        </td>
+                      <tr
+                        key={user.sno}
+                        className="hover:bg-gray-50"
+                        onClick={() =>
+                          navigate(
+                            `/req-list-table/preview-one-req/${user._id}`
+                          )
+                        }
+                      >
+                        
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {index + 1}
                         </td>
@@ -218,7 +210,7 @@ const Approvals = () => {
                         </td>
 
                         <td className="px-4 py-4 text-sm text-gray-500">
-                          {user.commercials.businessUnit||"NA"}
+                          {user.commercials.businessUnit || "NA"}
                         </td>
 
                         <td className="px-6 py-4 text-sm text-gray-500">
@@ -239,12 +231,8 @@ const Approvals = () => {
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.commercials.department}
                         </td>
-                       
-                     
-                        <td
-                          className="px-6 py-4 text-sm text-gray-500"
-                     
-                        >
+
+                        <td className="px-6 py-4 text-sm text-gray-500">
                           {user.status || "Pending"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
@@ -263,14 +251,17 @@ const Approvals = () => {
                             "N/A"
                           )}
                         </td>
-                       
-                        <td className="px-6 py-4 text-sm text-gray-500 flex items-center space-x-2 mt-7">
-                          <button className="text-blue-500 hover:text-blue-700">
+
+                        <td className="px-6 py-4 text-sm text-gray-500 flex items-center space-x-2">
+                          <button
+                            className="text-blue-500 hover:text-blue-700"
+                            onClick={(e) => handleEdit(e, user._id)}
+                          >
                             <Edit className="h-5 w-5" />
                           </button>
                           <button
                             className="text-red-500 hover:text-red-700"
-                            onClick={() => onDelete(user._id)}
+                            onClick={(e) => handleDelete(e, user._id)}
                           >
                             <Trash2 className="h-5 w-5" />
                           </button>
