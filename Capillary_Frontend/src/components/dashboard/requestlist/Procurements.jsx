@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { fetchAllVendorData } from "../../../api/service/adminServices";
 import { uploadCloudinary } from "../../../utils/cloudinaryUtils";
 import { FaFilePdf } from "react-icons/fa";
-import * as Yup from "yup";
 import { toast } from "react-toastify";
 
 const Procurements = ({ formData, setFormData, onBack, onNext }) => {
@@ -13,7 +12,6 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     { id: Date.now(), fileType: "", otherType: "", files: [], urls: [] },
   ]);
 
-  // Fetch vendors on component mount
   useEffect(() => {
     const fetchVendor = async () => {
       try {
@@ -29,7 +27,6 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     fetchVendor();
   }, []);
 
-  // Populate files data from formData when component mounts or formData changes
   useEffect(() => {
     if (
       formData.uploadedFiles &&
@@ -40,7 +37,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
           id: Date.now(),
           fileType: fileType,
           otherType: fileType === "Other" ? fileType : "",
-          files: [], // Note: original File objects are lost on page refresh
+          files: [],
           urls: urls,
         })
       );
@@ -59,36 +56,46 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
             ]
       );
     }
-  }, [formData.uploadedFiles]);
+  }, []);
 
-  // Set default quotation date if not already set
   useEffect(() => {
     if (!formData.quotationDate) {
       const today = new Date().toISOString().split("T")[0];
       setFormData((prevState) => ({
         ...prevState,
         quotationDate: today,
+        servicePeriod: "oneTime",
       }));
     }
   }, [setFormData, formData.quotationDate]);
 
-  // Utility method to get effective file type
   const getEffectiveFileType = (fileData) => {
     return fileData.fileType === "Other"
       ? fileData.otherType
       : fileData.fileType;
   };
 
-  // Handle input changes for form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+ 
+    if (name === "vendor") {
+      const selectedVendor = vendors.find((v) => v.ID === value);
+      console.log("selectedVendor",selectedVendor)
+      setFormData((prevState) => ({
+        ...prevState,
+        vendor: value,
+        vendorName: selectedVendor
+          ? selectedVendor.firstName || selectedVendor.Name
+          : "",
+      }));
+    } else {
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    }
   };
 
-  // Get minimum date for quotation (15 days ago)
   const getMinDate = () => {
     const date = new Date();
     date.setDate(date.getDate() - 15);
@@ -126,18 +133,19 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
   // Get vendor display name
   const getVendorDisplayName = (vendor) => {
+  
     if (vendor.isNewVendor) {
       return `${vendor.firstName} -(New Vendor)`;
     }
-    return `${vendor.vendorId} - ${vendor.firstName}`;
+    return `${vendor.vendorId || vendor.ID} - ${
+      vendor.firstName || vendor.Name
+    }`;
   };
 
   // Handle multiple file uploads
   const handleMultiFileChange = async (e, index) => {
     const files = Array.from(e.target.files);
     const currentFileData = filesData[index];
-
-    // Determine the file type to use
     const fileType = getEffectiveFileType(currentFileData);
 
     if (!fileType) {
@@ -154,17 +162,18 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       );
 
       // Update filesData for the specific row
-      const updatedFilesData = filesData.map((data, idx) => {
-        if (idx === index) {
-          return {
-            ...data,
-            files: [...data.files, ...files],
-            urls: [...data.urls, ...uploadedUrls],
-          };
-        }
-        return data;
-      });
-      setFilesData(updatedFilesData);
+      setFilesData((prevData) =>
+        prevData.map((data, idx) => {
+          if (idx === index) {
+            return {
+              ...data,
+              files: [...data.files, ...files],
+              urls: [...data.urls, ...uploadedUrls],
+            };
+          }
+          return data;
+        })
+      );
 
       // Update formData
       setFormData((prevState) => {
@@ -185,7 +194,6 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       alert("Error uploading files. Please try again.");
     }
   };
-
   // Remove a specific file
   const handleRemoveFile = (fileType, fileIndex) => {
     // Remove from formData
@@ -195,7 +203,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         updatedFiles[fileType] = updatedFiles[fileType].filter(
           (_, i) => i !== fileIndex
         );
-
+  
         if (updatedFiles[fileType].length === 0) {
           delete updatedFiles[fileType];
         }
@@ -205,26 +213,24 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         uploadedFiles: updatedFiles,
       };
     });
-
-    // Update filesData
+  
+    // Update filesData without creating new rows
     setFilesData((prevData) =>
-      prevData
-        .map((fileData) => {
-          const currentFileType = getEffectiveFileType(fileData);
-
-          if (currentFileType === fileType) {
-            return {
-              ...fileData,
-              urls: fileData.urls.filter((_, i) => i !== fileIndex),
-            };
-          }
-          return fileData;
-        })
-        .filter(
-          (fileData) => fileData.urls.length > 0 || fileData.fileType === ""
-        )
+      prevData.map((fileData) => {
+        const currentFileType = getEffectiveFileType(fileData);
+        if (currentFileType === fileType) {
+          // Update the urls array of the specific fileData
+          const updatedUrls = fileData.urls.filter((_, i) => i !== fileIndex);
+          // Only return a new object if the urls have changed, else keep the existing object
+          return updatedUrls.length !== fileData.urls.length
+            ? { ...fileData, urls: updatedUrls }
+            : fileData;
+        }
+        return fileData;
+      })
     );
   };
+  
 
   // Handle file type selection
   const handleFileTypeChange = (e, index) => {
@@ -232,22 +238,27 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
     setFilesData((prevData) => {
       const updatedData = [...prevData];
+      // Keep the existing files and urls when changing file type
       updatedData[index] = {
         ...updatedData[index],
         fileType: newFileType,
         otherType: newFileType === "Other" ? updatedData[index].otherType : "",
-        files: [],
-        urls: [],
       };
       return updatedData;
     });
 
-    // Clear any existing files for this row from formData
+    // Update formData only if file type changes
     const oldFileType = getEffectiveFileType(filesData[index]);
+    const newEffectiveType =
+      newFileType === "Other" ? filesData[index].otherType : newFileType;
 
-    if (oldFileType) {
+    if (oldFileType && oldFileType !== newEffectiveType) {
       setFormData((prevState) => {
         const updatedFiles = { ...prevState.uploadedFiles };
+        if (filesData[index].urls.length > 0) {
+          // Preserve the urls under the new file type
+          updatedFiles[newEffectiveType] = filesData[index].urls;
+        }
         delete updatedFiles[oldFileType];
         return {
           ...prevState,
@@ -301,10 +312,14 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
     if (!fileType || !fileData.urls.length) return null;
 
+    const displayType =
+      fileData.fileType === "Other" ? fileData.otherType : fileData.fileType;
+
     return (
       <div className="flex flex-col gap-4">
         <div>
-          <h3 className="font-semibold mb-2">{fileType}</h3>
+          <h3 className="font-semibold mb-2">{displayType}</h3>
+
           <div className="flex flex-wrap gap-2">
             {fileData.urls.map((url, fileIndex) => (
               <div
@@ -318,6 +333,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                   className="flex items-center"
                 >
                   <FaFilePdf size={24} className="text-red-500" />
+                  {`${fileType}-${fileIndex}`}
                 </a>
                 <button
                   onClick={() => handleRemoveFile(fileType, fileIndex)}
@@ -372,7 +388,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
               >
                 <option value="">Select Vendor</option>
                 {vendors.map((vendor) => (
-                  <option key={vendor._id} value={vendor._id}>
+                  <option key={vendor._id} value={vendor.ID||vendor.vendorId}>
                     {getVendorDisplayName(vendor)}
                   </option>
                 ))}

@@ -266,7 +266,9 @@ exports.createNewReq = async (req, res) => {
 
 exports.getAllEmployeeReq = async (req, res) => {
   try {
-    const reqList = await CreateNewReq.find({ userId: req.params.id });
+    console.log("wlcome to get req",req.params.id )
+    const reqList = await CreateNewReq.find({ userId: req.params.id }).sort({ createdAt: -1 });
+
     console.log(reqList)
 
     if (reqList.length > 0) {

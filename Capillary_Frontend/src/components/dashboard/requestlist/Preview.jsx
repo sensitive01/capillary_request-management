@@ -221,6 +221,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     { label: "Vendor ID", value: formData.procurements.vendor },
+                    { label: "Vendor Name", value: formData.procurements.vendorName },
                     {
                       label: "Quotation Number",
                       value: formData.procurements.quotationNumber,
@@ -229,7 +230,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                       label: "Quotation Date",
                       value: formData.procurements.quotationDate,
                     },
-                    
+
                     {
                       label: "Service Period",
                       value: formData.procurements.servicePeriod,
@@ -295,7 +296,8 @@ const Preview = ({ formData, onSubmit, onBack }) => {
               <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
                 <span className="text-gray-600 font-medium">Total Value</span>
                 <span className="text-gray-800 font-semibold">
-                  {formData.supplies.totalValue}
+                <span>{formData.supplies.selectedCurrency}</span>&nbsp;{formData.supplies.totalValue}
+
                 </span>
               </div>
             )}
@@ -310,7 +312,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                     <thead className="bg-primary/10">
                       <tr>
                         <th className="p-3 text-left text-primary">
-                          Product Name
+                          Product Names
                         </th>
                         <th className="p-3 text-left text-primary">
                           Description
@@ -367,20 +369,54 @@ const Preview = ({ formData, onSubmit, onBack }) => {
         return (
           <div className="p-6 space-y-6">
             <h2 className="text-2xl font-bold text-primary border-b pb-3">
-              Compliances Details
+              Compliances Detailss
             </h2>
 
             {formData.complinces &&
-            formData?.complinces?.agreementCompliances ? (
+            formData?.complinces? (
               <div className="space-y-4">
-                {Object.keys(formData?.complinces?.agreementCompliances)
+                {Object.keys(formData?.complinces)
                   ?.length > 0 ? (
                   Object.entries(
-                    formData?.complinces?.agreementCompliances
-                  )?.map(([question, answer], index) => (
-                    <div key={index} className="p-4 bg-gray-100 rounded-lg">
-                      <h3 className="text-lg font-semibold">{question}</h3>
-                      <p className="mt-2">{answer ? "Yes" : "No"}</p>
+                    formData?.complinces
+                  )?.map(([questionId, compliance], index) => (
+                    <div
+                      key={questionId}
+                      className="p-4 bg-gray-100 rounded-lg"
+                    >
+                      <h3 className="text-lg font-semibold">
+                        {compliance.question}
+                      </h3>
+                      <p className="mt-2">{compliance.answer ? "Yes" : "No"}</p>
+                      {compliance.department && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <strong>Department:</strong> {compliance.department}
+                        </p>
+                      )}
+                      {compliance.deviation&& (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <strong>Reason:</strong> {compliance.deviation.reason }
+                        </p>
+                      )}
+              
+                      {compliance?.deviation?.attachments?.length > 0 && (
+                        <div className="mt-2">
+                          <strong>Attachments:</strong>
+                          <ul className="list-disc pl-6">
+                            {compliance?.deviation?.attachments.map((attachment, i) => (
+                              <li key={i} className="text-blue-600">
+                                <a
+                                  href={attachment}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Attachment {i + 1}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (

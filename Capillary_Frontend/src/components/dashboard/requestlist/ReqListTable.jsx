@@ -13,7 +13,6 @@ import {
   deleteReq,
   getAdminReqListEmployee,
   getReqListEmployee,
-
 } from "../../../api/service/adminServices";
 
 const ReqListTable = () => {
@@ -31,11 +30,11 @@ const ReqListTable = () => {
       if (role === "Admin") {
         response = await getAdminReqListEmployee();
         console.log(response);
-      } else if (role === "Employee") {
+      } else{
         // Fetch data for Employee role
         response = await getReqListEmployee(userId);
-      } 
-      
+      }
+
       // else {
       //   response = await getReqListHR(userId);
       // }
@@ -43,7 +42,7 @@ const ReqListTable = () => {
       if (response && response.data) {
         console.log(response);
 
-        setUsers(response.data.data); 
+        setUsers(response.data.data);
       }
     };
 
@@ -65,18 +64,16 @@ const ReqListTable = () => {
   };
 
   const onDelete = async (e, id) => {
- 
     e.stopPropagation();
-    
+
     setUsers(users?.filter((person) => person?._id !== id));
     const response = await deleteReq(id);
     console.log(response);
   };
 
   const onEdit = (e, user) => {
-
     e.stopPropagation();
-    
+
     navigate(`/req-list-table/edit-req/${user._id}`);
   };
 
@@ -84,7 +81,7 @@ const ReqListTable = () => {
     if (role === "Employee") {
       return (
         <td className="px-6 py-4 text-sm text-gray-500 text-center">
-          <button 
+          <button
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary"
             onClick={(e) => e.stopPropagation()}
           >
@@ -94,7 +91,7 @@ const ReqListTable = () => {
       );
     } else {
       return (
-        <td 
+        <td
           className="px-6 py-4 text-sm text-gray-500 flex items-center justify-center space-x-2 mt-6"
           // Prevent propagation on the entire cell
           onClick={(e) => e.stopPropagation()}
@@ -160,18 +157,6 @@ const ReqListTable = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-primary">
                   <tr>
-                    <th
-                      scope="col"
-                      className="sticky top-0 w-12 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.length === users.length}
-                        onChange={handleSelectAll}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                    </th>
-
                     <th
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -249,26 +234,15 @@ const ReqListTable = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.length > 0 ? (
                     users.map((user, index) => (
-                      <tr 
-                        key={user.sno} 
-                        className="hover:bg-gray-50 cursor-pointer" 
+                      <tr
+                        key={user.sno}
+                        className="hover:bg-gray-50 cursor-pointer"
                         onClick={() =>
                           navigate(
                             `/req-list-table/preview-one-req/${user._id}`
                           )
                         }
                       >
-                        <td 
-                          className="px-6 py-4"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.includes(user.sno)}
-                            onChange={() => handleSelectUser(user.sno)}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                        </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {index + 1}
                         </td>
@@ -277,7 +251,7 @@ const ReqListTable = () => {
                           {user.reqid}
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-500">
-                          {user.commercials.businessUnit||"NA"}
+                          {user.commercials.businessUnit || "NA"}
                         </td>
 
                         <td className="px-4 py-4 text-sm text-gray-500">

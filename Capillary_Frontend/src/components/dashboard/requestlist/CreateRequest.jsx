@@ -22,13 +22,25 @@ const CreateRequest = () => {
     complinces: [],
   });
 
-  const [submittedData, setSubmittedData] = useState(null); 
+
 
   const handleSubmit = async () => {
     try {
-      setSubmittedData(formData);
-      console.log("Form Submitted:", formData);
-      const response = await createNewRequest(empId, formData);
+      const transformedData = {
+        ...formData,
+        complinces: Object.values(formData.complinces).map(compliance => ({
+          questionId: compliance.questionId,
+          question: compliance.question,
+          answer: compliance.answer,
+          department: compliance.department,
+          deviation: compliance.deviation ? {
+            reason: compliance.deviation.reason,
+            attachments: compliance.deviation.attachments
+          } : null
+        }))
+      };
+
+      const response = await createNewRequest(empId, transformedData);
       console.log(response);
       if (response.status === 201) {
         toast.success("New Request is created");
@@ -100,15 +112,8 @@ const CreateRequest = () => {
       icon: FileText,
       content: (
         <AgreementCompliences
-          formData={formData} 
-          setFormData={(data) =>
-            setFormData((prev) => ({
-              ...prev,
-              complinces:
-                typeof data === "function" ? data(prev.complinces) : data,
-            }))
-          }
-          onSubmit={handleSubmit}
+          formData={formData}
+          setFormData={setFormData}
           onBack={() => setCurrentStep(2)}
           onNext={() => handleStepComplete(3)}
         />

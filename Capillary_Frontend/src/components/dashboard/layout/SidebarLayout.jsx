@@ -61,7 +61,7 @@ const SidebarLayout = () => {
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
     ];
-  } else if (role === "Legal Team") {
+  } else if (role === "Legal Team"||role ==="Info Security") {
     sidebarItems = [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
@@ -73,7 +73,7 @@ const SidebarLayout = () => {
       { icon: HelpCircle, title: "Questions", path: "/questions" },
     ];
   }
-   else if(role==="HOF"||role==="PO Team"||role==="Vendor Management"||role==="HOD") {
+   else if(role==="HOF"||role==="PO Team"||role==="Vendor Management"||role==="HOD"||role==="Business Finance") {
     sidebarItems = [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },

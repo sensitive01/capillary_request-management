@@ -50,7 +50,7 @@ const PreviewTheReq = () => {
   useEffect(() => {
     const fetchSameDept = async () => {
       const respose = await isDisplayButton(userId);
-      console.log(respose);
+      console.log("Disable the button",respose);
       if (respose.status === 200) {
         setIsDisplay(respose?.data?.display);
       }
@@ -93,6 +93,12 @@ const PreviewTheReq = () => {
         key: "Product/Serivces",
         icon: ClipboardList,
         label: "Product/Serivces",
+        color: "text-primary hover:bg-primary/10",
+      },
+      {
+        key: "Aggrement Complinces",
+        icon: ClipboardList,
+        label: "Aggrement Complinces",
         color: "text-primary hover:bg-primary/10",
       },
       {
@@ -297,6 +303,10 @@ const PreviewTheReq = () => {
                       label: "Vendor ID",
                       value: request.procurements.vendor,
                     },
+                    request.procurements.vendorName && {
+                      label: "Vendor Name",
+                      value: request.procurements.vendorName,
+                    },
                     request.procurements.quotationNumber && {
                       label: "Quotation Number",
                       value: request.procurements.quotationNumber,
@@ -374,80 +384,150 @@ const PreviewTheReq = () => {
       case "Product/Serivces":
         return (
           <div className="p-6 space-y-6">
-          <h2 className="text-2xl font-bold text-primary border-b pb-3">
-            Supplies Details
-          </h2>
+            <h2 className="text-2xl font-bold text-primary border-b pb-3">
+              Supplies Details
+            </h2>
 
-          {request.supplies?.totalValue !== undefined && (
-            <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
-              <span className="text-gray-600 font-medium">Total Value</span>
-              <span className="text-gray-800 font-semibold">
-                {request.supplies.totalValue}
-              </span>
-            </div>
-          )}
-
-          {request.supplies?.services?.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">
-                Services
-              </h3>
-              <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-primary/10">
-                    <tr>
-                      <th className="p-3 text-left text-primary">
-                        Product Name
-                      </th>
-                      <th className="p-3 text-left text-primary">
-                        Description
-                      </th>
-                      <th className="p-3 text-left text-primary">Quantity</th>
-                      <th className="p-3 text-left text-primary">Price</th>
-                      <th className="p-3 text-left text-primary">Tax (%)</th>
-                      <th className="p-3 text-left text-primary">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {request.supplies.services.map((service, index) => {
-                      // Calculate the total for each service
-                      const quantity = parseFloat(service.quantity) || 0;
-                      const price = parseFloat(service.price) || 0;
-                      const tax = parseFloat(service.tax) || 0;
-                      const total = quantity * price * (1 + tax / 100);
-
-                      return (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-3">
-                            {service.productName || "N/A"}
-                          </td>
-                          <td className="p-3">
-                            {service.productDescription || "N/A"}
-                          </td>
-                          <td className="p-3">{service.quantity || "N/A"}</td>
-                          <td className="p-3">{service.price || "N/A"}</td>
-                          <td className="p-3">{service.tax || "N/A"}</td>
-                          <td className="p-3 font-semibold">
-                            {total.toFixed(2) || "N/A"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            {request.supplies?.totalValue !== undefined && (
+              <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
+                <span className="text-gray-600 font-medium">Total Value</span>
+                <span className="text-gray-800 font-semibold">
+                  <span>{request.supplies.selectedCurrency}</span>&nbsp;
+                  {request.supplies.totalValue}
+                </span>
               </div>
-            </div>
-          )}
+            )}
 
-          {request.supplies?.remarks && (
-            <div className="mt-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">
-                Remarks
-              </h3>
-              <p>{request.supplies.remarks}</p>
-            </div>
-          )}
-        </div>
+            {request.supplies?.services?.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-xl font-semibold text-primary mb-4">
+                  Services
+                </h3>
+                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-primary/10">
+                      <tr>
+                        <th className="p-3 text-left text-primary">
+                          Product Name
+                        </th>
+                        <th className="p-3 text-left text-primary">
+                          Description
+                        </th>
+                        <th className="p-3 text-left text-primary">Quantity</th>
+                        <th className="p-3 text-left text-primary">Price</th>
+                        <th className="p-3 text-left text-primary">Tax (%)</th>
+                        <th className="p-3 text-left text-primary">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {request.supplies.services.map((service, index) => {
+                        // Calculate the total for each service
+                        const quantity = parseFloat(service.quantity) || 0;
+                        const price = parseFloat(service.price) || 0;
+                        const tax = parseFloat(service.tax) || 0;
+                        const total = quantity * price * (1 + tax / 100);
+
+                        return (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="p-3">
+                              {service.productName || "N/A"}
+                            </td>
+                            <td className="p-3">
+                              {service.productDescription || "N/A"}
+                            </td>
+                            <td className="p-3">{service.quantity || "N/A"}</td>
+                            <td className="p-3">{service.price || "N/A"}</td>
+                            <td className="p-3">{service.tax || "N/A"}</td>
+                            <td className="p-3 font-semibold">
+                              {total.toFixed(2) || "N/A"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {request.supplies?.remarks && (
+              <div className="mt-6">
+                <h3 className="text-xl font-semibold text-primary mb-4">
+                  Remarks
+                </h3>
+                <p>{request.supplies.remarks}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case "Aggrement Complinces":
+        return (
+          <div className="p-6 space-y-6">
+            <h2 className="text-2xl font-bold text-primary border-b pb-3">
+              Compliances Detailss
+            </h2>
+
+            {request.complinces && request?.complinces ? (
+              <div className="space-y-4">
+                {Object.keys(request?.complinces)?.length > 0 ? (
+                  Object.entries(request?.complinces)?.map(
+                    ([questionId, compliance], index) => (
+                      <div
+                        key={questionId}
+                        className="p-4 bg-gray-100 rounded-lg"
+                      >
+                        <h3 className="text-lg font-semibold">
+                          {compliance.question}
+                        </h3>
+                        <p className="mt-2">
+                          {compliance.answer ? "Yes" : "No"}
+                        </p>
+                        {compliance.department && (
+                          <p className="mt-2 text-sm text-gray-600">
+                            <strong>Department:</strong> {compliance.department}
+                          </p>
+                        )}
+                        {compliance.deviation && (
+                          <p className="mt-2 text-sm text-gray-600">
+                            <strong>Reason:</strong>{" "}
+                            {compliance.deviation.reason}
+                          </p>
+                        )}
+
+                        {compliance?.deviation?.attachments?.length > 0 && (
+                          <div className="mt-2">
+                            <strong>Attachments:</strong>
+                            <ul className="list-disc pl-6">
+                              {compliance?.deviation?.attachments.map(
+                                (attachment, i) => (
+                                  <li key={i} className="text-blue-600">
+                                    <a
+                                      href={attachment}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Attachment {i + 1}
+                                    </a>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  )
+                ) : (
+                  <div className="text-gray-500">
+                    No compliance details available
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-500">No compliance data available</div>
+            )}
+          </div>
         );
 
       default:

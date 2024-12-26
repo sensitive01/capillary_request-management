@@ -90,6 +90,7 @@ const Supplies = ({
       ...formData,
       services,
       totalValue,
+      selectedCurrency
     };
   
     try {

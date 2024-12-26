@@ -27,10 +27,10 @@ const EditRequestForm = () => {
       console.log("response.data.data", response.data.data);
       if (response.status === 200) {
         setFormData(response.data.data);
-      }
+      }   
     };
     fetchResponse();
-  }, [id]);
+  }, []);
 
   const [submittedData, setSubmittedData] = useState(null);
 

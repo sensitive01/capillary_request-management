@@ -3,90 +3,104 @@ import { extractDateTime } from "../../../utils/extractDateTime";
 import { FileText } from "lucide-react";
 
 const RequestLogsTable = ({ logData }) => {
+  const empRole = localStorage.getItem("role")
   const getStatusColorClasses = (status) => {
-    return status === "Approved"
-      ? "bg-green-50 text-green-800 border-green-200"
-      : "bg-red-50 text-red-800 border-red-200";
+    switch (status.toLowerCase()) {
+      case "approved":
+        return "bg-green-100 text-green-800 border border-green-200 rounded-full px-3 py-1 text-xs font-medium";
+      case "rejected":
+        return "bg-red-100 text-red-800 border border-red-200 rounded-full px-3 py-1 text-xs font-medium";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-full px-3 py-1 text-xs font-medium";
+      default:
+        return "bg-gray-100 text-gray-800 border border-gray-200 rounded-full px-3 py-1 text-xs font-medium";
+    }
   };
 
   if (!logData || logData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-xl">
         <FileText className="text-gray-400 mb-4" size={48} />
-        <p className="text-gray-600 text-center">No log entries available</p>
+        <p className="text-gray-600 text-center">No approval logs available</p>
       </div>
     );
   }
 
-  const columnKeys =
-    logData.length > 0
-      ? Object.keys(logData[0]).filter(
-          (key) => !["_id", "remarks"].includes(key)
-        )
-      : [];
-
-  const formatColumnName = (key) => {
-    return key
-      .replace(/([A-Z])/g, " $1")
-      .toLowerCase()
-      .replace(/^./, (char) => char.toUpperCase());
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-gray-100 border-b">
-          <tr>
-            <th className="p-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Request Log
-            </th>
-            {columnKeys.map((key) => (
-              <th
-                key={key}
-                className="p-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {formatColumnName(key)}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sl.No
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {logData.map((log, index) => {
-            const { date, time } = extractDateTime(log.approvalDate); // Extract date and time
-            return (
-              <tr key={log._id || index} className="hover:bg-gray-50">
-                <td className="p-4 text-sm text-gray-600 font-bold">
-                  #{index + 1}
-                  <div className="text-xs text-gray-500 font-normal">
-                    {date} <br /> {time} {/* Render date and time */}
-                  </div>
-                </td>
-                {columnKeys.map((key) => {
-                  const value =
-                    key === "approvalDate"
-                      ? `${extractDateTime(log[key]).date} ${extractDateTime(
-                          log[key]
-                        ).time}`
-                      : log[key];
-
-                  return (
-                    <td
-                      key={key}
-                      className={`p-4 text-sm ${
-                        key === "status"
-                          ? getStatusColorClasses(value)
-                          : "text-gray-700"
-                      }`}
-                    >
-                      {value}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Approval ID
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Approver Name
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Department
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date & Time
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Next Department
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {logData.map((log, index) => {
+              const { date, time } = extractDateTime(log.approvalDate);
+              return (
+                <tr
+                  key={log._id || index}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {index + 1}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{log.approvalId}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{log.approverName}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {log.departmentName}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {date}
+                      <div className="text-xs text-gray-500">{time}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={getStatusColorClasses(log.status)}>
+                      {log.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {log.nextDepartment}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

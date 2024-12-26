@@ -36,6 +36,7 @@ const postComments = async (req, res) => {
       senderId: data.senderId,
       senderName: empData.name,
       message: data.message,
+      attachmentUrl: data.attachmentUrl,
       topic: data.topic,
       timestamp: new Date(),
     };
@@ -440,15 +441,15 @@ const approveReqByHofTeam = async (req, res) => {
       }
     );
 
-    res
-      .status(200)
-      .json({ message: "Request approved successfully and po is generated", approvalUpdate });
+    res.status(200).json({
+      message: "Request approved successfully and po is generated",
+      approvalUpdate,
+    });
   } catch (err) {
     console.error("Error in approving the request by HOF team", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 const getNewNotifications = async (req, res) => {
   try {
@@ -485,7 +486,10 @@ const getApprovedReqData = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const employeData = await empModel.findOne({ _id: id }, { empId: 1,department:1 });
+    const employeData = await empModel.findOne(
+      { _id: id },
+      { empId: 1, department: 1 }
+    );
     if (!employeData) {
       return res.status(404).json({ message: "Employee not found" });
     }
@@ -495,9 +499,7 @@ const getApprovedReqData = async (req, res) => {
     //   "approvals.approvalId": { $eq: employeData.empId },
     // });
 
-    
-    const reqData = await CreateNewReq.find();
-
+    const reqData = await CreateNewReq.find().sort({ createdAt: -1 });
 
     console.log("Request Data", reqData);
 
@@ -508,55 +510,101 @@ const getApprovedReqData = async (req, res) => {
   }
 };
 
+// const isButtonSDisplay = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     console.log("button==>", id);
+
+//     // Fetch employee's department details
+//     const departmentData = await empModel.findOne(
+//       { _id: id },
+//       { empId: 1, department: 1 }
+//     );
+//     console.log(departmentData);
+//     if (!departmentData) {
+//       return res.status(404).json({ message: "Employee not found" });
+//     }
+
+//     // If the department is "HOD", return true
+//     if (departmentData.department === "Head of Department") {
+//       return res.status(200).json({ display: true });
+//     }
+
+//     // Check if the employee's department matches any nextDepartment in approvals
+//     const isDisplay = await CreateNewReq.exists({
+//       "approvals.nextDepartment": departmentData.department,
+//     });
+//     const isDisable = await CreateNewReq.exists({
+//       "approvals.department": departmentData.department,
+//     });
+
+//     console.log("isDisplay:", isDisplay);
+
+//     if (isDisplay && isDisable) {
+//       return res.status(200).json({ display: true, isDisable: true });
+//     } else {
+//       return res.status(200).json({ display: false, isDisable: false });
+//     }
+//   } catch (err) {
+//     console.log("Error in is display button", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
 const isButtonSDisplay = async (req, res) => {
   try {
     const { id } = req.params;
     console.log("button==>", id);
 
-    // Fetch employee's department details
     const departmentData = await empModel.findOne(
       { _id: id },
       { empId: 1, department: 1 }
     );
-    console.log(departmentData)
+    console.log(departmentData);
+
     if (!departmentData) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
+    const isApproved = await CreateNewReq.exists({
+      "approvals.department": departmentData.department,
+    });
 
-    // If the department is "HOD", return true
-    if (departmentData.department === "Head of Department") {
-      return res.status(200).json({ display: true });
-    }
-
-    // Check if the employee's department matches any nextDepartment in approvals
-    const isDisplay = await CreateNewReq.exists({
+    const isNextDepartment = await CreateNewReq.exists({
       "approvals.nextDepartment": departmentData.department,
     });
 
-    console.log("isDisplay:", isDisplay);
+    console.log("isApproved:", isApproved);
+    console.log("isNextDepartment:", isNextDepartment);
 
-    if (isDisplay) {
-      return res.status(200).json({ display: true });
+    if (isApproved) {
+      return res.status(200).json({ display: false, isDisable: true });
+    } else if (isNextDepartment) {
+      return res.status(200).json({ display: true, isDisable: false });
     } else {
-      return res.status(200).json({ display: false });
+      return res.status(200).json({ display: false, isDisable: true });
     }
   } catch (err) {
-    console.log("Error in is display button", err);
+    console.error("Error in is display button:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 
+
+
+
+
 const generatePo = async (req, res) => {
   try {
     console.log("Welcome to generate PO", req.params);
-    
+
     const reqData = await CreateNewReq.findOne(
       { _id: req.params.id },
       { approvals: 0, commentLogs: 0, complinces: 0 }
     );
-    
+
     console.log(reqData);
 
     if (!reqData) {
@@ -565,12 +613,13 @@ const generatePo = async (req, res) => {
 
     return res.status(200).json({
       message: "PO data generated successfully",
-       reqData
+      reqData,
     });
-
   } catch (err) {
     console.log("Error in generating PO", err);
-    return res.status(500).json({ message: "Error in generating PO", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Error in generating PO", error: err.message });
   }
 };
 
@@ -578,7 +627,6 @@ const updateRequest = async (req, res) => {
   try {
     console.log("Welcome to update the request", req.body);
 
-    
     const {
       reqid,
       userId,
@@ -586,48 +634,42 @@ const updateRequest = async (req, res) => {
       procurements,
       supplies,
       complinces,
-      status
+      status,
     } = req.body;
 
-
     const updatedRequest = await CreateNewReq.findOneAndUpdate(
-      { reqid: reqid },  
+      { reqid: reqid },
       {
         $set: {
-          userId: userId || null, 
+          userId: userId || null,
           commercials: commercials || {},
           procurements: procurements || {},
           supplies: supplies || {},
           complinces: complinces || {},
-          status: status || 'Pending' 
-        }
+          status: status || "Pending",
+        },
       },
-      { new: true } 
+      { new: true }
     );
 
-  
     if (!updatedRequest) {
       return res.status(404).json({
-        message: "Request not found"
+        message: "Request not found",
       });
     }
 
-
     return res.status(200).json({
       message: "Request updated successfully",
-      data: updatedRequest
+      data: updatedRequest,
     });
-
   } catch (err) {
     console.error("Error in updating request:", err);
     return res.status(500).json({
       message: "Error updating request",
-      error: err.message
+      error: err.message,
     });
   }
 };
-
-
 
 module.exports = {
   addReqForm,
@@ -644,5 +686,5 @@ module.exports = {
   getApprovedReqData,
   isButtonSDisplay,
   generatePo,
-  updateRequest
+  updateRequest,
 };

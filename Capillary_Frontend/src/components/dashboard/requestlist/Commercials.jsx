@@ -3,47 +3,10 @@
 import { PlusCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAllEntityData } from "../../../api/service/adminServices";
-import * as Yup from "yup";
 import { toast } from "react-toastify";
-
-const CommercialValidationSchema = Yup.object().shape({
-  businessUnit: Yup.string().required("Business Unit is required"),
-  entity: Yup.string().required("Entity is required"),
-  city: Yup.string().required("City is required"),
-  site: Yup.string().required("Site is required"),
-  department: Yup.string().required("Department is required"),
-  hod: Yup.string().required("Head of Department is required"),
-  paymentMode: Yup.string().required("Payment Mode is required"),
-  billTo: Yup.string().required("Bill To address is required"),
-  shipTo: Yup.string().required("Ship To address is required"),
-
-  // Validate Payment Terms
-  paymentTerms: Yup.array()
-    .of(
-      Yup.object().shape({
-        percentageTerm: Yup.number()
-          .required("Percentage Term is required")
-          .min(0, "Percentage Term must be at least 0")
-          .max(100, "Percentage Term cannot exceed 100"),
-        paymentTerm: Yup.string().required("Payment Term is required"),
-        paymentType: Yup.string().required("Payment Type is required"),
-      })
-    )
-    .test(
-      "total-percentage",
-      "Total Percentage Terms must equal 100%",
-      function (paymentTerms) {
-        // Skip validation for credit card payment
-        if (this.parent.isCreditCardSelected) return true;
-
-        const totalPercentage = paymentTerms.reduce((sum, term) => {
-          return sum + (parseFloat(term.percentageTerm) || 0);
-        }, 0);
-
-        return totalPercentage === 100;
-      }
-    ),
-});
+import { CommercialValidationSchema } from "./yupValidation/commercialValidation";
+import businessUnits from "./dropDownData/businessUnit";
+import departments from "./dropDownData/departmentData";
 
 const Commercials = ({ formData, setFormData, onNext }) => {
   const [localFormData, setLocalFormData] = useState({
@@ -52,7 +15,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     site: formData.site || "",
     department: formData.department || "",
     amount: formData.amount || "",
-    currency: formData.currency || "USD",
+  
     costCentre: formData.costCentre || "CT-ITDT-02",
     paymentMode: formData.paymentMode || "",
     paymentTerms: formData.paymentTerms || [
@@ -113,10 +76,21 @@ const Commercials = ({ formData, setFormData, onNext }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    const updatedFormData = {
+    let updatedFormData = {
       ...localFormData,
       [name]: value,
     };
+
+    // Auto-populate HOD when department changes
+    if (name === "department") {
+      const selectedDepartment = departments.find(dept => dept.value === value);
+      if (selectedDepartment) {
+        updatedFormData = {
+          ...updatedFormData,
+          hod: `${selectedDepartment.hod.empId} - ${selectedDepartment.hod.name}` 
+        };
+      }
+    }
 
     if (name === "paymentMode" && value === "creditcard") {
       updatedFormData.paymentTerms = [
@@ -234,23 +208,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     setFormData(updatedFormData);
   };
 
-  // const handleNextStep = async () => {
-  //   const isValid = await validateForm();
-  //   if (isValid) {
-  //   }
-
-  //   console.log(localFormData);
-  //   const totalSum = localFormData.paymentTerms.reduce((sum, term) => {
-  //     return sum + (parseFloat(term.percentageTerm) || 0);
-  //   }, 0);
-
-  //   if (totalSum !== 100) {
-  //     toast.error("Persentage term is not equal to 100");
-  //     return;
-  //   } else {
-  //     onNext();
-  //   }
-  // };
   const handleNextStep = async () => {
     const isValid = await validateForm();
     if (isValid) {
@@ -278,19 +235,11 @@ const Commercials = ({ formData, setFormData, onNext }) => {
               name="businessUnit"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
             >
-              <option value="">Select Business Unit</option>
-              <option value="Central">Central</option>
-              <option value="China">China</option>
-              <option value="EMEA">EMEA</option>
-              <option value="India-Rest">India : India-Rest</option>
-              <option value="India-North">India : North</option>
-              <option value="India-South">India : South</option>
-              <option value="SEA-IDN">SEA : SEA IDN</option>
-              <option value="SEA-MLY">SEA : SEA MLY</option>
-              <option value="SEA-Rest">SEA : SEA-Rest</option>
-              <option value="SMB">SMB</option>
-              <option value="UK">UK : UK</option>
-              <option value="USA">USA</option>
+              {businessUnits.map((unit) => (
+                <option key={unit.value} value={unit.value}>
+                  {unit.label}
+                </option>
+              ))}
             </select>
 
             {errors.businessUnit && (
@@ -359,95 +308,44 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         </div>
 
         <div className="grid grid-cols-4 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Department <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="department"
-              value={localFormData.department}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-            >
-              <option value="">Select Department</option>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Department <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="department"
+            value={localFormData.department}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+          >
+            {departments.map((department) => (
+              <option key={department.value} value={department.value}>
+                {department.label}
+              </option>
+            ))}
+          </select>
+          {errors.department && (
+            <p className="text-red-500 text-xs mt-1">{errors.department}</p>
+          )}
+        </div>
 
-              <option value="Corporate:Corp">Corporate : Corp</option>
-              <option value="Corporate:Finance">Corporate : Finance</option>
-              <option value="Corporate:WorkPlaceSolutions">
-                Corporate : Work Place Solutions
-              </option>
-              <option value="CustomerSuccess:AccountManagement">
-                Customer Success : Account Management
-              </option>
-              <option value="CustomerSuccess:DataScience">
-                Customer Success : Data Science
-              </option>
-              <option value="CustomerSuccess:Implementation">
-                Customer Success : Implementation
-              </option>
-              <option value="CustomerSuccess:ProfServices">
-                Customer Success : Prof Services
-              </option>
-              <option value="CustomerSuccess:Solutions">
-                Customer Success : Solutions
-              </option>
-              <option value="HumanResource:PeoplePractice">
-                Human Resource : People Practice
-              </option>
-              <option value="HumanResource:TalentAcquisition">
-                Human Resource : Talent Acquisition
-              </option>
-              <option value="Infra:GatewaySMS">Infra : Gateway SMS</option>
-              <option value="Infra:InformationSecurity">
-                Infra : Information Security
-              </option>
-              <option value="Infra:InformationTechnology">
-                Infra : Information Technology
-              </option>
-              <option value="SalesMarketing:FieldSales">
-                Sales & Marketing : Field Sales
-              </option>
-              <option value="SalesMarketing:InsideSales">
-                Sales & Marketing : Inside Sales
-              </option>
-              <option value="SalesMarketing:Marketing">
-                Sales & Marketing : Marketing
-              </option>
-              <option value="SalesMarketing:PreSales">
-                Sales & Marketing : Pre-Sales
-              </option>
-              <option value="SalesMarketing:SalesOperations">
-                Sales & Marketing : Sales Operations
-              </option>
-              <option value="ServerCosts">Server Costs</option>
-              <option value="Technology:TechCore">
-                Technology : Tech-Core
-              </option>
-              <option value="Technology:TechProduct">
-                Technology : Tech-Product
-              </option>
-            </select>
-            {errors.department && (
-              <p className="text-red-500 text-xs mt-1">{errors.department}</p>
-            )}
-          </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            HOD <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="hod"
+            value={localFormData.hod}
+            readOnly
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300 bg-gray-50"
+            placeholder="HOD will be auto-populated"
+          />
+          {errors.hod && (
+            <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
+          )}
+        </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              HOD <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="hod"
-              value={localFormData.hod}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-              placeholder="Selct HOD"
-            />
-            {errors.hod && (
-              <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
-            )}
-          </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 ">

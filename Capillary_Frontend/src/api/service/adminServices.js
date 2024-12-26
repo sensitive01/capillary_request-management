@@ -206,6 +206,60 @@ export const updateRequest = async (id,formData) => {
 
 
 
+export const addNewQuestion = async (userId,newQuestion) => {
+  try {
+
+    const response = await adminServices.post(
+      `/questions/create-new-question/${userId}`,newQuestion);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+export const fetchMyQuestions = async (userId) => {
+  try {
+
+    const response = await adminServices.get(
+      `/questions/get-my-question/${userId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const changeQuestionVisibility = async (questionId) => {
+  try {
+
+    const response = await adminServices.put(
+      `/questions/update-question-visibility/${questionId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getAllLegalQuestions = async () => {
+  try {
+
+    const response = await adminServices.get(
+      `/questions/get-all-legal-questions`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+
+
+
+
+
+
 
 
 // ............................EMPLOYEE SIDE..........................................................
@@ -263,6 +317,7 @@ export const submitRequest = async (id, formData) => {
 
 export const getReqListEmployee = async (id) => {
   try {
+    console.log("Loading....")
     const response = await adminServices.get(`/employees/get-all-req/${id}`);
     return response;
   } catch (err) {

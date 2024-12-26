@@ -18,7 +18,7 @@ const SuppliesDetails = ({
     { code: "EUR", symbol: "€" },
     { code: "GBP", symbol: "£" },
     { code: "JPY", symbol: "¥" },
-    { code: "CAD", symbol: "C$" },
+    { code: "CAD", symbol: "C$" },   
     { code: "INR", symbol: "₹" },
   ];
 
