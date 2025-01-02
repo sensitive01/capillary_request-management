@@ -52,12 +52,12 @@ const Approvals = () => {
     );
   };
   const handleEdit = async (e, userId) => {
-    e.stopPropagation(); // Prevent row click event
+    e.stopPropagation(); 
     navigate(`/req-list-table/edit-req/${userId}`);
   };
 
   const handleDelete = async (e, id) => {
-    e.stopPropagation(); // Prevent row click event
+    e.stopPropagation(); 
     try {
       const response = await deleteReq(id);
       if (response.status === 200) {

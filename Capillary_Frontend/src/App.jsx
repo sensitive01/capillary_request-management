@@ -6,7 +6,6 @@ import Dashboard from "./components/Dasboard";
 import HomePage from "./components/home/HomePage";
 
 
-import Dasboard from "./components/dashboard/dashboard/Dasboard";
 import SidebarLayout from "./components/dashboard/layout/SidebarLayout";
 import UserRegistartion from "./components/dashboard/createuser/UserRegistartion";
 import UserListTable from "./components/dashboard/createuser/UserListTable";
@@ -42,7 +41,6 @@ function App() {
         {/* <Route path="/" element={<Login />} /> */}
           <Route path="/" element={<HomePage />} />
           <Route path="/" element={<SidebarLayout />}>
-          <Route path="/dashboard-page" element={<Dasboard />} />
 
           <Route path="/dashboard" element={<Dashboard />} />
 
