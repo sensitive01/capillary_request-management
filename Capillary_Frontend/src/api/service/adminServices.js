@@ -103,6 +103,20 @@ export const generateEmployeeUniqueId = async () => {
   }
 };
 
+export const getSyncEmployeeTable = async () => {
+  try {
+    const response = await adminServices.post(`/employees/sync-emp-data`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+
+
+
 export const regNewEmployee = async (formData) => {
   try {
     const response = await adminServices.post(

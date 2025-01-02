@@ -52,8 +52,6 @@ const SidebarLayout = () => {
 
   let sidebarItems = [];
 
-
-
   if (role === "Admin") {
     sidebarItems = allSidebarItems;
   } else if (role === "Employee") {
@@ -61,7 +59,7 @@ const SidebarLayout = () => {
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
     ];
-  } else if (role === "Legal Team"||role ==="Info Security") {
+  } else if (role === "Legal Team" || role === "Info Security") {
     sidebarItems = [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
@@ -72,8 +70,13 @@ const SidebarLayout = () => {
       },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
     ];
-  }
-   else if(role==="HOF"||role==="PO Team"||role==="Vendor Management"||role==="HOD"||role==="Business Finance") {
+  } else if (
+    role === "HOF" ||
+    role === "PO Team" ||
+    role === "Vendor Management" ||
+    role === "HOD" ||
+    role === "Business Finance"
+  ) {
     sidebarItems = [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
@@ -83,9 +86,8 @@ const SidebarLayout = () => {
         path: "/approveal-request-list",
       },
     ];
-  }
-  else{
-    sidebarItems=[]
+  } else {
+    sidebarItems = [];
   }
 
   const activeItem = sidebarItems.find((item) =>
@@ -93,16 +95,16 @@ const SidebarLayout = () => {
   );
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen scrollbar-none overflow-y-scroll">
       {/* TopBar */}
       <div className="fixed w-full z-10">
         <TopBar />
       </div>
 
       {/* Main Layout */}
-      <div className="flex flex-1 pt-20">
+      <div className="flex flex-1 pt-20 scrollbar-none overflow-y-scroll">
         {/* Sidebar */}
-        <div className="w-32 h-full bg-white border-r border-gray-200 fixed overflow-y-auto">
+        <div className="w-32 h-full bg-white border-r border-gray-200 fixed scrollbar-none overflow-y-scroll">
           <div className="flex flex-col py-6">
             <div className="grid grid-cols-1 gap-2">
               {sidebarItems.map((item, index) => (
@@ -119,7 +121,7 @@ const SidebarLayout = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 ml-32 overflow-y-auto bg-gray-50">
+        <div className="flex-1 ml-32 scrollbar-none overflow-y-scroll bg-gray-50">
           <div className="p-4 sm:p-8">
             <Outlet />
           </div>

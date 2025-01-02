@@ -14,7 +14,8 @@ const {
     getAllEmployeeReq,
     getAdminEmployeeReq,
     deleteRequest,
-    getIndividualReq
+    getIndividualReq,
+    syncEmployeeData
 } = require('../controllers/empController');
 
 const router = express.Router(); // Use Router() for modular routing
@@ -34,6 +35,13 @@ router.post('/create', createEmployee);
 router.post('/create-newrequest/:id',createNewReq); 
 router.post('/create-new-employee',createNewEmployee); 
 router.post('/verify-person',verifyUser); 
+
+
+router.post('/sync-emp-data',syncEmployeeData); 
+
+
+
+
 
 
 router.put('/update/:id', updateEmployee); 

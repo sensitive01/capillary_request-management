@@ -1,254 +1,140 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
-import { getEmployeeData, updateEmployeeData } from "../../../api/service/adminServices";
-import { formatDateToDDMMYY } from "../../../utils/dateFormat"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { regNewEmployee } from "../../../api/service/adminServices";
 
-const EditEmployee = () => {
-  const { id } = useParams();
-  const navigate = useNavigate()
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isDateInput, setIsDateInput] = useState(false);
-  const [isDateInputDoj, setIsDateInputDoj] = useState(false);
-
-  const [isStartTimeInput, setIsStartTimeInput] = useState(false);
-  const [isEndTimeInput, setIsEndTimeInput] = useState(false);
-
+const EditEmploye = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    empId: "",
-    name: "",
-    contact: "",
-    email: "",
-    dob: "",
-    doj: "",
-    gender: "",
-    role: "",
-    entity: "",
-    reportingTo: "",
-    location: "",
-    workType: "",
+    employee_id: "",
+    full_name: "",
+    company_email_id: "",
+    direct_manager: "",
+    direct_manager_email: "",
+    hod: "",
+    hod_email_id: "",
     department: "",
-    pincode: "",
-    city: "",
-    state: "",
-    addressLine: "",
-    area: "",
-    landmark: "",
-    startTime: "",
-    endTime: "",
+    business_unit: "",
   });
-
-  useEffect(() => {
-    const fetchEmployeeData = async () => {
-      try {
-        setIsLoading(true);
-
-        const response = await getEmployeeData(id);
-        console.log(response.data);
-
-        // Update formData with fetched employee data
-        setFormData(prevData => ({
-          ...prevData,
-          ...response.data
-        }));
-      } catch (error) {
-        console.error("Error fetching employee data:", error);
-        setError("Failed to fetch employee data");
-        toast.error("Failed to fetch employee data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEmployeeData();
-  }, [id]);
-
-  const fetchCityState = async () => {
-    if (!formData.pincode) {
-      toast.warning("Please enter a valid pincode.");
-      return;
-    }
-
-    try {
-      const response = await axios.get(
-        `https://api.postalpincode.in/pincode/${formData.pincode}`
-      );
-
-      if (response.data && response.data[0].Status === "Success") {
-        const { District, State } = response.data[0].PostOffice[0];
-        setFormData(prevData => ({
-          ...prevData,
-          city: District,
-          state: State
-        }));
-      } else {
-        toast.error("Invalid pincode or data not found!");
-      }
-    } catch (error) {
-      console.error("Error fetching city and state:", error);
-      toast.error("Failed to fetch city and state. Please try again later.");
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
+    setFormData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log("Employee Data:", formData);
     try {
-      const response = await updateEmployeeData(id, formData);
-      console.log(response);
+      const response = await regNewEmployee(formData)
+       
 
-      if (response.status === 200) {
-        toast.success(response?.data?.message || "Employee updated successfully");
+      if (response.status===201) {
+        toast.success("Employee added successfully");
         setTimeout(() => {
           navigate("/employee-list-table");
         }, 1500);
-      } else {
-        toast.error("Failed to update employee data");
       }
     } catch (error) {
-      console.error("Error updating employee data:", error);
-      toast.error("An error occurred while updating employee data");
+      toast.error("Error adding employee");
     }
   };
-
-  // Loading and Error States
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Employee</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit  Employee</h2>
       </div>
       <form onSubmit={handleSubmit}>
         <div className="p-4 border rounded-lg border-primary">
           <div>
             <input
-              name="empid"
-              value={formData.empId}
+              name="employee_id"
+              value={formData.employee_id}
               type="text"
-              placeholder="Employee ID"
-              readOnly
+              placeholder="Employee ID (CAP-XXXX)"
+              onChange={handleInputChange}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary mb-3"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <input
-                name="name"
+                name="full_name"
                 type="text"
-                placeholder="Name"
-                value={formData.name}
+                placeholder="Full Name"
+                value={formData.full_name}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
               <input
-                name="contact"
-                type="text"
-                placeholder="Contact"
-                value={formData.contact}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <input
-                name="email"
+                name="company_email_id"
                 type="email"
-                placeholder="Email"
-                value={formData.email}
+                placeholder="Company Email"
+                value={formData.company_email_id}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
-              <select
-                name="gender"
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                value={formData.gender}
+              <input
+                name="direct_manager"
+                type="text"
+                placeholder="Direct Manager"
+                value={formData.direct_manager}
                 onChange={handleInputChange}
-              >
-                <option value="">Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="relative">
-              {isDateInput ? (
-                <input
-                  type="date"
-                  name="dob"
-                  value={formData.dob}
-                  onChange={handleInputChange}
-                  onBlur={() => !formData.dob && setIsDateInput(false)}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={formatDateToDDMMYY(formData.dob)}
-                  placeholder="Date of Birth"
-                  readOnly
-                  onFocus={() => setIsDateInput(true)}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                />
-              )}
-            </div>
-            <div className="relative">
-              {isDateInputDoj ? (
-                <input
-                  type="date"
-                  name="doj"
-                  value={formData.doj}
-                  onChange={handleInputChange}
-                  onBlur={() => !formData.doj && setIsDateInputDoj(false)}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={formatDateToDDMMYY(formData.doj)}
-                  placeholder="Date of Joining"
-                  readOnly
-                  onFocus={() => setIsDateInputDoj(true)}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                />
-              )}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
           </div>
         </div>
 
-        {/* Entity Section */}
         <div className="mt-6">
-          <h2 className="text-lg text-primary mb-2">Entity</h2>
+          <h2 className="text-lg text-primary mb-2">Management Details</h2>
           <div className="p-4 border rounded-lg border-primary">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <input
-                  name="role"
-                  type="text"
-                  placeholder="Role"
-                  value={formData.role}
+                  name="direct_manager_email"
+                  type="email"
+                  placeholder="Manager's Email"
+                  value={formData.direct_manager_email}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
+              <div>
+                <input
+                  name="hod"
+                  type="text"
+                  placeholder="Head of Department"
+                  value={formData.hod}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <input
+                  name="hod_email_id"
+                  type="email"
+                  placeholder="HOD Email"
+                  value={formData.hod_email_id}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-lg text-primary mb-2">Department Details</h2>
+          <div className="p-4 border rounded-lg border-primary">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <input
                   name="department"
@@ -261,162 +147,10 @@ const EditEmployee = () => {
               </div>
               <div>
                 <input
-                  name="reportingTo"
+                  name="business_unit"
                   type="text"
-                  placeholder="Reporting To"
-                  value={formData.reportingTo}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <select
-                  name="entity"
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.entity}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Entity</option>
-                  {/* Add entity options here */}
-                </select>
-              </div>
-            </div>
-
-            {/* Second Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div>
-                <input
-                  name="location"
-                  type="text"
-                  placeholder="Location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <select
-                  name="workType"
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={formData.workType}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Work Type</option>
-                  <option value="full-time">Full Time</option>
-                  <option value="part-time">Part Time</option>
-                  <option value="contract">Contract</option>
-                </select>
-              </div>
-              <div>
-                <div className="flex space-x-5">
-                  {isStartTimeInput ? (
-                    <input
-                      type="time"
-                      name="startTime"
-                      value={formData.startTime}
-                      onChange={handleInputChange}
-                      onBlur={() => !formData.startTime && setIsStartTimeInput(false)}
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder="Start Time"
-                      readOnly
-                      value={formData.startTime}
-                      onFocus={() => setIsStartTimeInput(true)}
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                    />
-                  )}
-                  <span className="text-gray-600 self-center">to</span>
-                  {/* End Time Input */}
-                  {isEndTimeInput ? (
-                    <input
-                      type="time"
-                      name="endTime"
-                      value={formData.endTime}
-                      onChange={handleInputChange}
-                      onBlur={() => !formData.endTime && setIsEndTimeInput(false)}
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder="End Time"
-                      readOnly
-                      value={formData.endTime}
-                      onFocus={() => setIsEndTimeInput(true)}
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Address Details Section */}
-        <div className="mt-6">
-          <h2 className="text-lg text-primary mb-2">Address Details</h2>
-          <div className="p-4 border rounded-lg border-primary">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <input
-                  name="pincode"
-                  type="text"
-                  placeholder="Pincode"
-                  value={formData.pincode}
-                  onChange={handleInputChange}
-                  onBlur={fetchCityState}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <input
-                  name="city"
-                  type="text"
-                  placeholder="City"
-                  value={formData.city}
-                  readOnly
-                  className="w-full p-2 border rounded bg-gray-100"
-                />
-              </div>
-              <div>
-                <input
-                  name="state"
-                  type="text"
-                  placeholder="State"
-                  value={formData.state}
-                  readOnly
-                  className="w-full p-2 border rounded bg-gray-100"
-                />
-              </div>
-              <div>
-                <input
-                  name="addressLine"
-                  type="text"
-                  placeholder="Address Line"
-                  value={formData.addressLine}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <input
-                  name="area"
-                  type="text"
-                  placeholder="Area"
-                  value={formData.area}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <input
-                  name="landmark"
-                  type="text"
-                  placeholder="Landmark"
-                  value={formData.landmark}
+                  placeholder="Business Unit"
+                  value={formData.business_unit}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -447,4 +181,4 @@ const EditEmployee = () => {
   );
 };
 
-export default EditEmployee;
+export default EditEmploye;

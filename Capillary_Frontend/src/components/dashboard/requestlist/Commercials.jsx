@@ -6,7 +6,6 @@ import { getAllEntityData } from "../../../api/service/adminServices";
 import { toast } from "react-toastify";
 import { CommercialValidationSchema } from "./yupValidation/commercialValidation";
 import businessUnits from "./dropDownData/businessUnit";
-import departments from "./dropDownData/departmentData";
 
 const Commercials = ({ formData, setFormData, onNext }) => {
   const [localFormData, setLocalFormData] = useState({
@@ -15,7 +14,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     site: formData.site || "",
     department: formData.department || "",
     amount: formData.amount || "",
-  
+
     costCentre: formData.costCentre || "CT-ITDT-02",
     paymentMode: formData.paymentMode || "",
     paymentTerms: formData.paymentTerms || [
@@ -30,13 +29,16 @@ const Commercials = ({ formData, setFormData, onNext }) => {
   const [entities, setEntities] = useState([]);
   const [selectedEntityDetails, setSelectedEntityDetails] = useState(null);
   const [errors, setErrors] = useState({});
+  const [department, setDepartment] = useState([]);
 
   useEffect(() => {
     const fetchEntity = async () => {
       try {
         const response = await getAllEntityData();
+        console.log(response)
         if (response.status === 200) {
-          setEntities(response.data);
+          setEntities(response.data.entities);
+          setDepartment(response.data.department);
         }
       } catch (error) {
         console.error("Error fetching entities:", error);
@@ -83,11 +85,15 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
     // Auto-populate HOD when department changes
     if (name === "department") {
-      const selectedDepartment = departments.find(dept => dept.value === value);
+      console.log(name,value)
+      const selectedDepartment = department.find(
+        (dept) => dept.department === value
+      );
+      console.log("selectedDepartment",selectedDepartment)
       if (selectedDepartment) {
         updatedFormData = {
           ...updatedFormData,
-          hod: `${selectedDepartment.hod.empId} - ${selectedDepartment.hod.name}` 
+          hod: `${selectedDepartment.hod}`,
         };
       }
     }
@@ -308,44 +314,43 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         </div>
 
         <div className="grid grid-cols-4 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Department <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="department"
-            value={localFormData.department}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-          >
-            {departments.map((department) => (
-              <option key={department.value} value={department.value}>
-                {department.label}
-              </option>
-            ))}
-          </select>
-          {errors.department && (
-            <p className="text-red-500 text-xs mt-1">{errors.department}</p>
-          )}
-        </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Department <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="department"
+              value={localFormData.department}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+            >
+              {department.map((dept) => (
+                <option key={dept._id} value={dept.value}>
+                  {dept.department}
+                </option>
+              ))}
+            </select>
+            {errors.department && (
+              <p className="text-red-500 text-xs mt-1">{errors.department}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            HOD <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="hod"
-            value={localFormData.hod}
-            readOnly
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300 bg-gray-50"
-            placeholder="HOD will be auto-populated"
-          />
-          {errors.hod && (
-            <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
-          )}
-        </div>
-
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              HOD <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="hod"
+              value={localFormData.hod}
+              readOnly
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300 bg-gray-50"
+              placeholder="HOD will be auto-populated"
+            />
+            {errors.hod && (
+              <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 ">

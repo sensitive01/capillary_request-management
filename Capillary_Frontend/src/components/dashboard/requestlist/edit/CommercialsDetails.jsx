@@ -172,11 +172,11 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
     console.log("Selected Entity ID:", selectedEntityId);
 
     const matchingEntities = entities.filter(
-      (entity) => entity.entityName === selectedEntityId
+      (entity) => entity?.entityName === selectedEntityId
     );
     console.log("Matching Entities:", matchingEntities);
 
-    if (matchingEntities.length > 0) {
+    if (matchingEntities?.length > 0) {
       const selectedEntity = matchingEntities[0];
       setSelectedEntityDetails(selectedEntity);
 
@@ -334,13 +334,13 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
             >
               <option value="">Select Entity</option>
 
-              {[...new Set(entities.map((entity) => entity.entityName))].map(
+              {/* {[...new Set(entities?.map((entity) => entity?.entityName))]?.map(
                 (entityName, index) => (
                   <option key={index} value={entityName}>
                     {entityName}
                   </option>
                 )
-              )}
+              )} */}
             </select>
             {errors.entity && (
               <p className="text-red-500 text-xs mt-1">{errors.entity}</p>

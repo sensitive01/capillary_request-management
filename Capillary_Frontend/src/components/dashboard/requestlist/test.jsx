@@ -1,301 +1,583 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable no-unused-vars */
+import { PlusCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Edit, Trash2, Search, Download, Plus, Filter,  FileText, } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import {
-  deleteReq,
+import { getAllEntityData } from "../../../../api/service/adminServices";
+import { toast } from "react-toastify";
+import { CommercialValidationSchema } from "../yupValidation/commercialValidation";
+import businessUnits from "../dropDownData/businessUnit";
 
-  getApprovedReq,
-
+const CommercialsDetails = ({ formData, setFormData, onNext }) => {
  
-} from "../../../api/service/adminServices";
-
-const Approvals = () => {
-  const userId = localStorage.getItem("userId");
-  const role = localStorage.getItem("role");
-  console.log(role);
-  const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [entities, setEntities] = useState([]);
+  const [selectedEntityDetails, setSelectedEntityDetails] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [department, setDepartment] = useState([]);
 
   useEffect(() => {
-    const fetchReqTable = async () => {
-      let response;
+    const fetchEntity = async () => {
+      try {
+        const response = await getAllEntityData();
+        console.log(response);
+        if (response.status === 200) {
+          setEntities(response?.data?.entities);
+          setDepartment(response?.data?.department);
+        }
+      } catch (error) {
+        console.error("Error fetching entities:", error);
+      }
+    };
+    fetchEntity();
+  }, []);
 
-      if (role === "Admin") {
-        // response = await getAdminReqListEmployee();
-        // console.log(response);
-      } else {
-        response = await getApprovedReq(userId);
-        console.log(response)
-        if(response.status===200){
-          setUsers(response.data.reqData)
+  const validateForm = async () => {
+    try {
+      // Validate the entire form
+      await CommercialValidationSchema.validate(formData, {
+        abortEarly: false,
+      });
+      setErrors({});
+      return true;
+    } catch (yupError) {
+      if (yupError.inner) {
+        // Transform Yup errors into a more manageable format
+        const formErrors = yupError.inner.reduce((acc, error) => {
+          acc[error.path] = error.message;
+          return acc;
+        }, {});
+
+        setErrors(formErrors);
+
+        // Show toast for first error
+        const firstErrorKey = Object.keys(formErrors)[0];
+        if (firstErrorKey) {
+          toast.error(formErrors[firstErrorKey]);
         }
       }
-
-      
-    };
-
-    fetchReqTable();
-  }, [userId, role]);
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedUsers(users.map((user) => user.sno));
-    } else {
-      setSelectedUsers([]);
+      return false;
     }
   };
 
-  const handleSelectUser = (sno) => {
-    setSelectedUsers((prev) =>
-      prev.includes(sno) ? prev.filter((id) => id !== sno) : [...prev, sno]
-    );
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    let updatedFormData = {
+      ...formData,
+      [name]: value,
+    };
+
+    // Auto-populate HOD when department changes
+    if (name === "department") {
+      console.log(name, value);
+      const selectedDepartment = department.find(
+        (dept) => dept.department === value
+      );
+      console.log("selectedDepartment", selectedDepartment);
+      if (selectedDepartment) {
+        updatedFormData = {
+          ...updatedFormData,
+          hod: `${selectedDepartment.hod}`,
+        };
+      }
+    }
+
+    if (name === "paymentMode" && value === "creditcard") {
+      updatedFormData.paymentTerms = [
+        {
+          percentageTerm: "100",
+          paymentTerm: "immediate",
+          paymentType: "fullPayment",
+        },
+      ];
+      updatedFormData.isCreditCardSelected = true;
+    } else if (name === "paymentMode") {
+      updatedFormData.isCreditCardSelected = false;
+    }
+
+    setFormData(updatedFormData);
+
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
-  const onDelete = async (e,id) => {
-    console.log("Delete");
-    e.stopPropagation();
-    setUsers(users?.filter((person) => person?._id !== id));
 
+  const handleEntityChange = (e) => {
+    const selectedEntityId = e.target.value;
+    console.log("Selected Entity ID:", selectedEntityId);
 
-    const response = await deleteReq(id);
-    console.log(response);
+    const matchingEntities = entities?.filter(
+      (entity) => entity?.entityName === selectedEntityId
+    );
+    console.log("Matching Entities:", matchingEntities);
+
+    if (matchingEntities?.length > 0) {
+      const selectedEntity = matchingEntities[0];
+      setSelectedEntityDetails(selectedEntity);
+
+      const updatedFormData = {
+        ...formData,
+        entity: selectedEntityId,
+        city: selectedEntity ? selectedEntity.city : "",
+        site: selectedEntity ? selectedEntity.area : "",
+        billTo: selectedEntity ? selectedEntity.addressLine : "",
+        shipTo: selectedEntity ? selectedEntity.addressLine : "",
+      };
+
+      setFormData(updatedFormData);
+      setFormData(updatedFormData);
+
+      if (errors.entity) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.entity;
+          return newErrors;
+        });
+      }
+    } else {
+      console.log("No matching entities found");
+    }
+  };
+
+  const handlePaymentTermChange = (e, index) => {
+    const { name, value } = e.target;
+    console.log("name", name, "value", value);
+    const updatedPaymentTerms = [...formData.paymentTerms];
+    updatedPaymentTerms[index] = {
+      ...updatedPaymentTerms[index],
+      [name]: value,
+    };
+
+    const updatedFormData = {
+      ...formData,
+      paymentTerms: updatedPaymentTerms,
+    };
+
+    setFormData(updatedFormData);
+    setFormData(updatedFormData);
+    if (errors.paymentTerms?.[index]?.[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        if (newErrors.paymentTerms?.[index]) {
+          delete newErrors.paymentTerms[index][name];
+        }
+        return newErrors;
+      });
+    }
+  };
+
+  const handleAddMorePaymentTerm = () => {
+    const updatedFormData = {
+      ...formData,
+      paymentTerms: [
+        ...formData.paymentTerms,
+        { percentageTerm: "", paymentTerm: "", paymentMode: "" },
+      ],
+    };
+
+    setFormData(updatedFormData);
+    setFormData(updatedFormData);
+  };
+
+  const handleDeletePaymentTerm = (indexToRemove) => {
+    const updatedPaymentTerms = formData.paymentTerms.filter(
+      (_, index) => index !== indexToRemove
+    );
+
+    const updatedFormData = {
+      ...formData,
+      paymentTerms: updatedPaymentTerms,
+    };
+
+    setFormData(updatedFormData);
+    setFormData(updatedFormData);
+  };
+
+  const handleNextStep = async () => {
+    const isValid = await validateForm();
+    if (isValid) {
+      onNext();
+    }
   };
 
   return (
-    <div className="p-8 bg-white rounded-lg shadow-sm h-full">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Request List</h2>
+    <div className="w-full mx-auto bg-white  shadow-2xl rounded-2xl overflow-hidden ">
+      <div className="bg-gradient-to-r  from-primary to-primary p-6">
+        <h2 className="text-3xl font-extrabold text-white text-center">
+          Commercial Details
+        </h2>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div className="relative flex-1 min-w-[300px] max-w-md">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search users..."
-              className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-            />
+      <div className="p-8 space-y-6">
+        <div className="grid grid-cols-4 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-primary mb-2">
+              Business Unit <span className="text-red-500">*</span>
+            </label>
+            <select
+              onChange={handleInputChange}
+              value={formData.businessUnit}
+              name="businessUnit"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+            >
+              {businessUnits.map((unit) => (
+                <option key={unit.value} value={unit.value}>
+                  {unit.label}
+                </option>
+              ))}
+            </select>
+
+            {errors.businessUnit && (
+              <p className="text-red-500 text-xs mt-1">{errors.businessUnit}</p>
+            )}
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </button>
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </button>
-            <button
-              className="inline-flex items-center px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
-              onClick={() => navigate("/req-list-table/create-request")}
+          <div>
+            <label className="block text-sm font-semibold text-primary mb-2">
+              Entity <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="entity"
+              value={formData.entity}
+              onChange={handleEntityChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Request
+              <option value="">Select Entity</option>
+
+              {[...new Set(entities?.map((entity) => entity?.entityName))].map(
+                (entityName, index) => (
+                  <option key={index} value={entityName}>
+                    {entityName}
+                  </option>
+                )
+              )}
+            </select>
+            {errors.entity && (
+              <p className="text-red-500 text-xs mt-1">{errors.entity}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              City <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              placeholder="Enter City"
+            />
+            {errors.city && (
+              <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Site <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="site"
+              value={formData.site}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              placeholder="Enter Site"
+            />
+            {errors.site && (
+              <p className="text-red-500 text-xs mt-1">{errors.site}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Department <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+            >
+              {department.map((dept) => (
+                <option key={dept._id} value={dept.value}>
+                  {dept.department}
+                </option>
+              ))}
+            </select>
+            {errors.department && (
+              <p className="text-red-500 text-xs mt-1">{errors.department}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              HOD <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="hod"
+              value={formData.hod}
+              readOnly
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300 bg-gray-50"
+              placeholder="HOD will be auto-populated"
+            />
+            {errors.hod && (
+              <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 ">
+              Payment Mode <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-4 mt-5">
+              {["Bank Transfer", "Credit Card"].map((type) => (
+                <label key={type} className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="paymentMode"
+                    value={type.toLowerCase().replace(" ", "")}
+                    checked={
+                      formData.paymentMode ===
+                      type.toLowerCase().replace(" ", "")
+                    }
+                    onChange={handleInputChange}
+                    className="form-radio h-5 w-5 text-primary transition duration-300 focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="ml-2 text-gray-700">{type}</span>
+                </label>
+              ))}
+            </div>
+            {errors.paymentMode && (
+              <p className="text-red-500 text-xs mt-1">{errors.paymentMode}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              Payment Term
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-gray-100 border-b-2 border-gray-200">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Percentage Term <span className="text-red-500">*</span>
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Payment Term <span className="text-red-500">*</span>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Payment Type <span className="text-red-500">*</span>
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {formData.paymentTerms.map((term, index) => (
+                  <tr
+                    key={index}
+                    className="border-b hover:bg-gray-50 transition duration-200"
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        name="percentageTerm"
+                        value={term.percentageTerm}
+                        onChange={(e) => handlePaymentTermChange(e, index)}
+                        disabled={formData.isCreditCardSelected}
+                        className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
+            ${
+              formData.isCreditCardSelected
+                ? "bg-gray-100 cursor-not-allowed"
+                : "focus:ring-2 focus:ring-primary"
+            }
+            focus:outline-none focus:border-transparent transition duration-300`}
+                        placeholder="Enter Percentage Term"
+                        style={{
+                          appearance: "none",
+                          MozAppearance: "textfield",
+                          WebkitAppearance: "none",
+                        }}
+                      />
+                      {errors.paymentTerms?.[index]?.percentageTerm && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.paymentTerms[index].percentageTerm}
+                        </p>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <select
+                        name="paymentTerm"
+                        value={term.paymentTerm}
+                        onChange={(e) => handlePaymentTermChange(e, index)}
+                        disabled={formData.isCreditCardSelected}
+                        className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
+            ${
+              formData.isCreditCardSelected
+                ? "bg-gray-100 cursor-not-allowed"
+                : "focus:ring-2 focus:ring-primary"
+            }
+            focus:outline-none focus:border-transparent transition duration-300`}
+                      >
+                        <option value="">Select Payment Term</option>
+                        <option value="immediate">Immediate</option>
+                        <option value="advance_30">
+                          30 days credit period
+                        </option>
+                        <option value="advance_45">
+                          45 days credit period
+                        </option>
+                        <option value="advance_60">
+                          60 days credit period
+                        </option>
+                        <option value="advance_60">
+                          90 days credit period
+                        </option>
+                      </select>
+                      {errors.paymentTerms?.[index]?.paymentTerm && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.paymentTerms[index].paymentTerm}
+                        </p>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <select
+                        name="paymentType"
+                        value={term.paymentType}
+                        onChange={(e) => handlePaymentTermChange(e, index)}
+                        disabled={formData.isCreditCardSelected}
+                        className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
+            ${
+              formData.isCreditCardSelected
+                ? "bg-gray-100 cursor-not-allowed"
+                : "focus:ring-2 focus:ring-primary"
+            }
+            focus:outline-none focus:border-transparent transition duration-300`}
+                      >
+                        <option value="">Select Payment Type</option>
+                        <option value="fullPayment">Full Payment</option>
+                        <option value="advancePayment">Advance Payment</option>
+                        <option value="deliveryPayment">
+                          Payment on Delivary
+                        </option>
+                        <option value="partPayment">Part Payment</option>
+                      </select>
+                      {errors.paymentTerms?.[index]?.paymentType && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.paymentTerms[index].paymentType}
+                        </p>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePaymentTerm(index)}
+                          disabled={
+                            formData.isCreditCardSelected || index === 0
+                          }
+                          className={`flex items-center px-4 py-2 rounded-lg transition duration-300 
+        ${
+          formData.isCreditCardSelected || index === 0
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+            : "bg-red-500 text-white hover:bg-red-700"
+        }`}
+                        >
+                          <Trash2 size={16} className="mr-2" />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 flex justify-start">
+            <button
+              type="button"
+              onClick={handleAddMorePaymentTerm}
+              className={`${
+                formData.isCreditCardSelected
+                  ? "bg-gray-300 text-black"
+                  : "bg-primary text-white"
+              } flex items-center px-4 py-2   rounded-lg hover:bg-primary-dark transition duration-300 `}
+              disabled={formData.isCreditCardSelected}
+            >
+              <PlusCircle size={16} className="mr-2" />
+              Add Payment Term
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="border border-gray-200 rounded-lg">
-        <div className="overflow-x-auto">
-          <div className="inline-block min-w-full align-middle">
-            <div className="overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-primary">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="sticky top-0 w-12 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers?.length === users?.length}
-                        onChange={handleSelectAll}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                    </th>
-
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      SL No
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      ReqId
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Business Unit
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Entity
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Site
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Vendor
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Amount
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Requestor
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Department
-                    </th>
-                  
-                   
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      PO Document
-                    </th>
-                  
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users?.length > 0 ? (
-                    users.map((user, index) => (
-                      <tr key={user.sno} className="hover:bg-gray-50"  onClick={() =>
-                        navigate(
-                          `/req-list-table/preview-one-req/${user._id}`
-                        )
-                      } >
-                        <td className="px-6 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.includes(user.sno)}
-                            onChange={() => handleSelectUser(user.sno)}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {index + 1}
-                        </td>
-
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.reqid}
-                        </td>
-
-                        <td className="px-4 py-4 text-sm text-gray-500">
-                          {user.commercials.businessUnit||"NA"}
-                        </td>
-
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.entity}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.site}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.procurements.vendor}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.supplies.totalValue}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.requestor || "Employee"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.department}
-                        </td>
-                       
-                     
-                        <td
-                          className="px-6 py-4 text-sm text-gray-500"
-                     
-                        >
-                          {user.status || "Pending"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.status === "Approved" ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/req-list-table/invoice/${user._id}`);
-                              }}
-                              className="flex items-center text-blue-500 hover:text-blue-700"
-                            >
-                              <FileText className="h-5 w-5 mr-2" />
-                              View PO
-                            </button>
-                          ) : (
-                            "N/A"
-                          )}
-                        </td>
-                       
-                        <td className="px-6 py-4 text-sm text-gray-500 flex items-center space-x-2 mt-7">
-                          <button className="text-blue-500 hover:text-blue-700">
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => onDelete(user._id)}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="13"
-                        className="px-6 py-4 text-center text-gray-500"
-                      >
-                        No data available.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Bill To <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="billTo"
+              value={formData.billTo}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              placeholder="Enter Bill To"
+              rows="4"
+            ></textarea>
+            {errors.paymentMode && (
+              <p className="text-red-500 text-xs mt-1">{errors.billTo}</p>
+            )}
           </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Ship To <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="shipTo"
+              value={formData.shipTo}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+              placeholder="Enter Ship To"
+              rows="4"
+            ></textarea>
+            {errors.paymentMode && (
+              <p className="text-red-500 text-xs mt-1">{errors.shipTo}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-end">
+          <button
+            type="button"
+            onClick={handleNextStep}
+            className="px-10 py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default Approvals;
+export default CommercialsDetails;

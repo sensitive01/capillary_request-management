@@ -1,35 +1,85 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { Edit, Trash2, Search, Download, Plus, Filter } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Search,
+  Download,
+  Plus,
+  Filter,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { deleteEmployee, getEmployeeList } from "../../../api/service/adminServices";
-import { toast } from "react-toastify";
-import {formatDateToDDMMYY} from "../../../utils/dateFormat"
+import {
+  deleteEmployee,
+  getEmployeeList,
+  getSyncEmployeeTable,
+} from "../../../api/service/adminServices";
+import { toast, ToastContainer } from "react-toastify";
+import Pagination from "./Pagination";
+import FilterComponent from "./FilterComponent";
 
-
-const EmployeListTable = ({ onEdit, onDelete }) => {
+const EmployeeListTable = () => {
   const navigate = useNavigate();
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const [activeFilters, setActiveFilters] = useState({
+    department: "",
+    hod: "",
+  });
+
+  const itemsPerPage = 20;
+
+  const fetchEmployees = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getEmployeeList();
+      setEmployees(response.data);
+      setFilteredEmployees(response.data);
+    } catch (err) {
+      toast.error("Error fetching employees");
+      console.error("Error fetching employees:", err);
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const response = await getEmployeeList();
-        console.log(response);
-        setEmployees(response.data);
-      } catch (err) {
-        console.error("Error fetching employees:", err);
-      }
-    };
     fetchEmployees();
   }, []);
 
+  useEffect(() => {
+    let result = [...employees];
+
+    if (searchTerm) {
+      result = result.filter((employee) =>
+        Object.values(employee).some((value) =>
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+
+    if (activeFilters.department) {
+      result = result.filter(
+        (employee) => employee.department === activeFilters.department
+      );
+    }
+    if (activeFilters.hod) {
+      result = result.filter((employee) => employee.hod === activeFilters.hod);
+    }
+
+    setFilteredEmployees(result);
+    setCurrentPage(1);
+  }, [searchTerm, activeFilters, employees]);
+
   const handleDelete = async (id) => {
     const response = await deleteEmployee(id);
-    console.log(response);
-    
     if (response.status === 200) {
       setEmployees(employees?.filter((person) => person?._id !== id));
       toast.success(response.data.message);
@@ -38,20 +88,39 @@ const EmployeListTable = ({ onEdit, onDelete }) => {
     }
   };
 
+  const syncEmpData = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const response = await getSyncEmployeeTable();
+      if (response.status === 200) {
+        toast.success(response.data.message);
+        await fetchEmployees();
+      }
+    } catch (err) {
+      toast.error("Failed to sync employee data");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      // eslint-disable-next-line no-undef
-      setSelectedUsers(users.map((user) => user.sno));
-    } else {
+  const departments = [...new Set(employees.map((emp) => emp.department))];
+  const hods = [...new Set(employees.map((emp) => emp.hod))];
+
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
       setSelectedUsers([]);
     }
   };
 
-  const handleSelectUser = (sno) => {
-    setSelectedUsers((prev) =>
-      prev.includes(sno) ? prev.filter((id) => id !== sno) : [...prev, sno]
-    );
+  const handleFilter = (filters) => {
+    setActiveFilters(filters);
   };
 
   return (
@@ -61,21 +130,50 @@ const EmployeListTable = ({ onEdit, onDelete }) => {
 
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="relative flex-1 min-w-[300px] max-w-md">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search requests..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search employees..."
               className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
+            <button
+              className={`inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium ${
+                isSyncing
+                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                  : "text-gray-700 bg-white hover:bg-gray-50"
+              }`}
+              onClick={syncEmpData}
+              disabled={isSyncing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+              />
+              {isSyncing ? "Syncing..." : "Sync"}
             </button>
+
+            <div className="relative">
+              <button
+                className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </button>
+
+              <FilterComponent
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                departments={departments}
+                hods={hods}
+                onFilter={handleFilter}
+              />
+            </div>
+
             <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -91,294 +189,127 @@ const EmployeListTable = ({ onEdit, onDelete }) => {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg">
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="inline-block min-w-full align-middle">
-            <div className="overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-primary">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="sticky top-0 w-12 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers?.length === employees?.length}
-                        onChange={handleSelectAll}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Sno
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      EmployeeID
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Name
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Contact
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Email
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      DOB
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      DOJ
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Gender
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Role
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Entity
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      ReportingTo
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Location
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      WorkType
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Pincode
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      City
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      State
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      StartTime
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      EndTime
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      landmark
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      AddressLine
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Area
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    {/* <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4  text-xs font-medium text-center text-white uppercase tracking-wider"
-                    >
-                      ViewMore
-                    </th> */}
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-primary">
+              <tr>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  SL NO
+                </th>
 
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {employees?.map((user, index) => (
-                    <tr key={user.sno} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.includes(user.sno)}
-                          onChange={() => handleSelectUser(user.sno)}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.empId || "CAP5321944"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.contact}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.email}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatDateToDDMMYY(user.dob)}
-                      </td>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Employee ID
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Full Name
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Company Email
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Direct Manager
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Manager Email
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Head Of Department
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  HOD Email
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Department
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Business Unit
+                </th>
+                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {currentEmployees?.map((employee, index) => (
+                <tr key={employee._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {index + 1}
+                  </td>
 
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatDateToDDMMYY(user.doj)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.gender}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.role}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.entity}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.reportingTo}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.location}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.workType}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.pincode}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.city}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.state}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.startTime}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.endTime}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.landmark}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.addressLine}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.Area}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.status}
-                      </td>
-                      {/* <td className="px-6 py-4 text-sm text-gray-500">
-                        <div className="flex space-x-4">
-                          <button
-                            onClick={() => alert("View Logs clicked")}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            View Logs
-                          </button>
-                          <button
-                            onClick={() => alert("View Details clicked")}
-                            className="text-green-600 hover:text-green-800"
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </td> */}
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        <div className="flex space-x-4">
-                          <button
-                            // onClick={() => onEdit(user)}
-                            className="text-primary hover:text-primary/80"
-                            onClick={() =>
-                              navigate(`/employee-list-table/edit-employee/${user._id}`)
-                            }
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user?._id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.employee_id}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.full_name}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.company_email_id}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.direct_manager}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.direct_manager_email}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.hod}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.hod_email_id}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.department}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {employee.business_unit}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    <div className="flex space-x-4">
+                      <button
+                        className="text-primary hover:text-primary/80"
+                        onClick={() =>
+                          navigate(
+                            `/employee-list-table/edit-employee/${employee._id}`
+                          )
+                        }
+                      >
+                        <Edit className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(employee._id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+
+        {/* New Professional Pagination Layout */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredEmployees.length}
+        />
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </div>
   );
 };
 
-export default EmployeListTable;
+export default EmployeeListTable;

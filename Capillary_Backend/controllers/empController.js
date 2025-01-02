@@ -2,6 +2,9 @@ const Employee = require("../models/empModel");
 const empIdGenFunction = require("../utils/empIdGenFunction");
 const CreateNewReq = require("../models/createNewReqSchema");
 const sendLoginEmail = require("../utils/sendEmail");
+const axios = require("axios");
+const { fetchEmployeeData } = require("../fileUpload/fetchEmployeeData");
+const { DARWINBOX_BASE_URL,DARWINBOX_USERNAME,DARWINBOX_PASSWORD,DARWINBOX_API_KEY,DARWINBOX_DATASET_KEY } = require("../config/variables");
 
 exports.generateEmpId = async (req, res) => {
   try {
@@ -35,7 +38,7 @@ exports.createEmployee = async (req, res) => {
   try {
     console.log("Create Employee Request:", req.body);
     const employee = new Employee(req.body);
-    console.log(employee)
+    console.log(employee);
     await employee.save();
     res
       .status(201)
@@ -43,6 +46,110 @@ exports.createEmployee = async (req, res) => {
   } catch (error) {
     console.error("Error creating employee:", error);
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.syncEmployeeData = async (req, res) => {
+  try {
+    const options = {
+      method: "POST",
+      url: `${DARWINBOX_BASE_URL}`,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization:
+          "Basic " +
+          Buffer.from(`${DARWINBOX_USERNAME}:${DARWINBOX_PASSWORD}`).toString(
+            "base64"
+          ), 
+      },
+      data: {
+        api_key:
+          `${DARWINBOX_API_KEY}`,
+        datasetKey:
+          `${DARWINBOX_DATASET_KEY}`,
+      },
+    };
+    const response = await axios(options);
+
+    const employees = response.data.employee_data;
+
+    // Process each employee data
+    const results = await Promise.all(
+      employees.map(async (emp) => {
+        try {
+          const employeeData = {
+            employee_id: emp.employee_id,
+            full_name: emp.full_name,
+            company_email_id: emp.company_email_id,
+            direct_manager: emp.direct_manager,
+            direct_manager_email: emp.direct_manager_email,
+            hod: emp.hod,
+            hod_email_id: emp.hod_email_id,
+            department: emp.department,
+            business_unit: emp.business_unit,
+          };
+
+          // Check if employee already exists in database
+          const existingEmployee = await Employee.findOne({
+            employee_id: emp.employee_id,
+          });
+
+          // If employee exists, update it, otherwise create a new one
+          if (existingEmployee) {
+            await Employee.findByIdAndUpdate(
+              existingEmployee._id,
+              employeeData,
+              { new: true }
+            );
+            return { status: "updated", id: emp.employee_id };
+          } else {
+            await Employee.create(employeeData);
+            return { status: "created", id: emp.employee_id };
+          }
+        } catch (error) {
+          console.error(`Error processing employee ${emp.employee_id}:`, error);
+          return { status: "error", id: emp.employee_id, error: error.message };
+        }
+      })
+    );
+
+    // Compile statistics of the operation
+    const stats = {
+      total: results.length,
+      created: results.filter((r) => r.status === "created").length,
+      updated: results.filter((r) => r.status === "updated").length,
+      errors: results.filter((r) => r.status === "error").length,
+    };
+
+    const empDept = await Employee.find({}, { department: 1 });
+    console.log("empDept", empDept);
+    
+
+    const departmentArray = empDept.map(emp => emp.department);
+    
+ 
+    const uniqueDepartments = [...new Set(departmentArray)];
+    
+    console.log("Unique Departments:", uniqueDepartments);
+    
+
+    // Send the response
+    res.status(200).json({
+      message: "Sync completed",
+      stats,
+      errors: results.filter((r) => r.status === "error"),
+    });
+  } catch (error) {
+    console.error("Sync error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+
+    res.status(error.response?.status || 500).json({
+      message: "Sync failed",
+      error: error.response?.data || error.message,
+    });
   }
 };
 
@@ -59,7 +166,7 @@ exports.getAllEmployees = async (req, res) => {
 // Read a single employee by empId
 exports.getEmployeeById = async (req, res) => {
   try {
-    console.log("Welcome to edit employee",req.params.id)
+    console.log("Welcome to edit employee", req.params.id);
     const employee = await Employee.findOne({ _id: req.params.id });
     if (!employee)
       return res.status(404).json({ message: "Employee not found" });
@@ -69,16 +176,15 @@ exports.getEmployeeById = async (req, res) => {
   }
 };
 
-
 exports.updateEmployee = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const employee = await Employee.findOneAndUpdate(
       { _id: req.params.id },
       req.body,
       {
-        new: true, 
-        runValidators: true, 
+        new: true,
+        runValidators: true,
       }
     );
     if (!employee)
@@ -157,7 +263,7 @@ exports.updateEmployeeStatus = async (req, res) => {
 
 exports.createNewEmployee = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const newEmployee = new Employee({
       empId: req.body.empId,
       name: req.body.name,
@@ -172,7 +278,7 @@ exports.createNewEmployee = async (req, res) => {
       location: req.body.location,
       workType: req.body.workType,
       startTime: req.body.startTime,
-      department:req.body.department,
+      department: req.body.department,
       endTime: req.body.endTime,
       pincode: req.body.pincode,
       city: req.body.city,
@@ -194,17 +300,17 @@ exports.createNewEmployee = async (req, res) => {
 exports.verifyUser = async (req, res) => {
   try {
     console.log(req.body);
-    const {email}=req.body
+    const { email } = req.body;
 
     const employeeData = await Employee.findOne(
       { email: req.body.email },
-      { _id: 1, role: 1,name:1 }
+      { _id: 1, role: 1, name: 1 }
     );
 
     console.log("Employee data", employeeData);
 
     if (employeeData) {
-      await sendLoginEmail(email,employeeData.name);
+      await sendLoginEmail(email, employeeData.name);
       return res.status(200).json({
         success: true,
         message: "Employee verified successfully.",
@@ -228,8 +334,7 @@ exports.verifyUser = async (req, res) => {
 
 exports.createNewReq = async (req, res) => {
   try {
-    console.log("Complinces",req.body)
-
+    console.log("Complinces", req.body);
 
     const date = new Date();
     const day = String(date.getDate()).padStart(2, "0");
@@ -245,7 +350,7 @@ exports.createNewReq = async (req, res) => {
       commercials: req.body.commercials,
       procurements: req.body.procurements,
       supplies: req.body.supplies,
-      complinces:req.body.complinces
+      complinces: req.body.complinces,
     });
 
     await newRequest.save();
@@ -253,7 +358,7 @@ exports.createNewReq = async (req, res) => {
     res.status(201).json({
       message: "Request created successfully",
       data: newRequest,
-      approvals:newRequest?.approvals||[]
+      approvals: newRequest?.approvals || [],
     });
   } catch (error) {
     console.error("Error creating request:", error);
@@ -266,10 +371,12 @@ exports.createNewReq = async (req, res) => {
 
 exports.getAllEmployeeReq = async (req, res) => {
   try {
-    console.log("wlcome to get req",req.params.id )
-    const reqList = await CreateNewReq.find({ userId: req.params.id }).sort({ createdAt: -1 });
+    console.log("wlcome to get req", req.params.id);
+    const reqList = await CreateNewReq.find({ userId: req.params.id }).sort({
+      createdAt: -1,
+    });
 
-    console.log(reqList)
+    console.log(reqList);
 
     if (reqList.length > 0) {
       return res.status(200).json({
@@ -315,7 +422,7 @@ exports.getAdminEmployeeReq = async (req, res) => {
 
 exports.deleteRequest = async (req, res) => {
   try {
-    console.log("delete req",req.params.id)
+    console.log("delete req", req.params.id);
     const deleteReq = await CreateNewReq.findByIdAndDelete({
       _id: req.params.id,
     });
@@ -330,16 +437,14 @@ exports.deleteRequest = async (req, res) => {
   }
 };
 
-
 exports.getIndividualReq = async (req, res) => {
   try {
-    const {id} = req.params
-    console.log(id)
+    const { id } = req.params;
+    console.log(id);
 
     const reqList = await CreateNewReq.findOne({ _id: req.params.id });
-    console.log(reqList)
+    console.log(reqList);
 
- 
     if (!reqList || reqList.length === 0) {
       return res.status(404).json({
         success: false,
@@ -347,13 +452,11 @@ exports.getIndividualReq = async (req, res) => {
       });
     }
 
-  
     return res.status(200).json({
       success: true,
       data: reqList,
     });
   } catch (err) {
-  
     console.error("Error in fetching the requests", err);
     return res.status(500).json({
       success: false,
@@ -362,4 +465,3 @@ exports.getIndividualReq = async (req, res) => {
     });
   }
 };
-

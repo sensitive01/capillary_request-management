@@ -14,66 +14,118 @@ import {
   getAdminReqListEmployee,
   getReqListEmployee,
 } from "../../../api/service/adminServices";
+import Pagination from "./Pagination";
+import * as XLSX from 'xlsx';
 
 const ReqListTable = () => {
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
-  console.log(role);
   const navigate = useNavigate();
+  
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchReqTable = async () => {
-      let response;
-
-      if (role === "Admin") {
-        response = await getAdminReqListEmployee();
-        console.log(response);
-      } else{
-        // Fetch data for Employee role
-        response = await getReqListEmployee(userId);
-      }
-
-      // else {
-      //   response = await getReqListHR(userId);
-      // }
-
-      if (response && response.data) {
-        console.log(response);
-
-        setUsers(response.data.data);
+      try {
+        let response;
+        if (role === "Admin") {
+          response = await getAdminReqListEmployee();
+        } else {
+          response = await getReqListEmployee(userId);
+        }
+        if (response && response.data) {
+          setUsers(response.data.data);
+          setFilteredUsers(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
       }
     };
-
     fetchReqTable();
   }, [userId, role]);
 
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedUsers(users.map((user) => user.sno));
-    } else {
+  useEffect(() => {
+    let result = [...users];
+
+    if (searchTerm) {
+      result = result.filter((user) =>
+        Object.values(user).some((value) => {
+          if (typeof value === 'object' && value !== null) {
+            return Object.values(value).some(v => 
+              String(v).toLowerCase().includes(searchTerm.toLowerCase())
+            );
+          }
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+    }
+
+    if (selectedDepartment) {
+      result = result.filter(
+        (user) => user.commercials?.department === selectedDepartment
+      );
+    }
+
+    setFilteredUsers(result);
+    setCurrentPage(1);
+  }, [searchTerm, selectedDepartment, users]);
+
+  const departments = [...new Set(users.map(user => user.commercials?.department).filter(Boolean))];
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
       setSelectedUsers([]);
     }
   };
 
-  const handleSelectUser = (sno) => {
-    setSelectedUsers((prev) =>
-      prev.includes(sno) ? prev.filter((id) => id !== sno) : [...prev, sno]
-    );
+  const exportToExcel = () => {
+    const exportData = filteredUsers.map(user => ({
+      'SL No': user.sno,
+      'Request ID': user.reqid,
+      'Business Unit': user.commercials?.businessUnit || 'NA',
+      'Entity': user.commercials?.entity,
+      'Site': user.commercials?.site,
+      'Vendor': user.procurements?.vendor,
+      'Amount': user.supplies?.totalValue,
+      'Requestor': user.requestor || 'Employee',
+      'Department': user.commercials?.department,
+      'Status': user.status || 'Pending'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Requests");
+    XLSX.writeFile(wb, "RequestList.xlsx");
   };
 
   const onDelete = async (e, id) => {
     e.stopPropagation();
-
-    setUsers(users?.filter((person) => person?._id !== id));
-    const response = await deleteReq(id);
-    console.log(response);
+    try {
+      const response = await deleteReq(id);
+      if (response) {
+        setUsers(users?.filter((person) => person?._id !== id));
+        setFilteredUsers(filteredUsers?.filter((person) => person?._id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting request:", error);
+    }
   };
 
   const onEdit = (e, user) => {
     e.stopPropagation();
-
     navigate(`/req-list-table/edit-req/${user._id}`);
   };
 
@@ -93,7 +145,6 @@ const ReqListTable = () => {
       return (
         <td
           className="px-6 py-4 text-sm text-gray-500 flex items-center justify-center space-x-2 mt-6"
-          // Prevent propagation on the entire cell
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -120,25 +171,38 @@ const ReqListTable = () => {
 
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="relative flex-1 min-w-[300px] max-w-md">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search requests..."
               className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </button>
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <option value="">All Departments</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+
+            <button 
+              onClick={exportToExcel}
+              className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
             </button>
+
             <button
               className="inline-flex items-center px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
               onClick={() => navigate("/req-list-table/create-request")}
@@ -157,120 +221,78 @@ const ReqListTable = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-primary">
                   <tr>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       SL No
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       ReqId
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Business Unit
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Entity
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Site
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Vendor
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Amount
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Requestor
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Department
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Status
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       PO Document
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.length > 0 ? (
-                    users.map((user, index) => (
+                  {currentUsers.length > 0 ? (
+                    currentUsers.map((user, index) => (
                       <tr
-                        key={user.sno}
+                        key={user._id}
                         className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() =>
-                          navigate(
-                            `/req-list-table/preview-one-req/${user._id}`
-                          )
-                        }
+                        onClick={() => navigate(`/req-list-table/preview-one-req/${user._id}`)}
                       >
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {index + 1}
+                          {startIndex + index + 1}
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.reqid}
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-500">
-                          {user.commercials.businessUnit || "NA"}
+                          {user.commercials?.businessUnit || "NA"}
                         </td>
-
                         <td className="px-4 py-4 text-sm text-gray-500">
-                          {user.commercials.entity}
+                          {user.commercials?.entity}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.site}
+                          {user.commercials?.site}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.procurements.vendor}
+                          {user.procurements?.vendor}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.supplies.totalValue}
+                          {user.supplies?.totalValue}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.requestor || "Employee"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.department}
+                          {user.commercials?.department}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.status || "Pending"}
@@ -291,16 +313,12 @@ const ReqListTable = () => {
                             "N/A"
                           )}
                         </td>
-
                         {renderActionColumn(user)}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan="13"
-                        className="px-6 py-4 text-center text-gray-500"
-                      >
+                      <td colSpan="12" className="px-6 py-4 text-center text-gray-500">
                         No data available.
                       </td>
                     </tr>
@@ -310,6 +328,14 @@ const ReqListTable = () => {
             </div>
           </div>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredUsers.length}
+        />
       </div>
     </div>
   );
