@@ -3,7 +3,6 @@ const empIdGenFunction = require("../utils/empIdGenFunction");
 const CreateNewReq = require("../models/createNewReqSchema");
 const sendLoginEmail = require("../utils/sendEmail");
 const axios = require("axios");
-const { fetchEmployeeData } = require("../fileUpload/fetchEmployeeData");
 const { DARWINBOX_BASE_URL,DARWINBOX_USERNAME,DARWINBOX_PASSWORD,DARWINBOX_API_KEY,DARWINBOX_DATASET_KEY } = require("../config/variables");
 
 exports.generateEmpId = async (req, res) => {
