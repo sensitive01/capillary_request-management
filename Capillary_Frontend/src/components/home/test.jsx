@@ -4,6 +4,7 @@ import capilary_logo from "../../assets/images/capilary_logo.png";
 import { Navigate, useNavigate } from "react-router-dom";
 import { verifyUser } from "../../api/service/axiosService";
 import { toast } from "react-toastify";
+import { verifyToken } from "../../api/service/adminServices";
 
 const HomePage = () => {
   const [showSignInButton, setShowSignInButton] = useState(false);
@@ -20,59 +21,31 @@ const HomePage = () => {
 
   if (user) return <Navigate to="/dashboard" />;
 
-  const decodeJWT = (token) => {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  };
-
+  
   const handleSuccess = async (credentialResponse) => {
-    const user = decodeJWT(credentialResponse.credential);
-    console.log("User Info:", user);
-    const { email } = user;
-    localStorage.setItem("email", email);
-
     try {
-      const response = await verifyUser(email);
-      console.log("response", response);
-      if(response.status===200){
-        localStorage.setItem("userId", response?.data?.data?._id);
-        localStorage.setItem("role", response?.data?.data?.role);
-        localStorage.setItem("user", JSON.stringify({ ...user }));
+      const { credential } = credentialResponse;
+      const response = await verifyToken(credential)
+
+      const { data } = response;
+      console.log("Login success full",data)
+      if (data.success) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("role".data.employeeData.role)
         navigate("/dashboard");
-
-      }else if(response.status===401){
-        toast.error(response.data.message)
-        setTimeout(() => {
-          return <Navigate to="/" />;
-          
-        }, 1000);
-
-      }
-   
-
-    } catch (error) {
-      if (error.response) {
-        const errorMessage =
-          error.response.data?.message || "An unknown error occurred.";
-        console.log("error msg", errorMessage);
-      } else if (error.request) {
-        alert("Error: No response received from the server.");
       } else {
-        alert(`Error: ${error.message}`);
+        toast.error(data.message);
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Failed to login. Please try again.");
     }
   };
 
   const handleFailure = () => {
-    console.error("Login Failed");
+    toast.error("Google login failed.");
   };
+
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -115,12 +88,7 @@ const HomePage = () => {
       <div className="w-full md:w-3/5 bg-white p-8 md:p-12 flex flex-col">
         <div className="flex justify-end mb-16">
           {showSignInButton && (
-            <GoogleLogin
-              onSuccess={handleSuccess}
-              onError={handleFailure}
-              useOneTap
-              clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID} 
-            />
+            <GoogleLogin onSuccess={handleSuccess} onError={handleFailure} />
           )}
         </div>
 

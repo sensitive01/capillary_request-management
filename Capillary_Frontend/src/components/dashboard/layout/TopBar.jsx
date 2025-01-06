@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Link } from "react-router-dom";
-import { MoreVertical, Bell } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { MoreVertical, Bell, LogOut } from "lucide-react";
 import capillary_logo from "../../../assets/images/capilary_logo.png";
-import { getNewNotification } from '../../../api/service/adminServices';
+import { getNewNotification } from "../../../api/service/adminServices";
 
 const TopBar = () => {
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [reqData, setReqData] = useState([]);
-  console.log("User data",user)
 
   useEffect(() => {
-    if (role !== "Employee") { 
+    if (role !== "Employee") {
       const fetchNotification = async () => {
         try {
           const response = await getNewNotification(userId);
@@ -26,10 +26,16 @@ const TopBar = () => {
       };
       fetchNotification();
     }
-  }, [userId, role]); 
+  }, [userId, role]);
 
   const toggleNotifications = () => {
     setIsNotificationOpen(!isNotificationOpen);
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+
+    navigate("/");
   };
 
   return (
@@ -56,10 +62,17 @@ const TopBar = () => {
               </span>
             )}
           </div>
-          <div className="bg-gray-100 rounded-full px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 cursor-pointer">
-           {`${user.name} - ${role}`}
+          <div className="bg-gray-100 rounded-full px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700">
+            {`${user.name} - ${role}`}
           </div>
           <MoreVertical className="text-gray-500 cursor-pointer" />
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+          >
+            <LogOut size={16} />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </div>
 
@@ -75,7 +88,9 @@ const TopBar = () => {
             </button>
           </div>
           {reqData.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">No notifications</div>
+            <div className="p-4 text-center text-gray-500">
+              No notifications
+            </div>
           ) : (
             <ul>
               {reqData.map((notification) => (

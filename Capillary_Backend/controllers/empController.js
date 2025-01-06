@@ -3,7 +3,13 @@ const empIdGenFunction = require("../utils/empIdGenFunction");
 const CreateNewReq = require("../models/createNewReqSchema");
 const sendLoginEmail = require("../utils/sendEmail");
 const axios = require("axios");
-const { DARWINBOX_BASE_URL,DARWINBOX_USERNAME,DARWINBOX_PASSWORD,DARWINBOX_API_KEY,DARWINBOX_DATASET_KEY } = require("../config/variables");
+const {
+  DARWINBOX_BASE_URL,
+  DARWINBOX_USERNAME,
+  DARWINBOX_PASSWORD,
+  DARWINBOX_API_KEY,
+  DARWINBOX_DATASET_KEY,
+} = require("../config/variables");
 
 exports.generateEmpId = async (req, res) => {
   try {
@@ -59,13 +65,11 @@ exports.syncEmployeeData = async (req, res) => {
           "Basic " +
           Buffer.from(`${DARWINBOX_USERNAME}:${DARWINBOX_PASSWORD}`).toString(
             "base64"
-          ), 
+          ),
       },
       data: {
-        api_key:
-          `${DARWINBOX_API_KEY}`,
-        datasetKey:
-          `${DARWINBOX_DATASET_KEY}`,
+        api_key: `${DARWINBOX_API_KEY}`,
+        datasetKey: `${DARWINBOX_DATASET_KEY}`,
       },
     };
     const response = await axios(options);
@@ -122,15 +126,12 @@ exports.syncEmployeeData = async (req, res) => {
 
     const empDept = await Employee.find({}, { department: 1 });
     console.log("empDept", empDept);
-    
 
-    const departmentArray = empDept.map(emp => emp.department);
-    
- 
+    const departmentArray = empDept.map((emp) => emp.department);
+
     const uniqueDepartments = [...new Set(departmentArray)];
-    
+
     console.log("Unique Departments:", uniqueDepartments);
-    
 
     // Send the response
     res.status(200).json({
@@ -303,13 +304,38 @@ exports.verifyUser = async (req, res) => {
 
     const employeeData = await Employee.findOne(
       { email: req.body.email },
-      { _id: 1, role: 1, name: 1 }
+      { _id: 1, role: 1, full_name: 1 }
     );
+    const full_name = employeeData?.full_name
+      ? employeeData?.full_name
+      : "Unknown User";
 
     console.log("Employee data", employeeData);
+    const subject = "Login Notification from Capillary Technologies";
+    const textContent = "";
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <body>
+      <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+        <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+          <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
+            <h1>Capillary Technologies</h1>
+          </div>
+          <div style="padding: 20px; color: #333;">
+            <p>Hi <strong>${full_name}</strong>,</p>
+            <p>You have successfully logged in to your account!</p>
+            <p>If you did not perform this action, please contact our support team immediately.</p>
+            <p>Thank you,<br>The Capillary Technologies Team</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 
     if (employeeData) {
-      await sendLoginEmail(email, employeeData.name);
+      await sendLoginEmail(email, subject, textContent, htmlContent);
       return res.status(200).json({
         success: true,
         message: "Employee verified successfully.",
@@ -371,11 +397,13 @@ exports.createNewReq = async (req, res) => {
 exports.getAllEmployeeReq = async (req, res) => {
   try {
     console.log("wlcome to get req", req.params.id);
-    const reqList = await CreateNewReq.find({ userId: req.params.id }).sort({
-      createdAt: -1,
-    });
+    const reqList = await CreateNewReq.find({ userId: req.params.id })
+      .sort({ createdAt: -1 })
+      .exec();
 
-    console.log(reqList);
+    console.log("Sorted reqList", reqList.createdAt);
+
+    console.log("reqList", reqList.createdAt);
 
     if (reqList.length > 0) {
       return res.status(200).json({
@@ -398,7 +426,7 @@ exports.getAllEmployeeReq = async (req, res) => {
 exports.getAdminEmployeeReq = async (req, res) => {
   try {
     console.log("welcome to admin get data");
-    const reqList = await CreateNewReq.find();
+    const reqList = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
     console.log("Reqlist", reqList);
 
     if (reqList.length > 0) {
@@ -438,10 +466,13 @@ exports.deleteRequest = async (req, res) => {
 
 exports.getIndividualReq = async (req, res) => {
   try {
+    console.log("individual request");
     const { id } = req.params;
     console.log(id);
 
-    const reqList = await CreateNewReq.findOne({ _id: req.params.id });
+    const reqList = await CreateNewReq.findOne({ _id: req.params.id })
+      .sort({ createdAt: -1 })
+      .exec();
     console.log(reqList);
 
     if (!reqList || reqList.length === 0) {

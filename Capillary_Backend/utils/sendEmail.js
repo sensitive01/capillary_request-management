@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-const sendLoginEmail = async (userEmail, name) => {
+const sendLoginEmail = async (userEmail,subject,textContent,htmlContent) => {
   try {
     const transporter = nodemailer.createTransport({
       service: "Gmail",
@@ -13,9 +13,9 @@ const sendLoginEmail = async (userEmail, name) => {
     const mailOptions = {
       from: '"Your App" <your-email@example.com>',
       to: userEmail,
-      subject: "Login Notification",
-      text: `Hi ${name} !!! You have successfully logged in!`,
-      html: "<p>You have <strong>successfully logged in</strong>!</p>",
+      subject:subject,
+      text:textContent,
+      html:htmlContent,
     };
 
     await transporter.sendMail(mailOptions);

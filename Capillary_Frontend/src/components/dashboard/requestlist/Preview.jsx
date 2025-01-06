@@ -115,62 +115,104 @@ const Preview = ({ formData, onSubmit, onBack }) => {
     switch (activeSection) {
       case "commercials":
         return (
-          <div className="p-6 space-y-6">
+          <div className="p-4 space-y-6">
             <h2 className="text-2xl font-bold text-primary border-b pb-3">
               Commercials Details
             </h2>
             {formData.commercials &&
               Object.values(formData.commercials).some((value) => value) && (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { label: "Amount", value: formData.commercials.amount },
-                    { label: "Bill To", value: formData.commercials.billTo },
-                    {
-                      label: "Business Unit",
-                      value: formData.commercials.businessUnit,
-                    },
-                    { label: "City", value: formData.commercials.city },
-                    {
-                      label: "Cost Centre",
-                      value: formData.commercials.costCentre,
-                    },
-                    { label: "Currency", value: formData.commercials.currency },
-                    {
-                      label: "Department",
-                      value: formData.commercials.department,
-                    },
-                    { label: "Entity", value: formData.commercials.entity },
-                    {
-                      label: "Head of Department",
-                      value: formData.commercials.hod,
-                    },
-                    {
-                      label: "Credit Card Selected",
-                      value: formData.commercials.isCreditCardSelected
-                        ? "Yes"
-                        : "No",
-                    },
-                    {
-                      label: "Payment Mode",
-                      value: formData.commercials.paymentMode,
-                    },
-                    { label: "Ship To", value: formData.commercials.shipTo },
-                    { label: "Site", value: formData.commercials.site },
-                  ]
-                    .filter((item) => item.value)
-                    .map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between p-3 rounded-lg"
-                      >
-                        <span className="text-gray-600 font-medium">
-                          {item.label}
-                        </span>
-                        <span className="text-gray-800 font-semibold">
-                          {item.value}
-                        </span>
+                <div className="grid gap-6 p-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Business Unit
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.businessUnit}
                       </div>
-                    ))}
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Entity</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.entity}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">City</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.city}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Site</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.site}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Cost Centre
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.costCentre}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Department
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.department}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Head of Department
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.hod}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-4 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Payment Mode
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.paymentMode}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Credit Card Selected
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.isCreditCardSelected
+                          ? "Yes"
+                          : "No"}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Bill To</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.billTo}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Ship To</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {formData.commercials.shipTo}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -179,26 +221,35 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                 <h3 className="text-xl font-semibold text-primary mb-4">
                   Payment Terms
                 </h3>
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-primary/10">
                       <tr>
-                        <th className="p-3 text-left text-primary">
+                        <th className="px-6 py-4 text-left text-primary font-semibold">
+                          Percentage
+                        </th>
+                        <th className="px-6 py-4 text-left text-primary font-semibold">
                           Payment Term
                         </th>
-                        <th className="p-3 text-left text-primary">Type</th>
-                        <th className="p-3 text-right text-primary">
-                          Percentage
+                        <th className="px-6 py-4 text-left text-primary font-semibold">
+                          Type
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {formData.commercials.paymentTerms.map((term, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-3">{term.paymentTerm}</td>
-                          <td className="p-3">{term.paymentType}</td>
-                          <td className="p-3 text-right">
+                        <tr
+                          key={index}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 text-left font-medium">
                             {term.percentageTerm}%
+                          </td>
+                          <td className="px-6 py-4 capitalize">
+                            {term.paymentTerm?.toLowerCase()}
+                          </td>
+                          <td className="px-6 py-4 capitalize">
+                            {term.paymentType?.toLowerCase()}
                           </td>
                         </tr>
                       ))}
@@ -437,7 +488,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="max-w-8xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
       <SectionNavigation />
       {renderSectionContent()}
 

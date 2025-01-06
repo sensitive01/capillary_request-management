@@ -13,7 +13,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import {
   fetchIndividualReq,
-  isDisplayButton,
+  // isDisplayButton,
 } from "../../../api/service/adminServices";
 import { formatDateToDDMMYY } from "../../../utils/dateFormat";
 import ChatComments from "./ChatComments";
@@ -29,7 +29,7 @@ const PreviewTheReq = () => {
 
   const [request, setRequest] = useState(null);
   const [activeSection, setActiveSection] = useState("commercials");
-  const [isDisplay, setIsDisplay] = useState(false);
+  // const [isDisplay, setIsDisplay] = useState(false);
 
   // Fetch request details
   useEffect(() => {
@@ -47,27 +47,17 @@ const PreviewTheReq = () => {
     fetchReq();
   }, [params.id]);
 
-  useEffect(() => {
-    const fetchSameDept = async () => {
-      const respose = await isDisplayButton(userId);
-      console.log("Disable the button",respose);
-      if (respose.status === 200) {
-        setIsDisplay(respose?.data?.display);
-      }
-    };
-
-    fetchSameDept();
-  }, []);
-
-  const approveRequest = async () => {
+  const approveRequest = async (status) => {
     try {
-      const response = await handleApprove(userId, role, params.id);
-      console.log("response===>", response.status);
+      const { response } = await handleApprove(userId, role, params.id, status);
+      console.log("response===>", response);
       if (response.status === 200) {
         toast.success(response.data.message);
         setTimeout(() => {
           navigate("/req-list-table");
         }, 1500);
+      } else if (response.status === 400) {
+        toast.success(response.data.message);
       }
     } catch (err) {
       console.log("Error in appeve the request", err);
@@ -190,7 +180,12 @@ const PreviewTheReq = () => {
         return <ChatComments reqId={params.id} />;
 
       case "Logs":
-        return <RequestLogs logData={request.approvals} />;
+        return (
+          <RequestLogs
+            createdAt={request.createdAt}
+            logData={request.approvals}
+          />
+        );
 
       case "commercials":
         return (
@@ -200,56 +195,98 @@ const PreviewTheReq = () => {
             </h2>
             {request.commercials &&
               Object.values(request.commercials).some((value) => value) && (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { label: "Amount", value: request.commercials.amount },
-                    { label: "Bill To", value: request.commercials.billTo },
-                    {
-                      label: "Business Unit",
-                      value: request.commercials.businessUnit,
-                    },
-                    { label: "City", value: request.commercials.city },
-                    {
-                      label: "Cost Centre",
-                      value: request.commercials.costCentre,
-                    },
-                    { label: "Currency", value: request.commercials.currency },
-                    {
-                      label: "Department",
-                      value: request.commercials.department,
-                    },
-                    { label: "Entity", value: request.commercials.entity },
-                    {
-                      label: "Head of Department",
-                      value: request.commercials.hod,
-                    },
-                    {
-                      label: "Credit Card Selected",
-                      value: request.commercials.isCreditCardSelected
-                        ? "Yes"
-                        : "No",
-                    },
-                    {
-                      label: "Payment Mode",
-                      value: request.commercials.paymentMode,
-                    },
-                    { label: "Ship To", value: request.commercials.shipTo },
-                    { label: "Site", value: request.commercials.site },
-                  ]
-                    .filter((item) => item.value)
-                    .map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between p-3 rounded-lg"
-                      >
-                        <span className="text-gray-600 font-medium">
-                          {item.label}
-                        </span>
-                        <span className="text-gray-800 font-semibold">
-                          {item.value}
-                        </span>
+                <div className="grid gap-6 p-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Business Unit
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.businessUnit}
                       </div>
-                    ))}
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Entity</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.entity}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">City</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.city}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Site</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.site}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Cost Centre
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.costCentre}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Department
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.department}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Head of Department
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.hod}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-4 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Payment Mode
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.paymentMode}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">
+                        Credit Card Selected
+                      </span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.isCreditCardSelected
+                          ? "Yes"
+                          : "No"}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Bill To</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.billTo}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <span className="text-gray-600 font-medium">Ship To</span>
+                      <div className="text-gray-800 font-semibold mt-1">
+                        {request.commercials.shipTo}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -258,26 +295,35 @@ const PreviewTheReq = () => {
                 <h3 className="text-xl font-semibold text-primary mb-4">
                   Payment Terms
                 </h3>
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-primary/10">
                       <tr>
-                        <th className="p-3 text-left text-primary">
+                        <th className="px-6 py-4 text-left text-primary font-semibold">
+                          Percentage
+                        </th>
+                        <th className="px-6 py-4 text-left text-primary font-semibold">
                           Payment Term
                         </th>
-                        <th className="p-3 text-left text-primary">Type</th>
-                        <th className="p-3 text-right text-primary">
-                          Percentage
+                        <th className="px-6 py-4 text-left text-primary font-semibold">
+                          Type
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {request.commercials.paymentTerms.map((term, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-3">{term.paymentTerm}</td>
-                          <td className="p-3">{term.paymentType}</td>
-                          <td className="p-3 text-right">
+                        <tr
+                          key={index}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 text-left font-medium">
                             {term.percentageTerm}%
+                          </td>
+                          <td className="px-6 py-4 capitalize">
+                            {term.paymentTerm?.toLowerCase()}
+                          </td>
+                          <td className="px-6 py-4 capitalize">
+                            {term.paymentType?.toLowerCase()}
                           </td>
                         </tr>
                       ))}
@@ -554,33 +600,20 @@ const PreviewTheReq = () => {
       <div className="bg-white p-4 flex justify-end items-end border-t shadow-md">
         <div className="flex space-x-4">
           <button
-            className={`px-6 py-2 rounded-lg flex items-center ${
-              isDisplay
-                ? "bg-red-600 text-white hover:bg-red-700"
-                : "bg-red-400 text-gray-300 cursor-not-allowed"
-            }`}
-            disabled={!isDisplay}
+            onClick={() => approveRequest("Rejected")}
+            className={`px-6 py-2 rounded-lg flex items-center ${"bg-red-600 text-white"}`}
           >
             <XCircle className="mr-2" /> Reject
           </button>
           <button
-            className={`px-6 py-2 rounded-lg flex items-center ${
-              isDisplay
-                ? "bg-yellow-600 text-white hover:bg-yellow-700"
-                : "bg-yellow-400 text-gray-300 cursor-not-allowed"
-            }`}
-            disabled={!isDisplay}
+            onClick={() => approveRequest("Hold")}
+            className={`px-6 py-2 rounded-lg flex items-center ${"bg-yellow-600 text-gray-300 "}`}
           >
             <PauseCircle className="mr-2" /> Hold
           </button>
           <button
-            onClick={approveRequest}
-            className={`px-6 py-2 rounded-lg transition-colors flex items-center ${
-              isDisplay
-                ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-primary text-gray-300 cursor-not-allowed"
-            }`}
-            disabled={!isDisplay}
+            onClick={() => approveRequest("Approved")}
+            className={`px-6 py-2 rounded-lg transition-colors flex items-center ${"bg-green-950 text-white"}`}
           >
             <CheckCircle2 className="mr-2" />
             Submit

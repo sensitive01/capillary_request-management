@@ -82,6 +82,7 @@ const updateQuestionVisibility = async (req, res) => {
   try {
     const { questionId } = req.params;
     const question = await Question.findById(questionId);
+    console.log("question",question)
 
     if (!question) {
       return res.status(404).json({ message: "Question not found" });

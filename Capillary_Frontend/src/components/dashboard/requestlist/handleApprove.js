@@ -9,7 +9,7 @@ import {
 
 } from "../../../api/service/adminServices";
 
-const handleApprove = async (userId, role, reqId) => {
+const handleApprove = async (userId, role, reqId,status) => {
   try {
     console.log(`User ID: ${userId}, Role: ${role}, Request ID: ${reqId}`);
 
@@ -18,37 +18,37 @@ const handleApprove = async (userId, role, reqId) => {
     switch (role) {
       case "HOD":
         console.log("Approving for HOD");
-        response = await hodApproveRequest(userId, role, reqId);
+        response = await hodApproveRequest(userId, role, reqId,status);
         break;
 
       case "Business Finance":
         console.log("Approving for Business Finance");
-        response = await businessFinanceApproveRequest(userId, role, reqId);
+        response = await businessFinanceApproveRequest(userId, role, reqId,status);
         break;
 
       case "Vendor Management":
         console.log("Approving for Vendor Management");
-        response = await vendorManagementApproveRequest(userId, role, reqId);
+        response = await vendorManagementApproveRequest(userId, role, reqId,status);
         break;
 
       case "Legal Team":
         console.log("Approving for Legal Team");
-        response = await legalTeamApproveRequest(userId, role, reqId);
+        response = await legalTeamApproveRequest(userId, role, reqId,status);
         break;
 
       case "Info Security":
         console.log("Approving for Info Security");
-        response = await infoSecurityApproveRequest(userId, role, reqId);
+        response = await infoSecurityApproveRequest(userId, role, reqId,status);
         break;
 
       case "PO Team":
         console.log("Approving for PO Team");
-        response = await poTeamApproveRequest(userId, role, reqId);
+        response = await poTeamApproveRequest(userId, role, reqId,status);
         break;
 
       case "HOF":
         console.log("Approving for HOF");
-        response = await hofApproveRequest(userId, role, reqId);
+        response = await hofApproveRequest(userId, role, reqId,status);
         break;
 
       default:

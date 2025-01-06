@@ -5,6 +5,7 @@ import { FaFilePdf } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const Procurements = ({ formData, setFormData, onBack, onNext }) => {
+  console.log("procurements formData",formData)
   const [vendors, setVendors] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newVendor, setNewVendor] = useState({ name: "", email: "" });
@@ -85,7 +86,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         ...prevState,
         vendor: value,
         vendorName: selectedVendor
-          ? selectedVendor.firstName || selectedVendor.Name
+          ? selectedVendor.firstName || selectedVendor.Name|| selectedVendor.name
           : "",
       }));
     } else {
@@ -109,37 +110,38 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
   // Add new vendor
   const handleAddVendor = () => {
-    if (newVendor.name && newVendor.email) {
+    if (newVendor.name) {
       const newVendorObj = {
         _id: `new_${Date.now()}`,
-        vendorId: null,
+        ID: `new_${Date.now()}`, // Add this line
         firstName: newVendor.name,
+        email: newVendor.email,
         isNewVendor: true,
       };
 
-      setVendors([...vendors, newVendorObj]);
+      setVendors((prevVendors) => [...prevVendors, newVendorObj]);
 
       setFormData((prevState) => ({
         ...prevState,
         vendor: newVendorObj._id,
+        vendorName: newVendor.name,
       }));
 
       setShowModal(false);
       setNewVendor({ name: "", email: "" });
     } else {
-      alert("Please fill in all fields.");
+      toast.error("Please fill in all fields.");
     }
   };
 
   // Get vendor display name
   const getVendorDisplayName = (vendor) => {
-  
     if (vendor.isNewVendor) {
-      return `${vendor.firstName} -(New Vendor)`;
+      return `${vendor.firstName} (New Vendor)`;
     }
-    return `${vendor.vendorId || vendor.ID} - ${
-      vendor.firstName || vendor.Name
-    }`;
+    const displayName = vendor.firstName || vendor.Name || vendor.name;
+    const id = vendor.vendorId || vendor.ID;
+    return `${id} - ${displayName}`;
   };
 
   // Handle multiple file uploads
@@ -376,7 +378,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
               </label>
               <select
                 name="vendor"
-                value={formData.vendor || ""}
+                value={formData.vendor ||formData.vendorName|| ""}
                 onChange={(e) => {
                   if (e.target.value === "newVendor") {
                     handleNewVendor();

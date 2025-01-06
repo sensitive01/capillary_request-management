@@ -174,6 +174,7 @@ const LegalQuestions = () => {
     try {
       setIsLoading(true);
       const response = await fetchMyQuestions(userId);
+      console.log(response)
       if (response?.status === 200 && response?.data?.data) {
         setQuestions(response.data.data);
       } else {

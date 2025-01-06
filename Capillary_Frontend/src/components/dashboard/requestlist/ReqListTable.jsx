@@ -236,6 +236,7 @@ const ReqListTable = () => {
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Site
                     </th>
+                    
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Vendor
                     </th>
@@ -257,6 +258,7 @@ const ReqListTable = () => {
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
                       Actions
                     </th>
+                    
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">

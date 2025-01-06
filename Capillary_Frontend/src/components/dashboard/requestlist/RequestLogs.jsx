@@ -2,8 +2,41 @@ import React from "react";
 import { extractDateTime } from "../../../utils/extractDateTime";
 import { FileText } from "lucide-react";
 
-const RequestLogsTable = ({ logData }) => {
-  const empRole = localStorage.getItem("role")
+// Helper function to calculate duration between two dates
+const calculateDuration = (startDate, endDate) => {
+  if (!startDate || !endDate) return { days: "-", hours: "-", minutes: "-" };
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  // Calculate the difference in milliseconds
+  const diffInMs = end - start;
+  
+  if (diffInMs < 0) return { days: "-", hours: "-", minutes: "-" };
+
+  // Convert to days, hours, and minutes
+  const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  return { days, hours, minutes };
+};
+
+// Helper function to format duration
+const formatDuration = (duration) => {
+  if (duration.days === "-") return "Pending";
+  
+  const parts = [];
+  if (duration.days > 0) parts.push(`${duration.days}d`);
+  if (duration.hours > 0) parts.push(`${duration.hours}h`);
+  if (duration.minutes > 0) parts.push(`${duration.minutes}m`);
+  
+  return parts.length > 0 ? parts.join(" ") : "Less than 1m";
+};
+
+const RequestLogsTable = ({createdAt, logData }) => {
+  const empRole = localStorage.getItem("role");
+  
   const getStatusColorClasses = (status) => {
     switch (status.toLowerCase()) {
       case "approved":
@@ -45,10 +78,16 @@ const RequestLogsTable = ({ logData }) => {
                 Department
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date & Time
+                Status
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Created Date & Time
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Approved Date & Time
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Duration Taken for Approval
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Next Department
@@ -57,7 +96,13 @@ const RequestLogsTable = ({ logData }) => {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {logData.map((log, index) => {
-              const { date, time } = extractDateTime(log.approvalDate);
+              const { date: approvalDate, time: approvalTime } = extractDateTime(log.approvalDate);
+              const { date: requestDate, time: requestTime } = extractDateTime(createdAt);
+              
+              // Calculate duration
+              const duration = calculateDuration(createdAt, log.approvalDate);
+              const formattedDuration = formatDuration(duration);
+              
               return (
                 <tr
                   key={log._id || index}
@@ -80,15 +125,26 @@ const RequestLogsTable = ({ logData }) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {date}
-                      <div className="text-xs text-gray-500">{time}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className={getStatusColorClasses(log.status)}>
                       {log.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {requestDate}
+                    </div>
+                    <div className="text-xs text-gray-500">{requestTime}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {approvalDate}
+                    </div>
+                    <div className="text-xs text-gray-500">{approvalTime}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {formattedDuration}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">

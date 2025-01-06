@@ -100,7 +100,7 @@ const createnewReqSchema = new mongoose.Schema({
   commentLogs: [commentSchema],
   complinces: { type: [complianceItemSchema] }, // Array of compliance items
   approvals: { type: [approvalSchema], default: [] },
-});
+},{ timestamps: true });
 
 const CreateNewReq = mongoose.model("CreateNewReq", createnewReqSchema);
 

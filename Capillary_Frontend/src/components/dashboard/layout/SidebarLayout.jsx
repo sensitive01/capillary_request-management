@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import TopBar from "./TopBar";
+import { emailRoleMapping, defaultRole } from "../../../config/rolesConfig";
 
 const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
   return (
@@ -36,31 +37,27 @@ const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
 
 const SidebarLayout = () => {
   const location = useLocation();
-  const role = localStorage.getItem("role");
-  console.log(role);
+  // Add userEmail from your auth context or state management
+  const userEmail = localStorage.getItem("email")
+  console.log("email",userEmail)
 
-  const allSidebarItems = [
-    { icon: Home, title: "Dashboard", path: "/dashboard" },
-    { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-    { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
-    { icon: Users, title: "Employees", path: "/employee-list-table" },
-    { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
-    { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
-    { icon: HelpCircle, title: "Questions", path: "/questions" },
-    { icon: LogOut, title: "Logout", path: "/logout" },
-  ];
-
-  let sidebarItems = [];
-
-  if (role === "Admin") {
-    sidebarItems = allSidebarItems;
-  } else if (role === "Employee") {
-    sidebarItems = [
+  // Sidebar items for roles
+  const roleToSidebarItems = {
+    Admin: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-    ];
-  } else if (role === "Legal Team" || role === "Info Security") {
-    sidebarItems = [
+      { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
+      { icon: Users, title: "Employees", path: "/employee-list-table" },
+      { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
+      { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
+      { icon: HelpCircle, title: "Questions", path: "/questions" },
+      { icon: LogOut, title: "Logout", path: "/logout" },
+    ],
+    Employee: [
+      { icon: Home, title: "Dashboard", path: "/dashboard" },
+      { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
+    ],
+    "Legal Team": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
       {
@@ -69,15 +66,8 @@ const SidebarLayout = () => {
         path: "/approveal-request-list",
       },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
-    ];
-  } else if (
-    role === "HOF" ||
-    role === "PO Team" ||
-    role === "Vendor Management" ||
-    role === "HOD" ||
-    role === "Business Finance"
-  ) {
-    sidebarItems = [
+    ],
+    "Info Security": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
       {
@@ -85,10 +75,30 @@ const SidebarLayout = () => {
         title: "Approvals",
         path: "/approveal-request-list",
       },
-    ];
-  } else {
-    sidebarItems = [];
+      { icon: HelpCircle, title: "Questions", path: "/questions" },
+    ],
+    default: [
+      { icon: Home, title: "Dashboard", path: "/dashboard" },
+      { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
+      {
+        icon: CheckCircle,
+        title: "Approvals",
+        path: "/approveal-request-list",
+      },
+    ],
+  };
+
+  function getRoleByEmail(email) {
+    return emailRoleMapping[email] || defaultRole;
   }
+
+  function getSidebarItems(email) {
+    const role = getRoleByEmail(email);
+    console.log("Role",role)
+    return roleToSidebarItems[role] || roleToSidebarItems.default;
+  }
+
+  const sidebarItems = getSidebarItems(userEmail);
 
   const activeItem = sidebarItems.find((item) =>
     location.pathname.startsWith(item.path)

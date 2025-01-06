@@ -7,11 +7,15 @@ const {
     updateUser,
     deleteUser,
     updateManyUsers,
+    verifyToken
 } = require('../controllers/userController');
 
 const router = express();
 
 // Define routes
+
+
+router.post("/verify-token", verifyToken);
 router.post('/signup', createUser); // Create user
 router.get('/get-users', getAllUsers); // Get all users
 router.get('/get/:id', getUserById); // Get user by ID
