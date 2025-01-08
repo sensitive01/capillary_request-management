@@ -580,7 +580,7 @@ const approveRequest = async (req, res) => {
     // Fetch the approver's data
     const approverData = await empModel.findOne(
       { _id: id },
-      { name: 1, empId: 1, department: 1 }
+      { name: 1, employee_id: 1, department: 1 }
     );
 
     if (!approverData) {
@@ -675,7 +675,7 @@ const approveRequest = async (req, res) => {
       departmentName: department,
       status: status,
       approverName: approverData.name,
-      approvalId: approverData.empId,
+      approvalId: approverData.employee_id,
       approvalDate: new Date(),
       remarks: remarks || "",
       nextDepartment: status === "Approved" ? nextDepartment : null, // Only set next department if approved
@@ -736,29 +736,60 @@ const approveRequest = async (req, res) => {
 };
 const getNewNotifications = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // Employee ID
     console.log("Notification for employee ID:", id);
 
-    const employeData = await empModel.findOne({ _id: id }, { empId: 1 });
+    // Fetch employee data
+    const employeData = await empModel.findOne({ _id: id }, { employee_id: 1 });
     if (!employeData) {
       return res.status(404).json({ message: "Employee not found" });
     }
     console.log("Employee Data:", employeData);
 
+    const employeeId = employeData.employee_id;
+
+    // Fetch all requests related to the employee
     const reqData = await CreateNewReq.find({
-      "approvals.approvalId": { $ne: employeData.empId },
+      $or: [
+        { "approvals.approvalId": employeeId },
+        { "approvals.approvalId": { $ne: employeeId } },
+      ],
     });
-    console.log("Request Data:", reqData);
 
     if (!reqData || reqData.length === 0) {
       return res
         .status(404)
-        .json({ message: "No pending approvals for this employee" });
+        .json({ message: "No requests found for this employee" });
     }
 
-    res.status(200).json({ count: reqData.length, reqData });
+    // Calculate total, approved, and pending counts
+    const totalRequests = reqData.length;
+    let approvedRequests = 0;
+    let pendingRequests = 0;
+
+    reqData.forEach((request) => {
+      const approval = request.approvals.find(
+        (app) => app.approvalId === employeeId
+      );
+      if (approval) {
+        if (approval.status === "approved") {
+          approvedRequests++;
+        } else  {
+          pendingRequests++;
+        }
+      }
+    });
+    
+
+    // Respond with counts
+    res.status(200).json({
+      totalRequests,
+      approvedRequests, 
+      pendingRequests,
+      reqData,
+    });
   } catch (err) {
-    console.log("Error in fetching new notifications:", err);
+    console.error("Error in fetching new notifications:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -1185,8 +1216,8 @@ const generatePdfContent = (doc, invoiceData) => {
       footerY
     );
     doc.text("Thank you for your business!", margin, footerY + 15);
-    console.log("success")
-    return res.status(200)
+    console.log("success");
+    return res.status(200);
   } catch (error) {
     console.error("Error generating PDF content:", error);
   }

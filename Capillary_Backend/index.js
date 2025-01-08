@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Route configuration
-app.use('/', userRoutes);
+app.use('/', userRoutes); 
 app.use('/employees', empRoutes); // Add empRoutes with a base path
 app.use('/vendors',vendorRoutes);
 app.use('/questions',questionRoutes);
