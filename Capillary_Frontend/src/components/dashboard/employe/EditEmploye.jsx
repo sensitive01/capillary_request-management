@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import { regNewEmployee } from "../../../api/service/adminServices";
+import { getEmployeeData, updateEmployeeData } from "../../../api/service/adminServices";
 
 const EditEmploye = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [formData, setFormData] = useState({
     employee_id: "",
     full_name: "",
@@ -17,6 +18,14 @@ const EditEmploye = () => {
     business_unit: "",
   });
 
+  useEffect(() => {
+    const fetchEmpData = async () => {
+      const response = await getEmployeeData(id);
+      setFormData(response.data);
+    };
+    fetchEmpData();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -28,11 +37,11 @@ const EditEmploye = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await regNewEmployee(formData)
-       
+      const response = await updateEmployeeData(id,formData);
+      console.log(response)
 
-      if (response.status===201) {
-        toast.success("Employee added successfully");
+      if (response.status === 200) {
+        toast.success("Employee data updated successfully");
         setTimeout(() => {
           navigate("/employee-list-table");
         }, 1500);
@@ -45,7 +54,7 @@ const EditEmploye = () => {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit  Employee</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Employee</h2>
       </div>
       <form onSubmit={handleSubmit}>
         <div className="p-4 border rounded-lg border-primary">

@@ -18,6 +18,11 @@ const app = express();
 const port = 3001;
 
 db(); // Initialize database connection
+app.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    next();
+  });
 app.use(bodyParser.json());
 app.use(cors());
 

@@ -785,7 +785,7 @@ const getNewNotifications = async (req, res) => {
     res.status(200).json({
       totalRequests,
       approvedRequests, 
-      pendingRequests,
+      pendingRequests, 
       reqData,
     });
   } catch (err) {

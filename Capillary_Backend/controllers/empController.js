@@ -303,12 +303,12 @@ exports.verifyUser = async (req, res) => {
     const { email } = req.body;
 
     const employeeData = await Employee.findOne(
-      { email: req.body.email },
+      { company_email_id: req.body.email },
       { _id: 1, role: 1, full_name: 1 }
     );
     const full_name = employeeData?.full_name
       ? employeeData?.full_name
-      : "Unknown User";
+      : "Unknown User"; 
 
     console.log("Employee data", employeeData);
     const subject = "Login Notification from Capillary Technologies";
