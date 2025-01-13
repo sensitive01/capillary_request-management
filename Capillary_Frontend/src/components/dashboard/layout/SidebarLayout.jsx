@@ -95,6 +95,7 @@ const SidebarLayout = () => {
   function getSidebarItems(email) {
     const role = getRoleByEmail(email);
     console.log("Role",role)
+    localStorage.setItem("role",role)
     return roleToSidebarItems[role] || roleToSidebarItems.default;
   }
 

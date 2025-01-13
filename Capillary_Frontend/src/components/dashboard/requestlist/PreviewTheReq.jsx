@@ -64,6 +64,7 @@ const PreviewTheReq = () => {
       toast.error(err.response);
     }
   };
+  
 
   const SectionNavigation = () => {
     const sections = [
@@ -585,6 +586,39 @@ const PreviewTheReq = () => {
     return <div className="text-center py-10">Loading...</div>;
   }
 
+  const renderApprovalButtons = () => {
+    if (role === "Employee") {
+      return null;
+    }
+
+    return (
+      <div className="bg-white p-4 flex justify-end items-end border-t shadow-md">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => approveRequest("Rejected")}
+            className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white"
+          >
+            <XCircle className="mr-2" /> Reject
+          </button>
+          <button
+            onClick={() => approveRequest("Hold")}
+            className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-gray-300"
+          >
+            <PauseCircle className="mr-2" /> Hold
+          </button>
+          <button
+            onClick={() => approveRequest("Approved")}
+            className="px-6 py-2 rounded-lg transition-colors flex items-center bg-green-950 text-white"
+          >
+            <CheckCircle2 className="mr-2" />
+            Submit
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <div className="flex flex-col bg-white">
       <div className="bg-primary text-white p-4 text-center shadow-md">
@@ -597,29 +631,7 @@ const PreviewTheReq = () => {
         <div className="flex-1 overflow-y-auto">{renderSectionContent()}</div>
       </div>
 
-      <div className="bg-white p-4 flex justify-end items-end border-t shadow-md">
-        <div className="flex space-x-4">
-          <button
-            onClick={() => approveRequest("Rejected")}
-            className={`px-6 py-2 rounded-lg flex items-center ${"bg-red-600 text-white"}`}
-          >
-            <XCircle className="mr-2" /> Reject
-          </button>
-          <button
-            onClick={() => approveRequest("Hold")}
-            className={`px-6 py-2 rounded-lg flex items-center ${"bg-yellow-600 text-gray-300 "}`}
-          >
-            <PauseCircle className="mr-2" /> Hold
-          </button>
-          <button
-            onClick={() => approveRequest("Approved")}
-            className={`px-6 py-2 rounded-lg transition-colors flex items-center ${"bg-green-950 text-white"}`}
-          >
-            <CheckCircle2 className="mr-2" />
-            Submit
-          </button>
-        </div>
-      </div>
+      {renderApprovalButtons()}
 
       <ToastContainer
         position="top-right"

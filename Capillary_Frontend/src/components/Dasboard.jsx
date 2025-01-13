@@ -1,49 +1,39 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   UserCircle2,
-  MapPin,
   Mail,
   Briefcase,
   CheckCircle2,
   Clock,
+  FileText,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getNewNotification } from "../api/service/adminServices";
 
 const Dashboard = () => {
   const user = JSON.parse(localStorage.getItem("user"));
-  console.log("user", user);
   const role = localStorage.getItem("role");
-  const userId = localStorage.getItem("userId")
+  const userId = localStorage.getItem("userId");
 
-  // Mock statistics data - replace with actual data from your API
-  const stats = {
-    pending: 12,
-    approved: 45,
-  };
-  const [totalRequest,setTotalRequest] = useState(0)
-  const [approvedRequest,setApprovedRequest] = useState(0)
-
-  const [pendingRequest,setpendingRequest] = useState(0)
-
+  const [totalSubmitted, setTotalSubmitted] = useState(0);
+  const [approvedRequests, setApprovedRequests] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
-    const fetchNotification = async () => {
+    const fetchEmployeeStats = async () => {
       try {
         const response = await getNewNotification(userId);
         if (response.status === 200) {
-          setTotalRequest(response.data.totalRequests);
-          setApprovedRequest(response.data.approvedRequests);
-
-          setpendingRequest(response.data.pendingRequests);
-
+          setTotalSubmitted(response.data.totalRequests);
+          setApprovedRequests(response.data.approvedRequests);
+          setPendingRequests(response.data.pendingRequests);
         }
       } catch (error) {
-        console.error("Failed to fetch notifications:", error);
+        console.error("Failed to fetch employee statistics:", error);
       }
     };
-    fetchNotification();
-  }, []);
+    fetchEmployeeStats();
+  }, [userId]);
 
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4">
@@ -56,7 +46,7 @@ const Dashboard = () => {
               <div className="relative inline-block">
                 {user?.picture ? (
                   <img
-                    src={`${user?.picture}`}
+                    src={user.picture}
                     alt="Profile"
                     className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white object-cover shadow-lg"
                   />
@@ -70,7 +60,7 @@ const Dashboard = () => {
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {user?.name || "User"}
                 </h2>
-                <p className="text-gray-600 text-lg">{role || "Employee"}</p>
+                <p className="text-gray-600 text-lg">Employee</p>
               </div>
             </div>
 
@@ -107,9 +97,7 @@ const Dashboard = () => {
                   <UserCircle2 className="w-10 h-10 p-2 bg-primary/10 text-primary rounded-lg" />
                   <div>
                     <p className="text-sm text-gray-500 font-medium">Role</p>
-                    <p className="text-gray-900 font-semibold">
-                      {role || "Employee"}
-                    </p>
+                    <p className="text-gray-900 font-semibold">Employee</p>
                   </div>
                 </div>
               </div>
@@ -117,21 +105,37 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Statistics Card */}
+        {/* Statistics Cards */}
         <div className="grid md:grid-cols-1 gap-6">
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
             <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
               <span className="inline-block w-2 h-6 bg-primary rounded-full mr-3"></span>
-              Request Statistics
+              My Request Statistics
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total Submitted */}
+              <div className="bg-blue-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <FileText className="w-8 h-8 text-blue-500" />
+                  <span className="text-3xl font-bold text-blue-600">
+                    {totalSubmitted}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">
+                    Total Submitted
+                  </h4>
+                  <p className="text-sm text-gray-600 mt-1">All requests</p>
+                </div>
+              </div>
+
               {/* Pending Requests */}
               <div className="bg-orange-50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <Clock className="w-8 h-8 text-orange-500" />
                   <span className="text-3xl font-bold text-orange-600">
-                    {pendingRequest}
+                    {pendingRequests}
                   </span>
                 </div>
                 <div>
@@ -149,7 +153,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between mb-3">
                   <CheckCircle2 className="w-8 h-8 text-green-500" />
                   <span className="text-3xl font-bold text-green-600">
-                    {approvedRequest}
+                    {approvedRequests}
                   </span>
                 </div>
                 <div>
