@@ -31,6 +31,7 @@ import Approvals from "./components/dashboard/approvals/Approvals";
 import EditRequestForm from "./components/dashboard/requestlist/edit/EditRequestForm";
 import QuestionsDetails from "./components/questions/QuestionDetails";
 import VendorPreview from "./components/dashboard/vendor/VendorPreview";
+import PageNotFoundPage from "./components/404/PageNotFoundPage";
 
 
 function App() {
@@ -39,6 +40,8 @@ function App() {
       <Routes>
   
         {/* <Route path="/" element={<Login />} /> */}
+        <Route path="*" element={<PageNotFoundPage />} />
+
           <Route path="/" element={<HomePage />} />
           <Route path="/" element={<SidebarLayout />}>
 
