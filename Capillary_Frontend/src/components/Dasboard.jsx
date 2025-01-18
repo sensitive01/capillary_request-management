@@ -58,7 +58,7 @@ const Dashboard = () => {
                 )}
               </div>
               <div className="mt-4 sm:mt-0 sm:ml-6 flex-1">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
                   {user?.name || "User"}
                 </h2>
                 <div className="space-y-3">

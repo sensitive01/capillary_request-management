@@ -92,7 +92,7 @@ const ChatComments = ({ reqId }) => {
       const newMsg = {
         reqId: reqId,
         senderId: userId,
-        username: "Current User",
+        senderName: "You",
         userImage: null,
         message: newMessage,
         attachmentUrl,

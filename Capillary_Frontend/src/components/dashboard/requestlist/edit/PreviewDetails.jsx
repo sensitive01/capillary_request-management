@@ -371,17 +371,51 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
             </h2>
 
             {formData.complinces &&
-            formData?.complinces?.agreementCompliances ? (
+            formData?.complinces?.complinces?  (
               <div className="space-y-4">
-                {Object.keys(formData?.complinces?.agreementCompliances)
+                {Object.keys(formData?.complinces?.complinces)
                   ?.length > 0 ? (
                   Object.entries(
-                    formData?.complinces?.agreementCompliances
-                  )?.map(([question, answer], index) => (
-                    <div key={index} className="p-4 bg-gray-100 rounded-lg">
-                      <h3 className="text-lg font-semibold">{question}</h3>
-                      <p className="mt-2">{answer ? "Yes" : "No"}</p>
-                    </div>
+                    formData?.complinces?.complinces
+                  )?.map(([questionId, compliance], index) => (
+                    <div
+                    key={questionId}
+                    className="p-4 bg-gray-100 rounded-lg"
+                  >
+                    <h3 className="text-lg font-semibold">
+                      {compliance.question}
+                    </h3>
+                    <p className="mt-2">{compliance.answer ? "Yes" : "No"}</p>
+                    {compliance.department && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        <strong>Department:</strong> {compliance.department}
+                      </p>
+                    )}
+                    {compliance.deviation&& (
+                      <p className="mt-2 text-sm text-gray-600">
+                        <strong>Reason:</strong> {compliance.deviation.reason }
+                      </p>
+                    )}
+            
+                    {compliance?.deviation?.attachments?.length > 0 && (
+                      <div className="mt-2">
+                        <strong>Attachments:</strong>
+                        <ul className="list-disc pl-6">
+                          {compliance?.deviation?.attachments.map((attachment, i) => (
+                            <li key={i} className="text-blue-600">
+                              <a
+                                href={attachment}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Attachment {i + 1}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                   ))
                 ) : (
                   <div className="text-gray-500">
@@ -401,7 +435,7 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
       <SectionNavigation />
       {renderSectionContent()}
 

@@ -46,7 +46,6 @@ const CommercialValidationSchema = Yup.object().shape({
 });
 
 const CommercialsDetails = ({ formData, setFormData, onNext }) => {
-  console.log("Welcome to edit page",formData)
   const [localFormData, setLocalFormData] = useState({
     entity: formData?.entity || "",
     city: formData?.city || "",

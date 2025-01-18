@@ -30,12 +30,12 @@ const postComments = async (req, res) => {
 
     const empData = await empModel.findOne(
       { _id: data.senderId },
-      { name: 1, empId: 1 }
+      { full_name: 1, empId: 1 }
     );
 
     const commentData = {
       senderId: data.senderId,
-      senderName: empData.name,
+      senderName: empData.full_name,
       message: data.message,
       attachmentUrl: data.attachmentUrl,
       topic: data.topic,
@@ -951,7 +951,7 @@ const updateRequest = async (req, res) => {
           commercials: commercials || {},
           procurements: procurements || {},
           supplies: supplies || {},
-          complinces: complinces || {},
+          complinces: complinces.complinces || {},
           status: status || "Pending",
         },
       },

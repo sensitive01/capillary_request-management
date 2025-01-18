@@ -28,8 +28,23 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
         const initialAnswers = {};
         const initialDeviations = {};
 
+        // Extract existing compliances, handling both array and nested object formats
+        let existingCompliances = [];
+        if (Array.isArray(formData.complinces)) {
+          existingCompliances = formData.complinces;
+        } else if (formData.complinces?.complinces) {
+          // Handle nested object format
+          existingCompliances = Object.values(formData.complinces.complinces);
+        }
+
+        // Create a map for quick lookup
+        const complianceMap = existingCompliances.reduce((acc, compliance) => {
+          acc[compliance.questionId] = compliance;
+          return acc;
+        }, {});
+
         questionData.forEach((q) => {
-          const existingCompliance = formData.complinces?.[q._id];
+          const existingCompliance = complianceMap[q._id];
 
           if (existingCompliance) {
             initialAnswers[q._id] = existingCompliance.answer;
@@ -40,22 +55,22 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
           } else {
             initialAnswers[q._id] = q.expectedAnswer;
             initialDeviations[q._id] = { reason: "", attachments: [] };
-
-            setFormData((prev) => ({
-              ...prev,
-              complinces: {
-                ...prev.complinces,
-                [q._id]: {
-                  questionId: q._id,
-                  question: q.question,
-                  answer: q.expectedAnswer,
-                  department: q.createdBy.department,
-                  deviation: null,
-                },
-              },
-            }));
           }
         });
+
+        // Convert to array format
+        const updatedCompliances = questionData.map((q) => ({
+          questionId: q._id,
+          question: q.question,
+          answer: initialAnswers[q._id],
+          department: q.createdBy.department,
+          deviation: initialDeviations[q._id],
+        }));
+
+        setFormData((prev) => ({
+          ...prev,
+          complinces: updatedCompliances, // Store as array
+        }));
 
         setAnswers(initialAnswers);
         setDeviations(initialDeviations);
@@ -80,16 +95,15 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
 
     setFormData((prev) => ({
       ...prev,
-      complinces: {
-        ...prev.complinces,
-        [questionId]: {
-          questionId,
-          question: question.question,
-          answer: value,
-          department: question.createdBy.department,
-          deviation: isDeviation ? deviations[questionId] : null,
-        },
-      },
+      complinces: prev.complinces.map((compliance) =>
+        compliance.questionId === questionId
+          ? {
+              ...compliance,
+              answer: value,
+              deviation: isDeviation ? deviations[questionId] : null,
+            }
+          : compliance
+      ),
     }));
   };
 
@@ -106,13 +120,14 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
 
     setFormData((prev) => ({
       ...prev,
-      complinces: {
-        ...prev.complinces,
-        [questionId]: {
-          ...prev.complinces[questionId],
-          deviation: updatedDeviation,
-        },
-      },
+      complinces: prev.complinces.map((compliance) =>
+        compliance.questionId === questionId
+          ? {
+              ...compliance,
+              deviation: updatedDeviation,
+            }
+          : compliance
+      ),
     }));
   };
 
