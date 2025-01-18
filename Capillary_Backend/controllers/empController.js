@@ -304,7 +304,7 @@ exports.verifyUser = async (req, res) => {
 
     const employeeData = await Employee.findOne(
       { company_email_id: req.body.email },
-      { _id: 1, role: 1, full_name: 1 }
+      { _id: 1, role: 1, full_name: 1 ,department:1}
     );
     const full_name = employeeData?.full_name
       ? employeeData?.full_name

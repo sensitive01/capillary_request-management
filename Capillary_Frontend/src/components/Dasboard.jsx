@@ -14,6 +14,7 @@ const Dashboard = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
+  const department = localStorage.getItem("department");
 
   const [totalSubmitted, setTotalSubmitted] = useState(0);
   const [approvedRequests, setApprovedRequests] = useState(0);
@@ -42,8 +43,8 @@ const Dashboard = () => {
         <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
           <div className="bg-primary h-32" />
           <div className="px-6 py-8 relative">
-            <div className="flex flex-col sm:flex-row sm:items-center -mt-16 sm:-mt-20 mb-8">
-              <div className="relative inline-block">
+            <div className="flex flex-col sm:flex-row -mt-16 sm:-mt-20 mb-8">
+              <div className="relative">
                 {user?.picture ? (
                   <img
                     src={user.picture}
@@ -56,48 +57,28 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
-              <div className="mt-4 sm:mt-0 sm:ml-6">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="mt-4 sm:mt-0 sm:ml-6 flex-1">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
                   {user?.name || "User"}
                 </h2>
-                <p className="text-gray-600 text-lg">Employee</p>
-              </div>
-            </div>
-
-            {/* Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4 hover:bg-primary/5 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-10 h-10 p-2 bg-primary/10 text-primary rounded-lg" />
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">Email</p>
-                    <p className="text-gray-900 font-semibold truncate">
+                <div className="space-y-3">
+                  <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
+                    <Mail className="w-5 h-5 mr-3 text-primary" />
+                    <span className="text-base font-medium">
                       {user?.email || "No email provided"}
-                    </p>
+                    </span>
                   </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-4 hover:bg-primary/5 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Briefcase className="w-10 h-10 p-2 bg-primary/10 text-primary rounded-lg" />
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">
-                      Department
-                    </p>
-                    <p className="text-gray-900 font-semibold">
-                      IT Web Development
-                    </p>
+                  <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
+                    <Briefcase className="w-5 h-5 mr-3 text-primary" />
+                    <span className="text-base font-medium">
+                      {department || "No department"}
+                    </span>
                   </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-4 hover:bg-primary/5 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <UserCircle2 className="w-10 h-10 p-2 bg-primary/10 text-primary rounded-lg" />
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">Role</p>
-                    <p className="text-gray-900 font-semibold">Employee</p>
+                  <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
+                    <UserCircle2 className="w-5 h-5 mr-3 text-primary" />
+                    <span className="text-base font-medium">
+                      {role || "No role assigned"}
+                    </span>
                   </div>
                 </div>
               </div>
