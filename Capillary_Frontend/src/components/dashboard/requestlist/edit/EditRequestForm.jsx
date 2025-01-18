@@ -39,7 +39,7 @@ const EditRequestForm = () => {
       setSubmittedData(formData);
       console.log("Form Submitted:", formData);
       const response = await updateRequest(id, formData);
-      console.log(response);
+      console.log("response updated",response);
       if (response.status === 200) {
         toast.success(" Request is updated");
         setTimeout(() => {

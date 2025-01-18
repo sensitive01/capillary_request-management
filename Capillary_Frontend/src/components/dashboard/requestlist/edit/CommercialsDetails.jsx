@@ -74,7 +74,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
       try {
         const response = await getAllEntityData();
         if (response.status === 200) {
-          setEntities(response.data);
+          setEntities(response.data.entity);
         }
       } catch (error) {
         console.error("Error fetching entities:", error);

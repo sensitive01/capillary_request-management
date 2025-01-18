@@ -49,7 +49,6 @@ const LegalQuestionModal = ({ isOpen, onClose, onSubmit }) => {
   });
 
   const handleSubmit = () => {
-    console.log("LegalQuestionModal",LegalQuestionModal)
     if (questionDetails.question.trim()) {
       onSubmit({
         question: questionDetails.question,
@@ -174,7 +173,6 @@ const LegalQuestions = () => {
     try {
       setIsLoading(true);
       const response = await fetchMyQuestions(userId);
-      console.log(response)
       if (response?.status === 200 && response?.data?.data) {
         setQuestions(response.data.data);
       } else {
@@ -195,49 +193,53 @@ const LegalQuestions = () => {
 
   const handleAddQuestion = async (newQuestion) => {
     try {
-      setQuestions(prevQuestions => [...prevQuestions, newQuestion]);
+      setQuestions((prevQuestions) => [...prevQuestions, newQuestion]);
       const response = await addNewQuestion(userId, newQuestion);
       if (response?.status === 200) {
-        // First update the local state with the new question
         toast.success("Question added successfully");
       }
     } catch (error) {
       console.error("Error adding question:", error);
       toast.error(`Error: ${error.message || "Something went wrong!"}`);
-      // Refresh the questions list in case of error
       fetchQuestions();
     }
   };
 
   const toggleQuestionStatus = async (questionId) => {
+    const question = questions.find((q) => q._id === questionId);
+    const action = question.status ? "disable" : "enable";
+
     const confirmUpdate = await Swal.fire({
       title: "Are you sure?",
-      text: "Do you want to change the question visibility?",
+      text: `Do you want to ${action} this question?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, update it!",
+      confirmButtonText: `Yes, ${action} it!`,
       cancelButtonText: "No, cancel!",
     });
-  
+
     if (confirmUpdate.isConfirmed) {
-      setQuestions(questions.map(question => 
-        question._id === questionId 
-          ? { ...question, status: !question.status }
-          : question
-      ));
-  
+      setQuestions(
+        questions.map((question) =>
+          question._id === questionId
+            ? { ...question, status: !question.status }
+            : question
+        )
+      );
+
       const response = await changeQuestionVisibility(questionId);
-  
+
       if (response.status === 200) {
-        Swal.fire("Updated!", "The question status has been updated.", "success");
+        Swal.fire("Updated!", `The question has been ${action}d.`, "success");
       } else {
-        Swal.fire("Error!", "Failed to update the question status.", "error");
+        Swal.fire("Error!", `Failed to ${action} the question.`, "error");
+        fetchQuestions(); // Refresh questions if the API call fails
       }
     } else {
       Swal.fire("Cancelled", "The status update was cancelled.", "info");
     }
   };
-  
+
   const showInfo = (question, description) => {
     setInfoPopup({
       isOpen: true,
@@ -248,14 +250,20 @@ const LegalQuestions = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return <div className="p-8 text-center text-gray-500">Loading questions...</div>;
+      return (
+        <div className="p-8 text-center text-gray-500">
+          Loading questions...
+        </div>
+      );
     }
 
     if (!questions || questions.length === 0) {
       return (
         <div className="p-8 text-center">
           <div className="text-gray-500 text-lg mb-4">No questions found</div>
-          <div className="text-gray-400">Click "Add New Question" to create your first question</div>
+          <div className="text-gray-400">
+            Click "Add New Question" to create your first question
+          </div>
         </div>
       );
     }
@@ -267,7 +275,6 @@ const LegalQuestions = () => {
             <th className="px-6 py-4 text-left text-lg font-semibold text-primary">
               Question
             </th>
-   
             <th className="px-6 py-4 text-center text-lg font-semibold text-primary">
               Expected
             </th>
@@ -295,7 +302,6 @@ const LegalQuestions = () => {
                   )}
                 </div>
               </td>
-    
               <td className="px-6 py-4 text-center">
                 <span
                   className={`${
@@ -315,7 +321,7 @@ const LegalQuestions = () => {
                       : "bg-red-100 text-red-800"
                   } px-4 py-2 rounded-full text-base font-medium`}
                 >
-                  {item.status ? "Yes" : "No"}
+                  {item.status ? "Enabled" : "Disabled"}
                 </span>
               </td>
               <td className="px-6 py-4 text-center">
@@ -323,11 +329,11 @@ const LegalQuestions = () => {
                   onClick={() => toggleQuestionStatus(item._id)}
                   className={`${
                     item.status
-                      ? "bg-green-500 hover:bg-green-400"
-                      : "bg-red-500 hover:bg-red-400"
+                      ? "bg-red-500 hover:bg-red-400"
+                      : "bg-green-500 hover:bg-green-400"
                   } text-white px-6 py-3 text-base font-medium rounded-lg transition-all duration-200 ease-in-out`}
                 >
-                  Change Status
+                  {item.status ? "Disable" : "Enable"}
                 </button>
               </td>
             </tr>
@@ -366,7 +372,7 @@ const LegalQuestions = () => {
         title={infoPopup.title}
         description={infoPopup.description}
       />
-      
+
       <ToastContainer
         position="top-right"
         autoClose={5000}

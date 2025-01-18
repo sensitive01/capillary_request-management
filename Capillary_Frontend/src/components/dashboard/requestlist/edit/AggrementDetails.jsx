@@ -7,12 +7,11 @@ import {
   Upload,
   X,
 } from "lucide-react";
-
-import { FaFilePdf } from "react-icons/fa";
 import { getAllLegalQuestions } from "../../../../api/service/adminServices";
 import { uploadCloudinary } from "../../../../utils/cloudinaryUtils";
+import { FaFilePdf } from "react-icons/fa";
 
-const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
+const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [deviations, setDeviations] = useState({});
@@ -366,4 +365,4 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
   );
 };
 
-export default AgreementCompliances;
+export default AggrementDetails;

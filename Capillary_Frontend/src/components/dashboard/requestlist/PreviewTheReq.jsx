@@ -515,56 +515,53 @@ const PreviewTheReq = () => {
               Compliances Detailss
             </h2>
 
-            {request.complinces && request?.complinces ? (
+            {request.complinces &&
+            request?.complinces? (
               <div className="space-y-4">
-                {Object.keys(request?.complinces)?.length > 0 ? (
-                  Object.entries(request?.complinces)?.map(
-                    ([questionId, compliance], index) => (
-                      <div
-                        key={questionId}
-                        className="p-4 bg-gray-100 rounded-lg"
-                      >
-                        <h3 className="text-lg font-semibold">
-                          {compliance.question}
-                        </h3>
-                        <p className="mt-2">
-                          {compliance.answer ? "Yes" : "No"}
+                {Object.keys(request?.complinces)
+                  ?.length > 0 ? (
+                  Object.entries(
+                    request?.complinces
+                  )?.map(([questionId, compliance], index) => (
+                    <div
+                      key={questionId}
+                      className="p-4 bg-gray-100 rounded-lg"
+                    >
+                      <h3 className="text-lg font-semibold">
+                        {compliance.question}
+                      </h3>
+                      <p className="mt-2">{compliance.answer ? "Yes" : "No"}</p>
+                      {compliance.department && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <strong>Department:</strong> {compliance.department}
                         </p>
-                        {compliance.department && (
-                          <p className="mt-2 text-sm text-gray-600">
-                            <strong>Department:</strong> {compliance.department}
-                          </p>
-                        )}
-                        {compliance.deviation && (
-                          <p className="mt-2 text-sm text-gray-600">
-                            <strong>Reason:</strong>{" "}
-                            {compliance.deviation.reason}
-                          </p>
-                        )}
-
-                        {compliance?.deviation?.attachments?.length > 0 && (
-                          <div className="mt-2">
-                            <strong>Attachments:</strong>
-                            <ul className="list-disc pl-6">
-                              {compliance?.deviation?.attachments.map(
-                                (attachment, i) => (
-                                  <li key={i} className="text-blue-600">
-                                    <a
-                                      href={attachment}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      Attachment {i + 1}
-                                    </a>
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  )
+                      )}
+                      {compliance.deviation&& (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <strong>Reason:</strong> {compliance.deviation.reason }
+                        </p>
+                      )}
+              
+                      {compliance?.deviation?.attachments?.length > 0 && (
+                        <div className="mt-2">
+                          <strong>Attachments:</strong>
+                          <ul className="list-disc pl-6">
+                            {compliance?.deviation?.attachments.map((attachment, i) => (
+                              <li key={i} className="text-blue-600">
+                                <a
+                                  href={attachment}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Attachment {i + 1}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))
                 ) : (
                   <div className="text-gray-500">
                     No compliance details available
