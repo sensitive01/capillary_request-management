@@ -16,7 +16,7 @@ const handleApprove = async (userId, role, reqId,status) => {
     let response;
 
     switch (role) {
-      case "HOD":
+      case "HOD Department":
         console.log("Approving for HOD");
         response = await hodApproveRequest(userId, role, reqId,status);
         break;

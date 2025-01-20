@@ -365,6 +365,7 @@ export const getAdminReqListEmployee = async () => {
 
 export const hodApproveRequest = async (userId, role, reqId, status) => {
   try {
+    console.log("request/accept-request-hod")
     const response = await adminServices.post(
       `/request/accept-request-hod/${userId}`,
       { role, reqId, status }

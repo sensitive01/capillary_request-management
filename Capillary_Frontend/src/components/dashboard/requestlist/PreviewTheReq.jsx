@@ -49,8 +49,10 @@ const PreviewTheReq = () => {
 
   const approveRequest = async (status) => {
     try {
-      const { response } = await handleApprove(userId, role, params.id, status);
-      console.log("response===>", response);
+      console.log("Approving..")
+      const  response  = await handleApprove(userId, role, params.id, status);
+  
+      console.log("response===>", response.status );
       if (response.status === 200) {
         toast.success(response.data.message);
         setTimeout(() => {
@@ -61,7 +63,7 @@ const PreviewTheReq = () => {
       }
     } catch (err) {
       console.log("Error in appeve the request", err);
-      toast.error(err.response);
+      toast.error("Invalid workflow order");
     }
   };
   
