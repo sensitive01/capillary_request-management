@@ -37,9 +37,7 @@ const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
 
 const SidebarLayout = () => {
   const location = useLocation();
-  // Add userEmail from your auth context or state management
-  const userEmail = localStorage.getItem("email")
-  console.log("email",userEmail)
+  const userEmail = localStorage.getItem("email");
 
   // Sidebar items for roles
   const roleToSidebarItems = {
@@ -89,13 +87,28 @@ const SidebarLayout = () => {
   };
 
   function getRoleByEmail(email) {
-    return emailRoleMapping[email] || defaultRole;
+    if (!email) return defaultRole;
+
+    // Check if the email is in the admin list
+    const adminEmails = import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
+    if (adminEmails.includes(email.toLowerCase().trim())) {
+      return "Admin";
+    }
+
+    // Check other role mappings
+    for (const [mappedEmail, role] of Object.entries(emailRoleMapping)) {
+      if (email.toLowerCase().trim() === mappedEmail.toLowerCase().trim()) {
+        return role;
+      }
+    }
+
+    return defaultRole;
   }
 
   function getSidebarItems(email) {
     const role = getRoleByEmail(email);
-    console.log("Role",role)
-    localStorage.setItem("role",role)
+    console.log("Role", role);
+    localStorage.setItem("role", role);
     return roleToSidebarItems[role] || roleToSidebarItems.default;
   }
 
