@@ -6,7 +6,7 @@ const commentSchema = new mongoose.Schema({
   senderName: { type: String },
   department: { type: String },
   message: { type: String },
-  attachmentUrl:{ type: String},
+  attachmentUrl: { type: String },
   topic: { type: String },
   timestamp: { type: Date, default: Date.now },
 });
@@ -23,7 +23,7 @@ const commercialsSchema = new mongoose.Schema({
   businessUnit: { type: String },
   city: { type: String },
   costCentre: { type: String },
- 
+
   department: { type: String },
   entity: { type: String },
   hod: { type: String },
@@ -43,12 +43,12 @@ const procurementsSchema = new mongoose.Schema({
     of: [String],
   },
   vendor: { type: String },
-  vendorName:{ type: String},
+  vendorName: { type: String },
   servicePeriod: { type: String },
   projectCode: { type: String },
   clientName: { type: String },
-  poValidityTo: { type: Date },
-  poValidityFrom: { type: Date },
+  poValidTo: { type: Date },
+  poValidFrom: { type: Date },
   poExpiryDate: { type: Date },
   remarks: { type: String, default: "" },
 });
@@ -56,6 +56,8 @@ const procurementsSchema = new mongoose.Schema({
 const serviceSchema = new mongoose.Schema({
   productName: { type: String },
   productDescription: { type: String },
+  productPurpose: { type: String },
+
   quantity: { type: String },
   price: { type: String },
   tax: { type: String },
@@ -65,7 +67,7 @@ const suppliesSchema = new mongoose.Schema({
   remarks: { type: String, default: "" },
   services: { type: [serviceSchema] },
   totalValue: { type: Number },
-  selectedCurrency:{type: String}
+  selectedCurrency: { type: String },
 });
 
 // Define the schema for the individual compliance items
@@ -74,7 +76,7 @@ const complianceItemSchema = new mongoose.Schema({
   question: { type: String },
   answer: { type: Boolean },
   department: { type: String },
-  deviation: { type: mongoose.Schema.Types.Mixed }, 
+  deviation: { type: mongoose.Schema.Types.Mixed },
 });
 
 // Define the approval schema
@@ -89,18 +91,21 @@ const approvalSchema = new mongoose.Schema({
 });
 
 // Main schema for 'CreateNewReq'
-const createnewReqSchema = new mongoose.Schema({
-  reqid: { type: String },
-  userId: { type: String },
-  userName: { type: String },
-  commercials: { type: commercialsSchema },
-  procurements: { type: procurementsSchema },
-  supplies: { type: suppliesSchema },
-  status: { type: String, default: "Pending" },
-  commentLogs: [commentSchema],
-  complinces: { type: [complianceItemSchema] }, // Array of compliance items
-  approvals: { type: [approvalSchema], default: [] },
-},{ timestamps: true });
+const createnewReqSchema = new mongoose.Schema(
+  {
+    reqid: { type: String },
+    userId: { type: String },
+    userName: { type: String },
+    commercials: { type: commercialsSchema },
+    procurements: { type: procurementsSchema },
+    supplies: { type: suppliesSchema },
+    status: { type: String, default: "Pending" },
+    commentLogs: [commentSchema],
+    complinces: { type: [complianceItemSchema] }, // Array of compliance items
+    approvals: { type: [approvalSchema], default: [] },
+  },
+  { timestamps: true }
+);
 
 const CreateNewReq = mongoose.model("CreateNewReq", createnewReqSchema);
 

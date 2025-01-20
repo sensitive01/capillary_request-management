@@ -24,7 +24,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       }
     };
 
-    fetchVendor(); 
+    fetchVendor();
   }, []);
 
   useEffect(() => {
@@ -64,11 +64,11 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       setFormData((prevState) => ({
         ...prevState,
         quotationDate: today,
-        servicePeriod: "oneTime",    
+        servicePeriod: "oneTime",
       }));
     }
   }, []);
- 
+
   const getEffectiveFileType = (fileData) => {
     return fileData.fileType === "Other"
       ? fileData.otherType
@@ -77,10 +77,10 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
- 
+
     if (name === "vendor") {
       const selectedVendor = vendors.find((v) => v.ID === value);
-      console.log("selectedVendor",selectedVendor)
+      console.log("selectedVendor", selectedVendor);
       setFormData((prevState) => ({
         ...prevState,
         vendor: value,
@@ -128,12 +128,11 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       setNewVendor({ name: "", email: "" });
     } else {
       alert("Please fill in all fields.");
-    }   
+    }
   };
 
   // Get vendor display name
   const getVendorDisplayName = (vendor) => {
-  
     if (vendor.isNewVendor) {
       return `${vendor.firstName} -(New Vendor)`;
     }
@@ -141,6 +140,10 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       vendor.firstName || vendor.Name
     }`;
   };
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().split("T")[0]; // Extracts the date part in YYYY-MM-DD format
+  }
 
   // Handle multiple file uploads
   const handleMultiFileChange = async (e, index) => {
@@ -203,7 +206,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         updatedFiles[fileType] = updatedFiles[fileType].filter(
           (_, i) => i !== fileIndex
         );
-    
+
         // Only remove the key if there are no files left
         if (updatedFiles[fileType].length === 0) {
           delete updatedFiles[fileType];
@@ -214,7 +217,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         uploadedFiles: updatedFiles,
       };
     });
-   
+
     // Update filesData state
     setFilesData((prevData) =>
       prevData.map((fileData) => {
@@ -223,14 +226,13 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
           return {
             ...fileData,
             urls: fileData.urls.filter((_, i) => i !== fileIndex),
-            files: fileData.files.filter((_, i) => i !== fileIndex)
+            files: fileData.files.filter((_, i) => i !== fileIndex),
           };
         }
         return fileData;
       })
     );
   };
-  
 
   // Handle file type selection
   const handleFileTypeChange = (e, index) => {
@@ -388,7 +390,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
               >
                 <option value="">Select Vendor</option>
                 {vendors.map((vendor) => (
-                  <option key={vendor._id} value={vendor.ID||vendor.vendorId}>
+                  <option key={vendor._id} value={vendor.ID || vendor.vendorId}>
                     {getVendorDisplayName(vendor)}
                   </option>
                 ))}
@@ -404,12 +406,17 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
               <input
                 type="date"
                 name="quotationDate"
-                value={formData.quotationDate || ""}
+                value={
+                  formData.quotationDate
+                    ? formatDate(formData.quotationDate)
+                    : ""
+                }
                 onChange={handleInputChange}
                 min={getMinDate()}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               />
             </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Quotation Number
@@ -459,7 +466,11 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                   <input
                     type="date"
                     name="poValidFrom"
-                    value={formData.poValidFrom || ""}
+                    value={
+                      formData.poValidFrom
+                        ? formatDate(formData.poValidFrom)
+                        : ""
+                    }
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                   />
@@ -471,7 +482,9 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                   <input
                     type="date"
                     name="poValidTo"
-                    value={formData.poValidTo || ""}
+                    value={
+                      formData.poValidTo ? formatDate(formData.poValidTo) : ""
+                    }
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                   />

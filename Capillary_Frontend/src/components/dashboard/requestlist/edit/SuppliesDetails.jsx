@@ -11,7 +11,7 @@ const SuppliesDetails = ({
 }) => {
   const initialService = { productName: "", productDescription: "", productPurpose: "", quantity: "", price: "", tax: "" };
   const [services, setServices] = useState(formData.services || [initialService]);
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState("INR");
 
   const currencies = [
     { code: "USD", symbol: "$" },

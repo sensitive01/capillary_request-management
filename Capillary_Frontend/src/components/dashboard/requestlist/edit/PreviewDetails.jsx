@@ -10,6 +10,7 @@ import {
   Save,
   FileIcon,
 } from "lucide-react";
+import { formatDateToDDMMYY } from "../../../../utils/dateFormat";
 
 const PreviewDetails = ({ formData, onSubmit, onBack }) => {
   const [activeSection, setActiveSection] = useState("commercials");
@@ -116,98 +117,149 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
       case "commercials":
         return (
           <div className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold text-primary border-b pb-3">
-              Commercials Details
-            </h2>
-            {formData.commercials &&
-              Object.values(formData.commercials).some((value) => value) && (
+          <h2 className="text-2xl font-bold text-primary border-b pb-3">
+            Commercials Details
+          </h2>
+          {formData.commercials &&
+            Object.values(formData.commercials).some((value) => value) && (
+              <div className="grid gap-6 p-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { label: "Amount", value: formData.commercials.amount },
-                    { label: "Bill To", value: formData.commercials.billTo },
-                    {
-                      label: "Business Unit",
-                      value: formData.commercials.businessUnit,
-                    },
-                    { label: "City", value: formData.commercials.city },
-                    {
-                      label: "Cost Centre",
-                      value: formData.commercials.costCentre,
-                    },
-                    { label: "Currency", value: formData.commercials.currency },
-                    {
-                      label: "Department",
-                      value: formData.commercials.department,
-                    },
-                    { label: "Entity", value: formData.commercials.entity },
-                    {
-                      label: "Head of Department",
-                      value: formData.commercials.hod,
-                    },
-                    {
-                      label: "Credit Card Selected",
-                      value: formData.commercials.isCreditCardSelected
-                        ? "Yes"
-                        : "No",
-                    },
-                    {
-                      label: "Payment Mode",
-                      value: formData.commercials.paymentMode,
-                    },
-                    { label: "Ship To", value: formData.commercials.shipTo },
-                    { label: "Site", value: formData.commercials.site },
-                  ]
-                    .filter((item) => item.value)
-                    .map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between p-3 rounded-lg"
-                      >
-                        <span className="text-gray-600 font-medium">
-                          {item.label}
-                        </span>
-                        <span className="text-gray-800 font-semibold">
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Business Unit
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.businessUnit}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">Entity</span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.entity}
+                    </div>
+                  </div>
                 </div>
-              )}
 
-            {formData.commercials?.paymentTerms?.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold text-primary mb-4">
-                  Payment Terms
-                </h3>
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-primary/10">
-                      <tr>
-                        <th className="p-3 text-left text-primary">
-                          Payment Term
-                        </th>
-                        <th className="p-3 text-left text-primary">Type</th>
-                        <th className="p-3 text-right text-primary">
-                          Percentage
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formData.commercials.paymentTerms.map((term, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-3">{term.paymentTerm}</td>
-                          <td className="p-3">{term.paymentType}</td>
-                          <td className="p-3 text-right">
-                            {term.percentageTerm}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">City</span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.city}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">Site</span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.site}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Cost Centre
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.costCentre}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Department
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.department}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Head of Department
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.hod}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Payment Mode
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.paymentMode}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Credit Card Selected
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.isCreditCardSelected
+                        ? "Yes"
+                        : "No"}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">Bill To</span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.billTo}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">Ship To</span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {formData.commercials.shipTo}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
-          </div>
+
+          {formData.commercials?.paymentTerms?.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">
+                Payment Terms
+              </h3>
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-primary/10">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-primary font-semibold">
+                        Percentage
+                      </th>
+                      <th className="px-6 py-4 text-left text-primary font-semibold">
+                        Payment Term
+                      </th>
+                      <th className="px-6 py-4 text-left text-primary font-semibold">
+                        Type
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {formData.commercials.paymentTerms.map((term, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 text-left font-medium">
+                          {term.percentageTerm}%
+                        </td>
+                        <td className="px-6 py-4 capitalize">
+                          {term.paymentTerm?.toLowerCase()}
+                        </td>
+                        <td className="px-6 py-4 capitalize">
+                          {term.paymentType?.toLowerCase()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
         );
 
       case "procurements":
@@ -220,30 +272,48 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
               Object.values(formData.procurements).some((value) => value) && (
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
-                    { label: "Vendor ID", value: formData.procurements.vendor },
-                    {
+                    formData.procurements.vendor && {
+                      label: "Vendor ID",
+                      value: formData.procurements.vendor,
+                    },
+                    formData.procurements.vendorName && {
+                      label: "Vendor Name",
+                      value: formData.procurements.vendorName,
+                    },
+                    formData.procurements.quotationNumber && {
                       label: "Quotation Number",
                       value: formData.procurements.quotationNumber,
                     },
-                    {
-                      label: "Quotation Date",
-                      value: formData.procurements.quotationDate,
+                    formData.procurements.projectCode && {
+                      label: "Project Code",
+                      value: formData.procurements.projectCode,
                     },
-                    
-                    {
+                    formData.procurements.clientName && {
+                      label: "Client Name",
+                      value: formData.procurements.clientName,
+                    },
+                    formData.procurements.quotationDate && {
+                      label: "Quotation Date",
+                      value: formatDateToDDMMYY(
+                        formData.procurements.quotationDate
+                      ),
+                    },
+                    formData.procurements.servicePeriod && {
                       label: "Service Period",
                       value: formData.procurements.servicePeriod,
                     },
-                    {
+                    formData.procurements.poValidFrom && {
                       label: "PO Valid From",
-                      value: formData.procurements.poValidFrom,
+                      value: formatDateToDDMMYY(
+                        formData.procurements.poValidFrom
+                      ),
                     },
-                    {
+                    formData.procurements.poValidTo && {
                       label: "PO Valid To",
-                      value: formData.procurements.poValidTo,
+                      value: formatDateToDDMMYY(formData.procurements.poValidTo),
                     },
                   ]
-                    .filter((item) => item.value)
+                    .filter(Boolean) // Ensures we only include valid objects
                     .map((item, index) => (
                       <div
                         key={index}
@@ -287,80 +357,81 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
       case "product/services":
         return (
           <div className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold text-primary border-b pb-3">
-              Supplies Details
-            </h2>
+          <h2 className="text-2xl font-bold text-primary border-b pb-3">
+            Supplies Details
+          </h2>
 
-            {formData.supplies?.totalValue !== undefined && (
-              <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
-                <span className="text-gray-600 font-medium">Total Value</span>
-                <span className="text-gray-800 font-semibold">
-                  {formData.supplies.totalValue}
-                </span>
+          {formData.supplies?.totalValue !== undefined && (
+            <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
+              <span className="text-gray-600 font-medium">Total Value</span>
+              <span className="text-gray-800 font-semibold">
+                <span>{formData.supplies.selectedCurrency}</span>&nbsp;
+                {formData.supplies.totalValue}
+              </span>
+            </div>
+          )}
+
+          {formData.supplies?.services?.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">
+                Services
+              </h3>
+              <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-primary/10">
+                    <tr>
+                      <th className="p-3 text-left text-primary">
+                        Product Name
+                      </th>
+                      <th className="p-3 text-left text-primary">
+                        Description
+                      </th>
+                      <th className="p-3 text-left text-primary">Quantity</th>
+                      <th className="p-3 text-left text-primary">Price</th>
+                      <th className="p-3 text-left text-primary">Tax (%)</th>
+                      <th className="p-3 text-left text-primary">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.supplies.services.map((service, index) => {
+                      // Calculate the total for each service
+                      const quantity = parseFloat(service.quantity) || 0;
+                      const price = parseFloat(service.price) || 0;
+                      const tax = parseFloat(service.tax) || 0;
+                      const total = quantity * price * (1 + tax / 100);
+
+                      return (
+                        <tr key={index} className="border-b hover:bg-gray-50">
+                          <td className="p-3">
+                            {service.productName || "N/A"}
+                          </td>
+                          <td className="p-3">
+                            {service.productDescription || "N/A"}
+                          </td>
+                          <td className="p-3">{service.quantity || "N/A"}</td>
+                          <td className="p-3">{service.price || "N/A"}</td>
+                          <td className="p-3">{service.tax || "N/A"}</td>
+                          <td className="p-3 font-semibold">
+                            {total.toFixed(2) || "N/A"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
+          )}
 
-            {formData.supplies?.services?.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold text-primary mb-4">
-                  Services
-                </h3>
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-primary/10">
-                      <tr>
-                        <th className="p-3 text-left text-primary">
-                          Product Name
-                        </th>
-                        <th className="p-3 text-left text-primary">
-                          Description
-                        </th>
-                        <th className="p-3 text-left text-primary">Quantity</th>
-                        <th className="p-3 text-left text-primary">Price</th>
-                        <th className="p-3 text-left text-primary">Tax (%)</th>
-                        <th className="p-3 text-left text-primary">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formData.supplies.services.map((service, index) => {
-                        // Calculate the total for each service
-                        const quantity = parseFloat(service.quantity) || 0;
-                        const price = parseFloat(service.price) || 0;
-                        const tax = parseFloat(service.tax) || 0;
-                        const total = quantity * price * (1 + tax / 100);
-
-                        return (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="p-3">
-                              {service.productName || "N/A"}
-                            </td>
-                            <td className="p-3">
-                              {service.productDescription || "N/A"}
-                            </td>
-                            <td className="p-3">{service.quantity || "N/A"}</td>
-                            <td className="p-3">{service.price || "N/A"}</td>
-                            <td className="p-3">{service.tax || "N/A"}</td>
-                            <td className="p-3 font-semibold">
-                              {total.toFixed(2) || "N/A"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {formData.supplies?.remarks && (
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold text-primary mb-4">
-                  Remarks
-                </h3>
-                <p>{formData.supplies.remarks}</p>
-              </div>
-            )}
-          </div>
+          {formData.supplies?.remarks && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">
+                Remarks
+              </h3>
+              <p>{formData.supplies.remarks}</p>
+            </div>
+          )}
+        </div>
         );
 
       case "complinces":
@@ -370,53 +441,56 @@ const PreviewDetails = ({ formData, onSubmit, onBack }) => {
               Compliances Details
             </h2>
 
-            {formData.complinces &&
-            formData?.complinces?.complinces?  (
+            {formData.complinces && formData?.complinces?.complinces ? (
               <div className="space-y-4">
-                {Object.keys(formData?.complinces?.complinces)
-                  ?.length > 0 ? (
-                  Object.entries(
-                    formData?.complinces?.complinces
-                  )?.map(([questionId, compliance], index) => (
-                    <div
-                    key={questionId}
-                    className="p-4 bg-gray-100 rounded-lg"
-                  >
-                    <h3 className="text-lg font-semibold">
-                      {compliance.question}
-                    </h3>
-                    <p className="mt-2">{compliance.answer ? "Yes" : "No"}</p>
-                    {compliance.department && (
-                      <p className="mt-2 text-sm text-gray-600">
-                        <strong>Department:</strong> {compliance.department}
-                      </p>
-                    )}
-                    {compliance.deviation&& (
-                      <p className="mt-2 text-sm text-gray-600">
-                        <strong>Reason:</strong> {compliance.deviation.reason }
-                      </p>
-                    )}
-            
-                    {compliance?.deviation?.attachments?.length > 0 && (
-                      <div className="mt-2">
-                        <strong>Attachments:</strong>
-                        <ul className="list-disc pl-6">
-                          {compliance?.deviation?.attachments.map((attachment, i) => (
-                            <li key={i} className="text-blue-600">
-                              <a
-                                href={attachment}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Attachment {i + 1}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                {Object.keys(formData?.complinces?.complinces)?.length > 0 ? (
+                  Object.entries(formData?.complinces?.complinces)?.map(
+                    ([questionId, compliance], index) => (
+                      <div
+                        key={questionId}
+                        className="p-4 bg-gray-100 rounded-lg"
+                      >
+                        <h3 className="text-lg font-semibold">
+                          {compliance.question}
+                        </h3>
+                        <p className="mt-2">
+                          {compliance.answer ? "Yes" : "No"}
+                        </p>
+                        {compliance.department && (
+                          <p className="mt-2 text-sm text-gray-600">
+                            <strong>Department:</strong> {compliance.department}
+                          </p>
+                        )}
+                        {compliance.deviation && (
+                          <p className="mt-2 text-sm text-gray-600">
+                            <strong>Reason:</strong>{" "}
+                            {compliance.deviation.reason}
+                          </p>
+                        )}
+
+                        {compliance?.deviation?.attachments?.length > 0 && (
+                          <div className="mt-2">
+                            <strong>Attachments:</strong>
+                            <ul className="list-disc pl-6">
+                              {compliance?.deviation?.attachments.map(
+                                (attachment, i) => (
+                                  <li key={i} className="text-blue-600">
+                                    <a
+                                      href={attachment}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Attachment {i + 1}
+                                    </a>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  ))
+                    )
+                  )
                 ) : (
                   <div className="text-gray-500">
                     No compliance details available
