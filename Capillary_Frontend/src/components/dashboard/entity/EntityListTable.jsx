@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Edit, Trash2, Search, Download, Plus, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { deleteEntity, getAllEntityData } from "../../../api/service/adminServices";
+import {
+  deleteEntity,
+  getAllEntityData,
+} from "../../../api/service/adminServices";
 import Pagination from "./Pagination";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
 const EntityListTable = () => {
   const navigate = useNavigate();
-  
+
   // State management
   const [selectedEntities, setSelectedEntities] = useState([]);
   const [entity, setEntity] = useState([]);
@@ -24,6 +27,7 @@ const EntityListTable = () => {
   useEffect(() => {
     const fetchAllEntity = async () => {
       const response = await getAllEntityData();
+      console.log(response);
       if (response.status === 200) {
         setEntity(response.data.entities);
         setFilteredEntities(response.data.entities);
@@ -65,7 +69,9 @@ const EntityListTable = () => {
       const response = await deleteEntity(id);
       if (response.status === 200) {
         setEntity(entity?.filter((entity) => entity?._id !== id));
-        setFilteredEntities(filteredEntities?.filter((entity) => entity?._id !== id));
+        setFilteredEntities(
+          filteredEntities?.filter((entity) => entity?._id !== id)
+        );
       }
     } catch (err) {
       console.log("Error in delete entity", err);
@@ -75,17 +81,18 @@ const EntityListTable = () => {
   // Excel export handler
   const handleExport = () => {
     const workbook = XLSX.utils.book_new();
-    const filteredData = filteredEntities.map(item => ({
-      'Entity Name': item.entityName,
-      'Currency': item.currency,
-      'Address': item.addressLine,
-      'Type': item.type,
-      'Tax ID': item.taxId,
-      'Invoice Mail': item.invoiceMailId,
-      'PO Mail': item.poMailId,
-      'Status': item.status
+    const filteredData = filteredEntities.map((item) => ({
+      "Entity Name": item.entityName,
+      Currency: item.currency,
+      Address: item.addressLine,
+      Type: item.type,
+      "Tax ID": item.taxId,
+      "Invoice Mail": item.invoiceMailId,
+      "PO Mail": item.poMailId,
+      Status: item.status,
+      PoSVOK: item.PoSVOK,
     }));
-    
+
     const worksheet = XLSX.utils.json_to_sheet(filteredData);
     XLSX.utils.book_append_sheet(workbook, worksheet, "Entities");
     XLSX.writeFile(workbook, "entity_list.xlsx");
@@ -98,8 +105,8 @@ const EntityListTable = () => {
   const currentEntities = filteredEntities.slice(startIndex, endIndex);
 
   // Get unique types and statuses for filters
-  const types = [...new Set(entity.map(item => item.type))];
-  const statuses = [...new Set(entity.map(item => item.status))];
+  const types = [...new Set(entity.map((item) => item.type))];
+  const statuses = [...new Set(entity.map((item) => item.status))];
 
   return (
     <div className="p-8 bg-white rounded-lg shadow-sm h-full">
@@ -170,7 +177,7 @@ const EntityListTable = () => {
               )}
             </div>
 
-            <button 
+            <button
               onClick={handleExport}
               className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
@@ -221,6 +228,9 @@ const EntityListTable = () => {
                       Po MailId
                     </th>
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                      Po SVOK
+                    </th>
+                    <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                       Status
                     </th>
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -256,6 +266,9 @@ const EntityListTable = () => {
                         {entities.poMailId}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
+                        {entities.PoSVOK}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
                         {entities.status}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
@@ -263,7 +276,9 @@ const EntityListTable = () => {
                           <button
                             className="text-primary hover:text-primary/80"
                             onClick={() =>
-                              navigate(`/entity-list-table/edit-entities/${entities._id}`)
+                              navigate(
+                                `/entity-list-table/edit-entities/${entities._id}`
+                              )
                             }
                           >
                             <Edit className="h-5 w-5" />

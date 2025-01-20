@@ -285,7 +285,7 @@ const Supplies = ({
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition duration-300 shadow-md hover:shadow-lg"
           >
             <PlusCircle className="w-5 h-5" />
-            Add Service
+            Add Product/Service
           </button>
         </div>
 

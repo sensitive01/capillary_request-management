@@ -268,7 +268,7 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
                       {existingAnswer !== question.expectedAnswer && (
                         <div className="mt-4 bg-red-50 rounded-lg p-4 space-y-4">
                           <textarea
-                            placeholder="Please explain your deviation..."
+                            placeholder="Kindly Justify..."
                             value={existingDeviation?.reason || ""}
                             onChange={(e) =>
                               handleDeviationChange(
@@ -339,7 +339,7 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
             }`}
           >
             {hasDeviations
-              ? "Please justify all deviations"
+              ? "Please provide your input"
               : "All answers are compliant"}
           </p>
         </div>
@@ -347,16 +347,17 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
         <div className="flex justify-between pt-4">
           <button
             onClick={onBack}
-            className="px-6 py-3 bg-gray-100 text-gray-800 font-medium rounded-lg flex items-center gap-2 hover:bg-gray-200"
+            className="px-4 py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primary transition duration-300 ease-in-out flex items-center gap-2"
           >
             <ArrowLeft size={20} />
-            Back
+            Back to edit
           </button>
+
           <button
             onClick={onNext}
             className="px-6 py-3 bg-primary text-white font-medium rounded-lg flex items-center gap-2 hover:bg-primary/90"
           >
-            Next
+            Preview
             <ArrowRight size={20} />
           </button>
         </div>

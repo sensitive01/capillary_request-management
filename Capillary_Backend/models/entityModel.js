@@ -12,6 +12,8 @@ const entitySchema = new mongoose.Schema(
     taxId: { type: String },
     type: { type: String },
     latitude: { type: String },
+
+    PoSVOK:{ type: String },
    
     attachments: { type: [String] },
     status: { type: String, default: "Active" }

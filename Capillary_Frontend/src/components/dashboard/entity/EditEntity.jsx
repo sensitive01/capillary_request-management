@@ -7,7 +7,6 @@ import Select from "react-select";
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import {
- 
   getEntityData,
   updateEntityData,
 } from "../../../api/service/adminServices";
@@ -45,6 +44,7 @@ function EditEntity() {
       taxId: "",
       invoiceMailId: "",
       poMailId: "",
+      PoSVOK: "",
     },
     validationSchema: Yup.object({
       entityName: Yup.string().required("Entity name is required"),
@@ -62,8 +62,8 @@ function EditEntity() {
     onSubmit: async (values) => {
       console.log("Form Values:", values);
       try {
-        const response = await updateEntityData(params.id,values);
-        console.log(response)
+        const response = await updateEntityData(params.id, values);
+        console.log(response);
         if (response.status === 200) {
           toast.success(response.data.message);
           setTimeout(() => {
@@ -80,28 +80,29 @@ function EditEntity() {
   });
 
   const handleCurrencyChange = (selectedOption) => {
- 
-    formik.setFieldValue("currency", selectedOption ? selectedOption.value : "");
+    formik.setFieldValue(
+      "currency",
+      selectedOption ? selectedOption.value : ""
+    );
   };
-
 
   useEffect(() => {
     const fetchEntity = async () => {
       try {
         const response = await getEntityData(params.id);
-        
+
         if (response.status === 200) {
           const entityData = response.data;
 
-        
           formik.setValues({
             entityName: entityData.entityName || "",
-            currency: entityData.currency || "", 
+            currency: entityData.currency || "",
             addressLine: entityData.addressLine || "",
             type: entityData.type || "",
             taxId: entityData.taxId || "",
             invoiceMailId: entityData.invoiceMailId || "",
             poMailId: entityData.poMailId || "",
+            PoSVOK: entityData.PoSVOK||""
           });
         } else {
           toast.error("Failed to load entity data");
@@ -115,14 +116,12 @@ function EditEntity() {
     fetchEntity();
   }, [params.id]);
 
-
   useEffect(() => {
     if (currencies.length > 0 && formik.values.currency) {
       const selectedCurrency = currencies.find(
         (currency) => currency.value === formik.values.currency
       );
       if (selectedCurrency) {
-    
         formik.setFieldValue("currency", selectedCurrency.value);
       }
     }
@@ -279,6 +278,23 @@ function EditEntity() {
               <div className="text-red-500 text-sm">
                 {formik.errors.poMailId}
               </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-gray-700">
+              Po - SVOK <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="PoSVOK"
+              value={formik.values.PoSVOK}
+              onChange={formik.handleChange}
+              className={`mt-1 w-full p-2 border rounded ${
+                formik.errors.PoSVOK ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {formik.errors.PoSVOK && (
+              <div className="text-red-500 text-sm">{formik.errors.PoSVOK}</div>
             )}
           </div>
         </div>

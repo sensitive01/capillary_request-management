@@ -43,6 +43,7 @@ function AddEntity() {
       taxId: "",
       invoiceMailId: "",
       poMailId: "",
+      PoSVOK:""
     },
     validationSchema: Yup.object({
       entityName: Yup.string().required("Entity name is required"),
@@ -211,6 +212,25 @@ function AddEntity() {
             {formik.errors.poMailId && (
               <div className="text-red-500 text-sm">
                 {formik.errors.poMailId}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-gray-700">
+            Po - SVOK <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="PoSVOK"
+              value={formik.values.PoSVOK}
+              onChange={formik.handleChange}
+              className={`mt-1 w-full p-2 border rounded ${
+                formik.errors.PoSVOK ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {formik.errors.PoSVOK && (
+              <div className="text-red-500 text-sm">
+                {formik.errors.PoSVOK}
               </div>
             )}
           </div>
