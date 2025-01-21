@@ -228,7 +228,7 @@ const EntityListTable = () => {
                       Po MailId
                     </th>
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                      Po SVOK
+                      SPOC (Single Point of Contact)
                     </th>
                     <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                       Status

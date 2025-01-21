@@ -17,6 +17,15 @@ import {
 import Pagination from "./Pagination";
 import * as XLSX from 'xlsx';
 
+const currencies = [
+  { code: "USD", symbol: "$", locale: "en-US" },
+  { code: "EUR", symbol: "€", locale: "de-DE" },
+  { code: "GBP", symbol: "£", locale: "en-GB" },
+  { code: "JPY", symbol: "¥", locale: "ja-JP" },
+  { code: "CAD", symbol: "C$", locale: "en-CA" },
+  { code: "INR", symbol: "₹", locale: "en-IN" },
+];
+
 const ReqListTable = () => {
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
@@ -39,7 +48,9 @@ const ReqListTable = () => {
           response = await getAdminReqListEmployee();
         } else {
           response = await getReqListEmployee(userId);
+          
         }
+        console.log("Response",response)
         if (response && response.data) {
           setUsers(response.data.data);
           setFilteredUsers(response.data.data);
@@ -77,6 +88,24 @@ const ReqListTable = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedDepartment, users]);
 
+  const formatCurrency = (value, currencyCode) => {
+    if (!value) return 'N/A';
+    const currency = currencies.find(c => c.code === currencyCode);
+    if (!currency) return value;
+    
+    try {
+      return new Intl.NumberFormat(currency.locale, {
+        style: 'currency',
+        currency: currency.code,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (error) {
+      console.error('Currency formatting error:', error);
+      return value;
+    }
+  };
+
   const departments = [...new Set(users.map(user => user.commercials?.department).filter(Boolean))];
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -99,7 +128,7 @@ const ReqListTable = () => {
       'Entity': user.commercials?.entity,
       'Site': user.commercials?.site,
       'Vendor': user.procurements?.vendor,
-      'Amount': user.supplies?.totalValue,
+      'Amount': formatCurrency(user.supplies?.totalValue, user.supplies?.selectedCurrency),
       'Requestor': user.requestor || 'Employee',
       'Department': user.commercials?.department,
       'Status': user.status || 'Pending'
@@ -288,7 +317,7 @@ const ReqListTable = () => {
                           {user.procurements?.vendor}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.supplies?.totalValue}
+                        {formatCurrency(user.supplies?.totalValue, user.supplies?.selectedCurrency)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.requestor || "Employee"}

@@ -282,7 +282,7 @@ function EditEntity() {
           </div>
           <div>
             <label className="block text-gray-700">
-              Po - SVOK <span className="text-red-500">*</span>
+            SPOC (Single Point of Contact) <span className="text-red-500">*</span>
             </label>
             <input
               type="text"

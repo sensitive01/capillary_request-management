@@ -16,13 +16,18 @@ const validationSchema = Yup.object().shape({
         .typeError("Price must be a number")
         .required("Price is required")
         .min(0, "Price cannot be negative"),
-      
     })
   ),
 });
 
-
-
+const currencies = [
+  { code: "USD", symbol: "$", locale: "en-US" },
+  { code: "EUR", symbol: "€", locale: "de-DE" },
+  { code: "GBP", symbol: "£", locale: "en-GB" },
+  { code: "JPY", symbol: "¥", locale: "ja-JP" },
+  { code: "CAD", symbol: "C$", locale: "en-CA" },
+  { code: "INR", symbol: "₹", locale: "en-IN" },
+];
 
 const Supplies = ({
   formData,
@@ -34,25 +39,26 @@ const Supplies = ({
 }) => {
   const initialService = { productName: "", productDescription: "", quantity: "", price: "", tax: "" };
   const [services, setServices] = useState(formData.services || [initialService]);
-
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
 
-  const currencies = [
-    { code: "USD", symbol: "$" },
-    { code: "EUR", symbol: "€" },
-    { code: "GBP", symbol: "£" },
-    { code: "JPY", symbol: "¥" },
-    { code: "CAD", symbol: "C$" },
-    { code: "INR", symbol: "₹" },
-  ];
-
   const formatCurrency = (value) => {
     const currency = currencies.find(c => c.code === selectedCurrency);
-    return `${currency.symbol}${value.toFixed(2)}`;
+    return new Intl.NumberFormat(currency.locale, {
+      style: 'currency',
+      currency: currency.code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
   };
 
-  
+  const formatNumber = (value) => {
+    const currency = currencies.find(c => c.code === selectedCurrency);
+    return new Intl.NumberFormat(currency.locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
 
   const handleServiceChange = (e, index) => {
     const { name, value } = e.target;
@@ -72,19 +78,15 @@ const Supplies = ({
     }
   };
 
-  // Calculate row total (quantity * price * (1 + tax))
   const calculateRowTotal = (service) => {
     const quantity = parseFloat(service.quantity || 0);
     const price = parseFloat(service.price || 0);
     const tax = parseFloat(service.tax || 0);
-
-    return quantity * price * (1 + tax / 100); // Tax is percentage
+    return Number((quantity * price * (1 + tax / 100)).toFixed(2));
   };
 
-  // Calculate total value (sum of all row totals)
   const totalValue = services.reduce((acc, service) => acc + calculateRowTotal(service), 0);
 
-  // Handle form submission
   const handleSubmit = async () => {
     const submissionData = {
       ...formData,
@@ -95,30 +97,23 @@ const Supplies = ({
   
     try {
       await validationSchema.validate({ services }, { abortEarly: false });
-  
-      // If validation passes
       setFormData((prevFormData) => ({
         ...prevFormData,
         ...submissionData,
       }));
-  
       setIsSubmitted(true);
-  
       if (onSubmit) {
         onSubmit(submissionData);
       }
-  
       onNext();
     } catch (err) {
       if (err.inner) {
         const errorMessages = err.inner.map((e) => e.message).join("\n");
-        toast.error(errorMessages)
-        return
-        
+        toast.error(errorMessages);
+        return;
       }
     }
   };
-  
 
   return (
     <div className="mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
@@ -129,7 +124,7 @@ const Supplies = ({
       </div>
 
       <div className="p-8 space-y-6">
-      <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 border-b-2 border-gray-200">
@@ -155,7 +150,6 @@ const Supplies = ({
                   Row Total
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  
                 </th>
               </tr>
             </thead>
@@ -229,8 +223,8 @@ const Supplies = ({
                   </td>
                   <td className="px-3 py-4 w-52">
                     <input
-                      type="number"
-                      value={calculateRowTotal(service).toFixed(2)}
+                      type="text"
+                      value={formatCurrency(calculateRowTotal(service))}
                       readOnly
                       className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                       placeholder="Row Total"
