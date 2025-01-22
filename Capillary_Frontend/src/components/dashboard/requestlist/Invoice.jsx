@@ -2,8 +2,11 @@ import { format } from "date-fns";
 import capilary_logo from "../../../assets/images/Logo_Picture.png";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { downloadInvoicePdf, generatePo } from "../../../api/service/adminServices";
-
+import {
+  downloadInvoicePdf,
+  generatePo,
+} from "../../../api/service/adminServices";
+import { extractDateTime } from "../../../utils/extractDateTime";
 
 const Invoice = ({ formData, onSubmit }) => {
   const { id } = useParams();
@@ -20,6 +23,7 @@ const Invoice = ({ formData, onSubmit }) => {
   useEffect(() => {
     const fetchInvoice = async () => {
       const response = await generatePo(id);
+      console.log(response);
       if (response.status === 200) {
         setInvoiceData(response.data.reqData);
       }
@@ -66,14 +70,13 @@ const Invoice = ({ formData, onSubmit }) => {
   const handleDownloadPDF = async () => {
     if (isGeneratingPDF) return;
     setIsGeneratingPDF(true);
-    
+
     try {
       const result = await downloadInvoicePdf(invoiceData._id);
-      console.log(result)
-   
+      console.log(result);
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Error downloading PDF. Please try again.');
+      console.error("Error downloading PDF:", error);
+      alert("Error downloading PDF. Please try again.");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -161,13 +164,24 @@ const Invoice = ({ formData, onSubmit }) => {
         <div className="text-right">
           <h1 className="text-2xl font-bold">Purchase Order Request</h1>
           <span className="font-medium block">
-            Invoice No. {`#${invoiceData?.reqid}`}
+            Request ID. {`#${invoiceData?.reqid}`}
           </span>
           <p className="text-sm mt-2">
-            Issued on {format(invoice.date, "MMMM d, yyyy")}
+            {
+              // Format the date and time
+              (() => {
+                const formattedDate = new Date(
+                  invoiceData?.createdAt
+                ).toLocaleDateString();
+                const formattedTime = new Date(
+                  invoiceData?.createdAt
+                ).toLocaleTimeString();
+                return `Requested on ${formattedDate} at ${formattedTime}`;
+              })()
+            }
           </p>
           <p className="text-sm">
-            Due Date: {format(invoice.dueDate, "MMMM d, yyyy")}
+            Approved on: {invoiceData?.approvedOn||"Not Available"}
           </p>
         </div>
       </header>

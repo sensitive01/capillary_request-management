@@ -23,18 +23,21 @@ exports.getAllEntities = async (req, res) => {
     const uniqueDepartments = await Employee.aggregate([
       {
         $group: {
-          _id: "$department",
-          hod: { $first: "$hod" },
+          _id: "$department", 
+          hod: { $first: "$hod" }, 
+          hod_email_id: { $first: "$hod_email_id" }
         },
       },
       {
         $project: {
-          _id: { $toString: "$_id" }, // Convert ObjectId to string if you want to have it like '67758f1cd7165c8f343de8bf'
-          department: "$_id",
-          hod: 1,
+          _id: 0, 
+          department: "$_id", 
+          hod: 1, 
+          hod_email_id: 1, 
         },
       },
     ]);
+    
 
     console.log("Unique Departments", uniqueDepartments);
     res.status(200).json({ entities: entities, department: uniqueDepartments });

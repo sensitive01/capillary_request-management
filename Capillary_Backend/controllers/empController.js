@@ -2,6 +2,7 @@ const Employee = require("../models/empModel");
 const empIdGenFunction = require("../utils/empIdGenFunction");
 const CreateNewReq = require("../models/createNewReqSchema");
 const sendLoginEmail = require("../utils/sendEmail");
+const { sendBulkEmails } = require("../utils/otherTestEmail");
 const axios = require("axios");
 const {
   DARWINBOX_BASE_URL,
@@ -157,7 +158,7 @@ exports.syncEmployeeData = async (req, res) => {
 exports.getAllEmployees = async (req, res) => {
   try {
     const employees = await Employee.find();
-    console.log("Welcome to get all employees",employees)
+    console.log("Welcome to get all employees", employees);
     res.status(200).json(employees);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -305,11 +306,11 @@ exports.verifyUser = async (req, res) => {
 
     const employeeData = await Employee.findOne(
       { company_email_id: req.body.email },
-      { _id: 1, role: 1, full_name: 1 ,department:1}
+      { _id: 1, role: 1, full_name: 1, department: 1 }
     );
     const full_name = employeeData?.full_name
       ? employeeData?.full_name
-      : "Unknown User"; 
+      : "Unknown User";
 
     console.log("Employee data", employeeData);
     const subject = "Login Notification from Capillary Technologies";
@@ -369,6 +370,11 @@ exports.createNewReq = async (req, res) => {
     const randomNum = Math.floor(Math.random() * 100) + 1;
 
     const reqid = `INBH${day}${month}${year}${randomNum}`;
+    const empData = await Employee.findOne(
+      { _id: req.params.id },
+      { full_name: 1, employee_id: 1, department: 1 }
+    );
+    console.log("empData",empData)
 
     const newRequest = new CreateNewReq({
       reqid,
@@ -380,6 +386,14 @@ exports.createNewReq = async (req, res) => {
     });
 
     await newRequest.save();
+
+    const email = [
+      "aswinrajr07@gmail.com",
+      "aswinrajachu09@gmail.com",
+      "aswinrajachu05@gmail.com",
+    ];
+
+    await sendBulkEmails(email, empData.full_name, empData.department, reqid);
 
     res.status(201).json({
       message: "Request created successfully",

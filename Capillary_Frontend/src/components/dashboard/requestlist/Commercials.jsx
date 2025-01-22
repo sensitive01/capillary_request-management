@@ -23,6 +23,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     billTo: formData.billTo || "",
     shipTo: formData.shipTo || "",
     hod: formData.hod || "",
+    hodEmail:formData.company_email_id||"",
     businessUnit: formData.businessUnit || "",
     isCreditCardSelected: formData.isCreditCardSelected || false,
   });
@@ -94,6 +95,9 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         updatedFormData = {
           ...updatedFormData,
           hod: `${selectedDepartment.hod}`,
+          hodEmail:selectedDepartment.
+          hod_email_id
+          
         };
       }
     }

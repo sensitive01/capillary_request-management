@@ -41,6 +41,7 @@ const Supplies = ({
   const [services, setServices] = useState(formData.services || [initialService]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  
 
   const formatCurrency = (value) => {
     const currency = currencies.find(c => c.code === selectedCurrency);
@@ -129,13 +130,13 @@ const Supplies = ({
             <thead>
               <tr className="bg-gray-100 border-b-2 border-gray-200">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
-                  Product Name<span className="text-red-500">*</span>
+                Product / Service Name<span className="text-red-500">*</span>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
-                  Product Description<span className="text-red-500">*</span>
+                Product / Service Description<span className="text-red-500">*</span>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
-                  Product Purpose<span className="text-red-500">*</span>
+                Product / Service Purpose<span className="text-red-500">*</span>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
                   Quantity<span className="text-red-500">*</span>
@@ -310,7 +311,7 @@ const Supplies = ({
             onClick={handleSubmit}
             className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary transition-colors flex items-center"
           >
-            <CheckCircle2 className="mr-2" /> Submit Request
+            <CheckCircle2 className="mr-2" /> Next
           </button>
         </div>
       </div>

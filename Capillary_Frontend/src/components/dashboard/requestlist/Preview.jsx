@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Save,
   FileIcon,
+  User,
 } from "lucide-react";
 
 const currencies = [
@@ -20,6 +21,7 @@ const currencies = [
 ];
 
 const Preview = ({ formData, onSubmit, onBack }) => {
+  const [showDialog, setShowDialog] = useState(false);
   const formatCurrency = (value) => {
     const currency = currencies.find(
       (c) => c.code === formData.supplies.selectedCurrency
@@ -474,25 +476,82 @@ const Preview = ({ formData, onSubmit, onBack }) => {
             <div className="text-gray-500">No compliance data available</div>
           )}
         </div>
+
+        <div className="p-6 border rounded-lg shadow-sm bg-gray-50">
+          <div className="flex items-center gap-3 mb-6">
+            <User className="w-8 h-8 text-blue-600" />
+            <h3 className="font-semibold text-2xl">Approver</h3>
+          </div>
+
+          <div className="flex items-center gap-8 p-4">
+            <div>
+              <div className="text-gray-600 text-sm">Department</div>
+              <div className="font-medium">
+                {formData.commercials.department}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-gray-600 text-sm">Head of Department</div>
+              <div className="font-medium">
+                {formData.commercials.hod || "No HOD found"}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-gray-600 text-sm">HOD Email</div>
+              <div className="font-medium">
+                {formData?.commercials?.hodEmail || "No email found"}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Footer Actions */}
       <div className="p-6 flex justify-between items-center border-t mt-8">
         <button
           onClick={onBack}
-          className="flex items-center text-gray-600 hover:text-primary transition-colors duration-300 px-4 py-2 rounded-md hover:bg-gray-100"
+          className="px-4 py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primary transition duration-300 ease-in-out flex items-center gap-2"
         >
           <ArrowLeft className="mr-2" size={20} />
           Back
         </button>
         <button
-          onClick={onSubmit}
+          onClick={() => setShowDialog(true)}
           className="flex items-center bg-primary text-white px-6 py-2 rounded-md hover:bg-primary-dark transition-colors duration-300"
         >
           <Save className="mr-2" size={20} />
           Submit
         </button>
       </div>
+      {showDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h3 className="text-xl font-semibold mb-4">Confirm Submission</h3>
+            <p className="mb-6">Are you sure you want to submit this form?</p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowDialog(false)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onSubmit();
+
+                  setShowDialog(false);
+                }}
+                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary"
+              >
+                 Submit Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

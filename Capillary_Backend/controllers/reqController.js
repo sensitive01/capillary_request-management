@@ -4,6 +4,8 @@ const reqModel = require("../models/reqModel");
 const { createNewReq } = require("./empController");
 const PDFDocument = require("pdfkit");
 
+const { sendIndividualEmail } = require("../utils/otherTestEmail");
+
 const addReqForm = async (req, res) => {
   try {
     console.log("Welcome to add req", req.body);
@@ -592,12 +594,17 @@ const approveRequest = async (req, res) => {
     // Fetch the request data
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { approvals: 1 }
+      { approvals: 1, userId: 1 }
     );
+    console.log("----->",reqData)
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
     }
+    const empData = await empModel.findOne(
+      { _id: reqData.userId },
+      { full_name: 1, deparment: 1,company_email_id:1 }
+    );
 
     const approvals = reqData.approvals || [];
 
@@ -676,9 +683,10 @@ const approveRequest = async (req, res) => {
       status: status,
       approverName: approverData.name,
       approvalId: approverData.employee_id,
-      approvalDate: new Date(),
+      approvalDate: new Date(), // Current date and time
       remarks: remarks || "",
-      nextDepartment: status === "Approved" ? nextDepartment : null, // Only set next department if approved
+      nextDepartment: status === "Approved" ? nextDepartment : null,
+    
     };
 
     // Update request status
@@ -712,10 +720,30 @@ const approveRequest = async (req, res) => {
         {
           $set: {
             status: "Approved",
+            approvedOn: new Date(),
           },
         }
       );
     }
+
+    await sendIndividualEmail(
+      "EMPLOYEE",
+      empData.company_email_id,
+      empData.full_name,
+      empData.department,
+      reqId,
+      approvalRecord
+    );
+
+    await sendIndividualEmail(
+      'AUTHORITY',
+      "aswinrajr07@gmail.com",
+      empData.full_name,
+      empData.department,
+      reqId,
+      approvalRecord,
+      
+    );
 
     // Send success response with detailed message
     const message =

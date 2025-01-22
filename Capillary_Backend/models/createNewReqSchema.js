@@ -32,7 +32,7 @@ const commercialsSchema = new mongoose.Schema({
   paymentTerms: { type: [paymentTermSchema] },
   shipTo: { type: String },
   site: { type: String },
-  amount: { type: String },
+  hodEmail: { type: String },
 });
 
 const procurementsSchema = new mongoose.Schema({
@@ -103,6 +103,7 @@ const createnewReqSchema = new mongoose.Schema(
     commentLogs: [commentSchema],
     complinces: { type: [complianceItemSchema] }, // Array of compliance items
     approvals: { type: [approvalSchema], default: [] },
+    approvedOn: { type: Date },
   },
   { timestamps: true }
 );
