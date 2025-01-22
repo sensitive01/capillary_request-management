@@ -1,5 +1,23 @@
 import { adminServices } from "../axiosInstance/adminService";
 
+
+
+
+
+
+export const getStatisticData = async (empId,role) => {
+  try {
+    const response = await adminServices.get(`/request/get-statistic-data/${empId}/${role}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+
+
 // ............................VENDOR SIDE..........................................................
 
 export const getNewVendorId = async () => {

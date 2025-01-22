@@ -1,5 +1,5 @@
-const Entity = require("../models/entityModel"); 
-const Employee = require("../models/empModel")
+const Entity = require("../models/entityModel");
+const Employee = require("../models/empModel");
 
 // Create a new entity
 exports.createEntity = async (req, res) => {
@@ -19,8 +19,25 @@ exports.createEntity = async (req, res) => {
 exports.getAllEntities = async (req, res) => {
   try {
     const entities = await Entity.find();
-    const department = await Employee.find({},{department:1,hod:1})
-    res.status(200).json({entities:entities,department:department});
+
+    const uniqueDepartments = await Employee.aggregate([
+      {
+        $group: {
+          _id: "$department",
+          hod: { $first: "$hod" },
+        },
+      },
+      {
+        $project: {
+          _id: { $toString: "$_id" }, // Convert ObjectId to string if you want to have it like '67758f1cd7165c8f343de8bf'
+          department: "$_id",
+          hod: 1,
+        },
+      },
+    ]);
+
+    console.log("Unique Departments", uniqueDepartments);
+    res.status(200).json({ entities: entities, department: uniqueDepartments });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -772,25 +772,143 @@ const getNewNotifications = async (req, res) => {
         (app) => app.approvalId === employeeId
       );
       if (approval) {
-        if (approval.status === "approved") {
+        if (approval.status === "Approved") {
           approvedRequests++;
-        } else  {
-          pendingRequests++;
         }
+      } else {
+        pendingRequests++;
       }
     });
-    
 
     // Respond with counts
     res.status(200).json({
       totalRequests,
-      approvedRequests, 
-      pendingRequests, 
+      approvedRequests,
+      pendingRequests,
       reqData,
     });
   } catch (err) {
     console.error("Error in fetching new notifications:", err);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const getStatisticData = async (req, res) => {
+  try {
+    const { empId, role } = req.params;
+    console.log("Welcome to statistics data", empId, role);
+
+    const empData = await empModel.findOne(
+      { _id: empId },
+      { department: 1, role: 1, employee_id: 1, full_name: 1, _id: 1 }
+    );
+    console.log("Employee data", empData);
+
+    if (!empData) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    let myRequests = 0;
+    let myApprovals = 0;
+    let pendingApprovals = 0;
+    let completedApprovals = 0;
+    let departmentBudget = 0;
+    let pendingRequest = 0;
+
+    let adminAllTotalRequests = 0;
+    let adminAllpendingRequests = 0;
+    let adminAllcompletedRequests = 0;
+    let adminAlltotalFunds = 0;
+
+    const reqData = await CreateNewReq.find();
+    if (role == "Admin") {
+      adminAllTotalRequests = reqData.length;
+
+      adminAllpendingRequests = reqData.filter(
+        (req) => req.status === "Pending"
+      ).length;
+
+      adminAllcompletedRequests = reqData.filter(
+        (req) => req.status === "Approved"
+      ).length;
+
+      adminAlltotalFunds = reqData.reduce((sum, req) => {
+        if (req.supplies && req.supplies.totalValue) {
+          return sum + req.supplies.totalValue;
+        }
+        return sum;
+      }, 0);
+      adminAlltotalFunds = Math.round(adminAlltotalFunds * 100) / 100;
+    } else if (role === "Business Finance" || role === "HOF") {
+      let myrequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myrequestData.length;
+
+      const reqDataStatics = await CreateNewReq.find({
+        $or: [
+          { "approvals.approvalId": empData.employee_id },
+          { "approvals.approvalId": { $ne: empData.employee_id } },
+        ],
+      });
+      console.log("request statics", reqDataStatics);
+      myApprovals = reqDataStatics.length;
+      reqDataStatics.forEach((request) => {
+        const approval = request.approvals.find(
+          (app) => app.approvalId === empData.employee_id
+        );
+        if (approval) {
+          if (approval.status === "Approved") {
+            completedApprovals++;
+          }
+        } else {
+          pendingApprovals++;
+          console.log(pendingApprovals);
+        }
+      });
+
+      departmentBudget = reqData.reduce((sum, req) => {
+        if (req.supplies && req.supplies.totalValue) {
+          return sum + req.supplies.totalValue;
+        }
+        return sum;
+      }, 0);
+      departmentBudget = Math.round(departmentBudget * 100) / 100;
+
+      const pendingRequestData = reqData.filter(
+        (req) => req.status === "Pending"
+      );
+      pendingRequest = pendingRequestData.length;
+    } else if (role === "Employee") {
+      let myrequestDatas = reqData.filter((req) => req.userId === empId);
+      myRequests = myrequestDatas.length;
+
+      myrequestDatas.forEach((request) => {
+        if (request.status === "Approved") {
+          completedApprovals++;
+        } else {
+          pendingApprovals++;
+          console.log(pendingApprovals);
+        }
+      });
+    }
+
+    // Send the response
+    res.status(200).json({
+      role: empData.role,
+      adminAllTotalRequests,
+      adminAllpendingRequests,
+      adminAllcompletedRequests,
+      adminAlltotalFunds,
+
+      myRequests,
+      myApprovals,
+      completedApprovals,
+      pendingApprovals,
+      departmentBudget,
+      pendingRequest,
+    });
+  } catch (err) {
+    console.error("Error in getting the statistics", err);
+    res.status(500).json({ message: "Error in getting the statistics" });
   }
 };
 
@@ -1275,4 +1393,5 @@ module.exports = {
   generatePo,
   updateRequest,
   downloadInvoicePdf,
+  getStatisticData,
 };

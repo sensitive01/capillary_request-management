@@ -8,8 +8,13 @@ import {
   Filter,
   FileText,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { deleteReq, getApprovedReq } from "../../../api/service/adminServices";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  deleteReq,
+  getApprovedReq,
+  getReqListEmployee,
+  getAdminReqListEmployee,
+} from "../../../api/service/adminServices";
 
 const currencies = [
   { code: "USD", symbol: "$", locale: "en-US" },
@@ -20,7 +25,9 @@ const currencies = [
   { code: "INR", symbol: "₹", locale: "en-IN" },
 ];
 
-const Approvals = () => {
+const RequestStatistcsTable = () => {
+  const { action } = useParams();
+  console.log("Action", action);
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
   console.log(role);
@@ -28,42 +35,56 @@ const Approvals = () => {
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
 
+  let filterAction;
+  if (action === "Pending-Request") {
+    filterAction = "Pending";
+  } else if (action === "Approved-Request") {
+    filterAction = "Approved";
+  }
+
   useEffect(() => {
     const fetchReqTable = async () => {
       let response;
 
       if (role === "Admin") {
-        // response = await getAdminReqListEmployee();
-        // console.log(response);
-      } else {
-        response = await getApprovedReq(userId);
+        console.log("in admin");
+        response = await getAdminReqListEmployee();
         console.log(response);
-        if (response.status === 200) {
-          setUsers(response.data.reqData);
+        if (action === "Total-Request") {
+          setUsers(response.data.data);
+        } else {
+          const filteredData = response.data.data.filter(
+            (item) => item.status === filterAction
+          );
+          console.log("Filtered data", filteredData);
+          setUsers(filteredData);
+        }
+      } else {
+        if (role === "Employee") {
+          console.log("From employee");
+          response = await getReqListEmployee(userId);
+          if (response.status === 200) {
+            const filteredData = response.data.data.filter(
+              (item) => item.status === filterAction
+            );
+            console.log("Filtered data", filteredData);
+            setUsers(filteredData);
+          }
+        } else {
+          response = await getApprovedReq(userId);
+          if (response.status === 200) {
+            const filteredData = response.data.reqData.filter(
+              (item) => item.status === filterAction
+            );
+            console.log("Filtered data", filteredData);
+            setUsers(filteredData);
+          }
         }
       }
     };
 
     fetchReqTable();
   }, [userId, role]);
-
-  const formatCurrency = (value, currencyCode) => {
-    if (!value) return 'N/A';
-    const currency = currencies.find(c => c.code === currencyCode);
-    if (!currency) return value;
-    
-    try {
-      return new Intl.NumberFormat(currency.locale, {
-        style: 'currency',
-        currency: currency.code,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch (error) {
-      console.error('Currency formatting error:', error);
-      return value;
-    }
-  };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -78,13 +99,31 @@ const Approvals = () => {
       prev.includes(sno) ? prev.filter((id) => id !== sno) : [...prev, sno]
     );
   };
+
+  const formatCurrency = (value, currencyCode) => {
+    if (!value) return "N/A";
+    const currency = currencies.find((c) => c.code === currencyCode);
+    if (!currency) return value;
+
+    try {
+      return new Intl.NumberFormat(currency.locale, {
+        style: "currency",
+        currency: currency.code,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (error) {
+      console.error("Currency formatting error:", error);
+      return value;
+    }
+  };
   const handleEdit = async (e, userId) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     navigate(`/req-list-table/edit-req/${userId}`);
   };
 
   const handleDelete = async (e, id) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     try {
       const response = await deleteReq(id);
       if (response.status === 200) {
@@ -98,7 +137,7 @@ const Approvals = () => {
   return (
     <div className="p-8 bg-white rounded-lg shadow-sm h-full">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Request List</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{`${action} List`}</h2>
 
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="relative flex-1 min-w-[300px] max-w-md">
@@ -227,7 +266,6 @@ const Approvals = () => {
                           )
                         }
                       >
-                        
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {index + 1}
                         </td>
@@ -250,7 +288,10 @@ const Approvals = () => {
                           {user.procurements.vendor}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatCurrency(user.supplies?.totalValue, user.supplies?.selectedCurrency)}
+                          {formatCurrency(
+                            user.supplies?.totalValue,
+                            user.supplies?.selectedCurrency
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.requestor || "Employee"}
@@ -315,4 +356,4 @@ const Approvals = () => {
   );
 };
 
-export default Approvals;
+export default RequestStatistcsTable;

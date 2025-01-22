@@ -32,6 +32,7 @@ import EditRequestForm from "./components/dashboard/requestlist/edit/EditRequest
 import QuestionsDetails from "./components/questions/QuestionDetails";
 import VendorPreview from "./components/dashboard/vendor/VendorPreview";
 import PageNotFoundPage from "./components/404/PageNotFoundPage";
+import RequestStatistcsTable from "./components/dashboard/requestlist/RequestStatistcsTable";
 
 
 function App() {
@@ -52,6 +53,9 @@ function App() {
           <Route path="/req-list-table/invoice/:id" element={<Invoice/>} />
           <Route path="/req-list-table/preview-one-req/:id" element={<PreviewTheReq/>} />
           <Route path="/req-list-table/edit-req/:id" element={<EditRequestForm/>} />
+
+          <Route path="/approveal-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
+
 
 
           <Route path="/approveal-request-list" element={<Approvals/>} />

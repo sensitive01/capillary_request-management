@@ -6,39 +6,323 @@ import {
   CheckCircle2,
   Clock,
   FileText,
+  ClipboardList,
+  CheckSquare,
+  Building2,
+  Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getNewNotification } from "../api/service/adminServices";
+import { getStatisticData } from "../api/service/adminServices";
+
+const currencies = [
+  { code: "USD", symbol: "$", locale: "en-US" },
+  { code: "EUR", symbol: "€", locale: "de-DE" },
+  { code: "GBP", symbol: "£", locale: "en-GB" },
+  { code: "JPY", symbol: "¥", locale: "ja-JP" },
+  { code: "CAD", symbol: "C$", locale: "en-CA" },
+  { code: "INR", symbol: "₹", locale: "en-IN" },
+];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
-  const userId = localStorage.getItem("userId");
+  const empId = localStorage.getItem("userId");
   const department = localStorage.getItem("department");
 
-  const [totalSubmitted, setTotalSubmitted] = useState(0);
-  const [approvedRequests, setApprovedRequests] = useState(0);
-  const [pendingRequests, setPendingRequests] = useState(0);
+  const [dashboardStats, setDashboardStats] = useState({
+    adminAllTotalRequests: 0,
+    adminAllpendingRequests: 0,
+    adminAllcompletedRequests: 0,
+    adminAlltotalFunds: 0,
+
+    myRequests: 0,
+    myApprovals: 0,
+    pendingApprovals: 0,
+    completedApprovals: 0,
+    departmentBudget: 0,
+    pendingRequest: 0,
+  });
 
   useEffect(() => {
-    const fetchEmployeeStats = async () => {
+    const fetchDashboardStats = async () => {
       try {
-        const response = await getNewNotification(userId);
+        const response = await getStatisticData(empId, role);
         if (response.status === 200) {
-          setTotalSubmitted(response.data.totalRequests);
-          setApprovedRequests(response.data.approvedRequests);
-          setPendingRequests(response.data.pendingRequests);
+          setDashboardStats(response.data);
         }
       } catch (error) {
-        console.error("Failed to fetch employee statistics:", error);
+        console.error("Failed to fetch statistics:", error);
       }
     };
-    fetchEmployeeStats();
-  }, [userId]);
+    fetchDashboardStats();
+  }, [empId]);
+
+  const formatCurrency = (value, currencyCode) => {
+    if (!value) return "N/A";
+    const currency = currencies.find((c) => c.code === currencyCode);
+    if (!currency) return value;
+
+    try {
+      return new Intl.NumberFormat(currency.locale, {
+        style: "currency",
+        currency: currency.code,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (error) {
+      console.error("Currency formatting error:", error);
+      return value;
+    }
+  };
+
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    bgColor,
+    textColor,
+    onClick,
+  }) => (
+    <div
+      onClick={onClick}
+      className={`${bgColor} rounded-xl p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
+    >
+      <div className="flex items-center space-x-3 mb-3">
+        <Icon className={`w-8 h-8 ${textColor}`} />
+        <h4 className="font-semibold text-gray-900">{title}</h4>
+      </div>
+      <div>
+        <span className={`text-3xl font-bold ${textColor}`}>{value}</span>
+      </div>
+    </div>
+  );
+
+  const renderAdminCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <StatCard
+        title="Total Requests"
+        value={dashboardStats.adminAllTotalRequests}
+        icon={FileText}
+        bgColor="bg-blue-50 hover:bg-blue-100"
+        textColor="text-blue-600"
+        onClick={() =>
+          navigate(
+            "/approveal-request-list/show-request-statistcs/Total-Request"
+          )
+        }
+      />
+      <StatCard
+        title="Pending Requests"
+        value={dashboardStats.adminAllpendingRequests}
+        icon={Clock}
+        bgColor="bg-orange-50 hover:bg-orange-100"
+        textColor="text-orange-600"
+        onClick={() =>
+          navigate(
+            "/approveal-request-list/show-request-statistcs/Pending-Request"
+          )
+        }
+      />
+      <StatCard
+        title="Completed Requests"
+        value={dashboardStats.adminAllcompletedRequests}
+        icon={CheckCircle2}
+        bgColor="bg-green-50 hover:bg-green-100"
+        textColor="text-green-600"
+        onClick={() =>
+          navigate(
+            "/approveal-request-list/show-request-statistcs/Approved-Request"
+          )
+        }
+      />
+      <StatCard
+        title="Total Funds"
+        value={`₹${dashboardStats.adminAlltotalFunds}`}
+        icon={Wallet}
+        bgColor="bg-purple-50 hover:bg-purple-100"
+        textColor="text-purple-600"
+        onClick={() => navigate("/funds-statistics")}
+      />
+    </div>
+  );
+
+  const renderHODCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <StatCard
+        title="My Requests"
+        value={dashboardStats.myRequests}
+        icon={FileText}
+        bgColor="bg-blue-50 hover:bg-blue-100"
+        textColor="text-blue-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="My Approvals"
+        value={dashboardStats.myApprovals}
+        icon={CheckSquare}
+        bgColor="bg-green-50 hover:bg-green-100"
+        textColor="text-green-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Pending Requests"
+        value={dashboardStats.pendingRequests}
+        icon={Clock}
+        bgColor="bg-orange-50 hover:bg-orange-100"
+        textColor="text-orange-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Pending Approvals"
+        value={dashboardStats.pendingApprovals}
+        icon={ClipboardList}
+        bgColor="bg-yellow-50 hover:bg-yellow-100"
+        textColor="text-yellow-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Completed Requests"
+        value={dashboardStats.completedRequests}
+        icon={CheckCircle2}
+        bgColor="bg-teal-50 hover:bg-teal-100"
+        textColor="text-teal-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Completed Approvals"
+        value={dashboardStats.completedApprovals}
+        icon={CheckCircle2}
+        bgColor="bg-indigo-50 hover:bg-indigo-100"
+        textColor="text-indigo-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Department Budget"
+        value={`₹${dashboardStats.departmentBudget}`}
+        icon={Building2}
+        bgColor="bg-purple-50 hover:bg-purple-100"
+        textColor="text-purple-600"
+        onClick={() => navigate("#")}
+      />
+    </div>
+  );
+
+  const renderFinanceCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <StatCard
+        title="My Requests"
+        value={dashboardStats.myRequests}
+        icon={FileText}
+        bgColor="bg-blue-50 hover:bg-blue-100"
+        textColor="text-blue-600"
+        onClick={() => navigate("/req-list-table")}
+      />
+      <StatCard
+        title="My Approvals"
+        value={dashboardStats.myApprovals}
+        icon={CheckSquare}
+        bgColor="bg-green-50 hover:bg-green-100"
+        textColor="text-green-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Pending Requests"
+        value={dashboardStats.pendingRequest}
+        icon={Clock}
+        bgColor="bg-orange-50 hover:bg-orange-100"
+        textColor="text-orange-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Pending Approvals"
+        value={dashboardStats.pendingApprovals}
+        icon={ClipboardList}
+        bgColor="bg-yellow-50 hover:bg-yellow-100"
+        textColor="text-yellow-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Completed Requests"
+        value={dashboardStats.completedApprovals}
+        icon={CheckCircle2}
+        bgColor="bg-teal-50 hover:bg-teal-100"
+        textColor="text-teal-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Completed Approvals"
+        value={dashboardStats.completedApprovals}
+        icon={CheckCircle2}
+        bgColor="bg-indigo-50 hover:bg-indigo-100"
+        textColor="text-indigo-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="Total Funds"
+        value={`₹${formatCurrency(dashboardStats.departmentBudget)}`}
+        icon={Wallet}
+        bgColor="bg-purple-50 hover:bg-purple-100"
+        textColor="text-purple-600"
+        onClick={() => navigate("#")}
+      />
+    </div>
+  );
+
+  const renderEmployeeCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <StatCard
+        title="My Requests"
+        value={dashboardStats.myRequests}
+        icon={FileText}
+        bgColor="bg-blue-50 hover:bg-blue-100"
+        textColor="text-blue-600"
+        onClick={() => navigate("/req-list-table")}
+      />
+      <StatCard
+        title="Pending Requests"
+        value={dashboardStats.pendingApprovals}
+        icon={Clock}
+        bgColor="bg-orange-50 hover:bg-orange-100"
+        textColor="text-orange-600"
+        onClick={() =>
+          navigate(
+            "/approveal-request-list/show-request-statistcs/Pending-Request"
+          )
+        }
+      />
+      <StatCard
+        title="Completed Requests"
+        value={dashboardStats.completedApprovals}
+        icon={CheckCircle2}
+        bgColor="bg-green-50 hover:bg-green-100"
+        textColor="text-green-600"
+        onClick={() =>
+          navigate(
+            "/approveal-request-list/show-request-statistcs/Approved-Request"
+          )
+        }
+      />
+    </div>
+  );
+
+  const renderStatisticCards = () => {
+    switch (role?.toLowerCase()) {
+      case "admin":
+        return renderAdminCards();
+      case "hod department":
+        return renderHODCards();
+      case "finance":
+      case "business finance":
+        return renderFinanceCards();
+      default:
+        return renderEmployeeCards();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Profile Card */}
         <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
           <div className="bg-primary h-32" />
@@ -58,7 +342,7 @@ const Dashboard = () => {
                 )}
               </div>
               <div className="mt-4 sm:mt-0 sm:ml-6 flex-1">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
                   {user?.name || "User"}
                 </h2>
                 <div className="space-y-3">
@@ -87,67 +371,12 @@ const Dashboard = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid md:grid-cols-1 gap-6">
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <span className="inline-block w-2 h-6 bg-primary rounded-full mr-3"></span>
-              My Request Statistics
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Total Submitted */}
-              <div className="bg-blue-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <FileText className="w-8 h-8 text-blue-500" />
-                  <span className="text-3xl font-bold text-blue-600">
-                    {totalSubmitted}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">
-                    Total Submitted
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">All requests</p>
-                </div>
-              </div>
-
-              {/* Pending Requests */}
-              <div className="bg-orange-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <Clock className="w-8 h-8 text-orange-500" />
-                  <span className="text-3xl font-bold text-orange-600">
-                    {pendingRequests}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">
-                    Pending Requests
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Awaiting approval
-                  </p>
-                </div>
-              </div>
-
-              {/* Approved Requests */}
-              <div className="bg-green-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
-                  <span className="text-3xl font-bold text-green-600">
-                    {approvedRequests}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">
-                    Approved Requests
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Successfully processed
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+            <span className="inline-block w-2 h-6 bg-primary rounded-full mr-3"></span>
+            Dashboard Statistics
+          </h3>
+          {renderStatisticCards()}
         </div>
       </div>
     </div>
