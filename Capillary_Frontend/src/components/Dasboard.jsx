@@ -142,7 +142,7 @@ const Dashboard = () => {
         icon={Wallet}
         bgColor="bg-purple-50 hover:bg-purple-100"
         textColor="text-purple-600"
-        onClick={() => navigate("/funds-statistics")}
+        onClick={() => navigate("#")}
       />
     </div>
   );
@@ -155,7 +155,7 @@ const Dashboard = () => {
         icon={FileText}
         bgColor="bg-blue-50 hover:bg-blue-100"
         textColor="text-blue-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/req-list-table")}
       />
       <StatCard
         title="My Approvals"
@@ -163,7 +163,7 @@ const Dashboard = () => {
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
       />
       <StatCard
         title="Pending Requests"

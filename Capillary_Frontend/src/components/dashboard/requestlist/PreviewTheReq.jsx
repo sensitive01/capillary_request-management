@@ -14,6 +14,7 @@ import { toast, ToastContainer } from "react-toastify";
 import ChatComments from "./ChatComments";
 import handleApprove from "./handleApprove";
 import RequestLogs from "./RequestLogs";
+import pfdIcon from "../../../assets/images/pdfIcon.png";
 
 const currencies = [
   { code: "USD", symbol: "$", locale: "en-US" },
@@ -60,36 +61,41 @@ const PreviewTheReq = () => {
       maximumFractionDigits: 2,
     }).format(value);
   };
-
   const renderUploadedFiles = (uploadedFiles) => {
     if (!uploadedFiles || Object.keys(uploadedFiles).length === 0) {
       return <div className="text-gray-500">No files uploaded</div>;
     }
-
     return (
-      <div className="mt-4 space-y-2">
+      <div className="grid grid-cols-3 gap-4">
         {Object.entries(uploadedFiles).map(
           ([key, files]) =>
             files &&
             files.length > 0 && (
-              <div key={key} className="bg-gray-50 p-3 rounded-lg">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2 capitalize">
+              <div
+                key={key}
+                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+              >
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
                   {key.replace(/([A-Z])/g, " $1").toLowerCase()}
                 </h4>
-                <div className="space-y-1">
+                <div className="grid grid-cols-3 gap-2">
                   {files.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center text-sm text-gray-700"
+                      className="flex flex-col items-center bg-gray-50 rounded p-2"
                     >
-                      <FileIcon className="mr-2 text-primary" size={16} />
                       <a
                         href={file}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:text-primary underline"
+                        className="text-xs text-blue-600 hover:text-blue-800 truncate max-w-full text-center"
                       >
-                        View File {index + 1}
+                        {" "}
+                        <img
+                          src={pfdIcon}
+                          alt={`Icon ${index + 1}`}
+                          className="w-10 h-10 object-cover mb-2"
+                        />
                       </a>
                     </div>
                   ))}
@@ -100,7 +106,6 @@ const PreviewTheReq = () => {
       </div>
     );
   };
-
   const SectionNavigation = () => {
     const sections = [
       {
@@ -164,7 +169,15 @@ const PreviewTheReq = () => {
           {request.commercials &&
             Object.values(request.commercials).some((value) => value) && (
               <div className="grid gap-6 p-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <span className="text-gray-600 font-medium">
+                      Request ID
+                    </span>
+                    <div className="text-gray-800 font-semibold mt-1">
+                      {request.reqid}
+                    </div>
+                  </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <span className="text-gray-600 font-medium">
                       Business Unit
@@ -454,7 +467,7 @@ const PreviewTheReq = () => {
             Compliance Details
           </h2>
           {request.complinces && request?.complinces ? (
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               {Object.keys(request?.complinces)?.length > 0 ? (
                 Object.entries(request?.complinces)?.map(
                   ([questionId, compliance], index) => (
@@ -523,7 +536,7 @@ const PreviewTheReq = () => {
                   )
                 )
               ) : (
-                <div className="text-gray-500">
+                <div className="text-gray-500 col-span-2">
                   No compliance details available
                 </div>
               )}

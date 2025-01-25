@@ -87,7 +87,7 @@ const Invoice = ({ formData, onSubmit }) => {
   return (
     <div className="relative bg-white shadow-lg rounded-lg overflow-hidden max-w-7xl mx-auto p-3">
       {/* Diagonal Watermark */}
-      <div className="max-w-7xl mx-auto mb-4 flex gap-4 print:hidden">
+      {/* <div className="max-w-7xl mx-auto mb-4 flex gap-4 print:hidden">
         <button
           onClick={handleDownloadPDF}
           disabled={isGeneratingPDF}
@@ -111,7 +111,7 @@ const Invoice = ({ formData, onSubmit }) => {
           </svg>
           {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
         </button>
-      </div>
+      </div> */}
       <div
         className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
         style={{
@@ -180,8 +180,20 @@ const Invoice = ({ formData, onSubmit }) => {
               })()
             }
           </p>
-          <p className="text-sm">
-            Approved on: {invoiceData?.approvedOn||"Not Available"}
+
+          <p className="text-sm mt-2">
+            {
+              // Format the date and time
+              (() => {
+                const formattedDate = new Date(
+                  invoiceData?.approvedOn
+                ).toLocaleDateString();
+                const formattedTime = new Date(
+                  invoiceData?.approvedOn
+                ).toLocaleTimeString();
+                return `Approved on ${formattedDate} at ${formattedTime}`;
+              })()
+            }
           </p>
         </div>
       </header>

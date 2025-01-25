@@ -202,12 +202,7 @@ const RequestStatistcsTable = () => {
                     >
                       Entity
                     </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Site
-                    </th>
+
                     <th
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -225,12 +220,6 @@ const RequestStatistcsTable = () => {
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       Requestor
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Department
                     </th>
 
                     <th
@@ -279,13 +268,24 @@ const RequestStatistcsTable = () => {
                         </td>
 
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.entity}
+                          <div>
+                            <span className="block font-medium">
+                              {user.commercials.entity || "NA"}
+                            </span>
+                            <span className="block">
+                              {user.commercials.site || "NA"}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.site}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.procurements.vendor}
+                          <div>
+                            <span className="block font-medium">
+                              {user.procurements.vendor}
+                            </span>
+                            <span className="block">
+                              {user.procurements.vendorName}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {formatCurrency(
@@ -294,45 +294,54 @@ const RequestStatistcsTable = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.requestor || "Employee"}
+                          <div>
+                            <span className="block font-medium">
+                              {user.requestor || "Employee"}
+                            </span>
+                            <span className="block">
+                              {user.commercials.department}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.department}
-                        </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.status || "Pending"}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-4 py-3 text-sm text-gray-500 text-center">
                           {user.status === "Approved" ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/req-list-table/invoice/${user._id}`);
-                              }}
-                              className="flex items-center text-blue-500 hover:text-blue-700"
-                            >
-                              <FileText className="h-5 w-5 mr-2" />
-                              View PO
-                            </button>
+                            <div className="w-full flex justify-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(
+                                    `/req-list-table/invoice/${user._id}`
+                                  );
+                                }}
+                                className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary flex items-center space-x-1 w-full max-w-[120px]"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                View PO
+                              </button>
+                            </div>
                           ) : (
                             "N/A"
                           )}
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-500 flex items-center space-x-2">
-                          <button
-                            className="text-blue-500 hover:text-blue-700"
-                            onClick={(e) => handleEdit(e, user._id)}
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            className="text-red-500 hover:text-red-700"
-                            onClick={(e) => handleDelete(e, user._id)}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">
+                          <div className="flex justify-center items-center space-x-2">
+                            <button
+                              className="text-blue-500 hover:text-blue-700"
+                              onClick={(e) => handleEdit(e, user._id)}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                            <button
+                              className="text-red-500 hover:text-red-700"
+                              onClick={(e) => handleDelete(e, user._id)}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

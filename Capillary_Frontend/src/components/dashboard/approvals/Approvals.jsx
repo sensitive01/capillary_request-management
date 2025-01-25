@@ -48,19 +48,19 @@ const Approvals = () => {
   }, [userId, role]);
 
   const formatCurrency = (value, currencyCode) => {
-    if (!value) return 'N/A';
-    const currency = currencies.find(c => c.code === currencyCode);
+    if (!value) return "N/A";
+    const currency = currencies.find((c) => c.code === currencyCode);
     if (!currency) return value;
-    
+
     try {
       return new Intl.NumberFormat(currency.locale, {
-        style: 'currency',
+        style: "currency",
         currency: currency.code,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(value);
     } catch (error) {
-      console.error('Currency formatting error:', error);
+      console.error("Currency formatting error:", error);
       return value;
     }
   };
@@ -79,12 +79,12 @@ const Approvals = () => {
     );
   };
   const handleEdit = async (e, userId) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     navigate(`/req-list-table/edit-req/${userId}`);
   };
 
   const handleDelete = async (e, id) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     try {
       const response = await deleteReq(id);
       if (response.status === 200) {
@@ -131,8 +131,7 @@ const Approvals = () => {
           </div>
         </div>
       </div>
-
-      <div className="border border-gray-200 rounded-lg">
+      <div className="border border-gray-200 rounded-lg w-full">
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full align-middle">
             <div className="overflow-hidden">
@@ -141,75 +140,61 @@ const Approvals = () => {
                   <tr>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[5%]"
                     >
                       SL No
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                     >
                       ReqId
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                     >
                       Business Unit
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                     >
                       Entity
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Site
-                    </th>
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                     >
                       Vendor
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                     >
                       Amount
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                     >
                       Requestor
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
-                      Department
-                    </th>
-
-                    <th
-                      scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                     >
                       Status
                     </th>
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                     >
-                      PO Document
+                      PO_Document
                     </th>
-
                     <th
                       scope="col"
-                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                     >
                       Actions
                     </th>
@@ -227,7 +212,6 @@ const Approvals = () => {
                           )
                         }
                       >
-                        
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {index + 1}
                         </td>
@@ -241,57 +225,91 @@ const Approvals = () => {
                         </td>
 
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.entity}
+                          <div>
+                            <span className="block font-medium">
+                              {user.commercials.entity || "NA"}
+                            </span>
+
+                            <span className="block">
+                              {user.commercials.site || "NA"}
+                            </span>
+                          </div>
                         </td>
+
+                        {/* <td className="px-6 py-4 text-sm text-gray-500">
+                          {`${user.commercials.entity || "NA"} / ${
+                            user.commercials.site || "NA"
+                          }`}
+                        </td> */}
+
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.site}
+                          <div>
+                            <span className="block font-medium">
+                              {user.procurements.vendor}
+                            </span>
+                            <span className="block">
+                              {user.procurements.vendorName}
+                            </span>
+                          </div>
                         </td>
+
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.procurements.vendor}
+                          {formatCurrency(
+                            user.supplies?.totalValue,
+                            user.supplies?.selectedCurrency
+                          )}
                         </td>
+
                         <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatCurrency(user.supplies?.totalValue, user.supplies?.selectedCurrency)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.requestor || "Employee"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.commercials.department}
+                          <div>
+                            <span className="block font-medium">
+                              {user.requestor || "Employee"}
+                            </span>
+                            <span className="block">
+                              {user.commercials.department}
+                            </span>
+                          </div>
                         </td>
 
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.status || "Pending"}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-4 py-3 text-sm text-gray-500 text-center">
                           {user.status === "Approved" ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/req-list-table/invoice/${user._id}`);
-                              }}
-                              className="flex items-center text-blue-500 hover:text-blue-700"
-                            >
-                              <FileText className="h-5 w-5 mr-2" />
-                              View PO
-                            </button>
+                            <div className="w-full flex justify-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(
+                                    `/req-list-table/invoice/${user._id}`
+                                  );
+                                }}
+                                className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary flex items-center space-x-1 w-full max-w-[120px]"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                View PO
+                              </button>
+                            </div>
                           ) : (
                             "N/A"
                           )}
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-500 flex items-center space-x-2">
-                          <button
-                            className="text-blue-500 hover:text-blue-700"
-                            onClick={(e) => handleEdit(e, user._id)}
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            className="text-red-500 hover:text-red-700"
-                            onClick={(e) => handleDelete(e, user._id)}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">
+                          <div className="flex justify-center items-center space-x-2">
+                            <button
+                              className="text-blue-500 hover:text-blue-700"
+                              onClick={(e) => handleEdit(e, user._id)}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                            <button
+                              className="text-red-500 hover:text-red-700"
+                              onClick={(e) => handleDelete(e, user._id)}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

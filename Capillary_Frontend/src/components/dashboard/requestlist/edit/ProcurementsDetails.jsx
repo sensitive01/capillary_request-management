@@ -618,13 +618,13 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
           <div className="mt-8 flex justify-between">
             <button
               onClick={onBack}
-              className="px-6 w-40 h-10 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary"
+              className="px-10 py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
             >
               Back
             </button>
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 w-40 h-10 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark"
+              className="px-10 py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
             >
               Next
             </button>

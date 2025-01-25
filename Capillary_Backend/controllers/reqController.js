@@ -594,16 +594,16 @@ const approveRequest = async (req, res) => {
     // Fetch the request data
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { approvals: 1, userId: 1 }
+      { approvals: 1, userId: 1,createdAt:1 }
     );
-    console.log("----->",reqData)
+    console.log("----->", reqData);
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
     }
     const empData = await empModel.findOne(
       { _id: reqData.userId },
-      { full_name: 1, deparment: 1,company_email_id:1 }
+      { full_name: 1, deparment: 1, company_email_id: 1 }
     );
 
     const approvals = reqData.approvals || [];
@@ -686,7 +686,7 @@ const approveRequest = async (req, res) => {
       approvalDate: new Date(), // Current date and time
       remarks: remarks || "",
       nextDepartment: status === "Approved" ? nextDepartment : null,
-    
+      receivedOn: department === "HOD Department" ?  reqData.createdAt: latestApproval.approvalDate,
     };
 
     // Update request status
@@ -736,13 +736,12 @@ const approveRequest = async (req, res) => {
     );
 
     await sendIndividualEmail(
-      'AUTHORITY',
+      "AUTHORITY",
       "aswinrajr07@gmail.com",
       empData.full_name,
       empData.department,
       reqId,
-      approvalRecord,
-      
+      approvalRecord
     );
 
     // Send success response with detailed message
@@ -917,6 +916,9 @@ const getStatisticData = async (req, res) => {
           console.log(pendingApprovals);
         }
       });
+    } else {
+      let myrequestDatas = reqData.filter((req) => req.userId === empId);
+      myRequests = myrequestDatas.length;
     }
 
     // Send the response

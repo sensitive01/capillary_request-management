@@ -8,6 +8,8 @@ import {
   Filter,
   RefreshCw,
   X,
+  ToggleRight,
+  ToggleLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -29,6 +31,8 @@ const EmployeeListTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [employeeSyncStates, setEmployeeSyncStates] = useState({});
+  const [syncOffEmployee, setSyncOffEmployee] = useState([]);
 
   const [activeFilters, setActiveFilters] = useState({
     department: "",
@@ -43,6 +47,13 @@ const EmployeeListTable = () => {
       const response = await getEmployeeList();
       setEmployees(response.data);
       setFilteredEmployees(response.data);
+
+      // Set default sync state to true for all employees
+      const defaultSyncStates = response.data.reduce((acc, employee) => {
+        acc[employee.employee_id] = true;
+        return acc;
+      }, {});
+      setEmployeeSyncStates(defaultSyncStates);
     } catch (err) {
       toast.error("Error fetching employees");
       console.error("Error fetching employees:", err);
@@ -55,12 +66,18 @@ const EmployeeListTable = () => {
   }, []);
 
   useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  useEffect(() => {
     let result = [...employees];
 
     if (searchTerm) {
       result = result.filter((employee) =>
-        Object.values(employee).some((value) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        ["full_name", "employee._id", "department"].some((key) =>
+          String(employee[key] || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
         )
       );
     }
@@ -92,7 +109,8 @@ const EmployeeListTable = () => {
     if (isSyncing) return;
     setIsSyncing(true);
     try {
-      const response = await getSyncEmployeeTable();
+      console.log("Not sync data", syncOffEmployee);
+      const response = await getSyncEmployeeTable(syncOffEmployee);
       if (response.status === 200) {
         toast.success(response.data.message);
         await fetchEmployees();
@@ -117,6 +135,32 @@ const EmployeeListTable = () => {
       setCurrentPage(page);
       setSelectedUsers([]);
     }
+  };
+
+  const handleIndividualSyncToggle = (employeeId) => {
+    console.log(employeeId);
+    setEmployeeSyncStates((prevStates) => {
+      const newStates = {
+        ...prevStates,
+        [employeeId]: !prevStates[employeeId], // Toggle the state
+      };
+
+      console.log(
+        `Sync for employee ${employeeId}: ${
+          newStates[employeeId] ? "ON" : "OFF"
+        }`
+      );
+
+      // Get employees with sync state "OFF"
+      const employeesWithSyncOff = Object.keys(newStates).filter(
+        (id) => !newStates[id]
+      );
+      setSyncOffEmployee(employeesWithSyncOff);
+
+      console.log("Employees with sync OFF:", employeesWithSyncOff);
+
+      return newStates;
+    });
   };
 
   const handleFilter = (filters) => {
@@ -189,85 +233,106 @@ const EmployeeListTable = () => {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-primary">
               <tr>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  SL NO
-                </th>
-
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Employee ID
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Full Name
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Company Email
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Direct Manager
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Manager Email
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Head Of Department
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  HOD Email
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Department
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Business Unit
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase">
-                  Actions
-                </th>
+                {[
+                  "SL NO",
+                  "Employee",
+                  "Sync",
+                  "Business_Unit",
+                  "Head Of Department",
+                  "Direct Manager",
+                  "Actions",
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="sticky top-0 px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider"
+                  >
+                    {header}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200">
               {currentEmployees?.map((employee, index) => (
-                <tr key={employee._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                <tr
+                  key={employee._id}
+                  className="hover:bg-blue-50 transition duration-200 ease-in-out"
+                >
+                  <td className="px-6 py-4 text-sm text-gray-700">
                     {index + 1}
                   </td>
 
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.employee_id}
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <span className="block font-semibold text-gray-900">
+                        {employee.employee_id || "NA"}
+                      </span>
+                      <span className="block font-medium text-gray-800">
+                        {employee.full_name || "NA"}
+                      </span>
+                      <span className="block text-sm text-gray-500">
+                        {employee.company_email_id || "NA"}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.full_name}
+
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      {employeeSyncStates[employee.employee_id] ? (
+                        <ToggleRight
+                          className="h-8 w-8 text-green-500 hover:text-green-600 cursor-pointer transition"
+                          onClick={() =>
+                            handleIndividualSyncToggle(employee.employee_id)
+                          }
+                        />
+                      ) : (
+                        <ToggleLeft
+                          className="h-8 w-8 text-gray-400 hover:text-gray-500 cursor-pointer transition"
+                          onClick={() =>
+                            handleIndividualSyncToggle(employee.employee_id)
+                          }
+                        />
+                      )}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.company_email_id}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.direct_manager}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.direct_manager_email}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.hod}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.hod_email_id}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {employee.department}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+
+                  <td className="px-6 py-4 text-sm text-gray-700">
                     {employee.business_unit}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <span className="block font-semibold text-gray-900">
+                        {employee.hod || "NA"}
+                      </span>
+                      <span className="block text-sm text-gray-500">
+                        {employee.hod_email_id || "NA"}
+                      </span>
+                      <span className="block text-sm text-gray-500">
+                        {employee.department || "NA"}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <span className="block font-semibold text-gray-900">
+                        {employee.direct_manager || "NA"}
+                      </span>
+                      <span className="block text-sm text-gray-500">
+                        {employee.direct_manager_email || "NA"}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
                     <div className="flex space-x-4">
                       <button
-                        className="text-primary hover:text-primary/80"
+                        className="text-primary hover:text-blue-800 transition"
                         onClick={() =>
                           navigate(
                             `/employee-list-table/edit-employee/${employee._id}`
@@ -278,7 +343,7 @@ const EmployeeListTable = () => {
                       </button>
                       <button
                         onClick={() => handleDelete(employee._id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-red-600 hover:text-red-800 transition"
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -290,7 +355,7 @@ const EmployeeListTable = () => {
           </table>
         </div>
 
-        {/* New Professional Pagination Layout */}
+        {/* Pagination component remains the same */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

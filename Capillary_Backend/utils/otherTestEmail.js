@@ -177,7 +177,6 @@ const sendIndividualEmail = async (
   department,
   reqId,
   approvalRecord
- 
 ) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -256,9 +255,15 @@ const sendIndividualEmail = async (
                   <p>Your request has been processed with the following status:</p>
                   <ul style="list-style: none; padding-left: 0;">
                     <li>📝 Request ID: <span class="highlight">${reqId}</span></li>
-                    <li>✅ Approved by: <span class="highlight">${approvalRecord.departmentName} Department</span></li>
-                    <li>📅 Approval Date: <span class="highlight">${approvalRecord.approvalDate}</span></li>
-                    <li>⏳ Awaiting approval from: <span class="highlight">${approvalRecord.nextDepartment} Department</span></li>
+                    <li>✅ Approved by: <span class="highlight">${
+                      approvalRecord.departmentName
+                    } Department</span></li>
+                    <li>📅 Approval Date: <span class="highlight">${
+                      approvalRecord.approvalDate
+                    }</span></li>
+                    <li>⏳ Awaiting approval from: <span class="highlight">${
+                      approvalRecord.nextDepartment
+                    } Department</span></li>
                   </ul>
                 </div>
 
@@ -346,8 +351,12 @@ const sendIndividualEmail = async (
                     <li>👤 Employee Name: <span class="highlight">${empName}</span></li>
                     <li>🏢 Department: <span class="highlight">${department}</span></li>
                     <li>📝 Request ID: <span class="highlight">${reqId}</span></li>
-                    <li>✅ Approved by: <span class="highlight">${approvalRecord.departmentName} Department</span></li>
-                    <li>📅 Approval Date: <span class="highlight">${approvalRecord.approvalDate}</span></li>
+                    <li>✅ Approved by: <span class="highlight">${
+                      approvalRecord.departmentName
+                    } Department</span></li>
+                    <li>📅 Approval Date: <span class="highlight">${
+                      approvalRecord.approvalDate
+                    }</span></li>
                   </ul>
                 </div>
 
@@ -357,8 +366,8 @@ const sendIndividualEmail = async (
               </div>
 
               <div class="footer">
-                <p>This is an automated message from Capillary Technology. Please do not reply to this email.</p>
-                <p>© ${new Date().getFullYear()} Capillary Technology. All rights reserved.</p>
+                <p>This is an automated message from Capillary Finance. Please do not reply to this email.</p>
+                <p>© ${new Date().getFullYear()} Capillary Finance. All rights reserved.</p>
               </div>
             </div>
           </body>

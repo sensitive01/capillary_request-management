@@ -119,9 +119,9 @@ export const generateEmployeeUniqueId = async () => {
   }
 };
 
-export const getSyncEmployeeTable = async () => {
+export const getSyncEmployeeTable = async (syncOffEmployee) => {
   try {
-    const response = await adminServices.post(`/employees/sync-emp-data`);
+    const response = await adminServices.post(`/employees/sync-emp-data`,{syncOffEmployee});
     return response;
   } catch (err) {
     return err;

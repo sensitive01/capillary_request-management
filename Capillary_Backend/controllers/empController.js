@@ -57,6 +57,8 @@ exports.createEmployee = async (req, res) => {
 
 exports.syncEmployeeData = async (req, res) => {
   try {
+    const { syncOffEmployee } = req.body;
+    console.log("syncOffEmployee", syncOffEmployee);
     const options = {
       method: "POST",
       url: `${DARWINBOX_BASE_URL}`,
@@ -73,13 +75,17 @@ exports.syncEmployeeData = async (req, res) => {
         datasetKey: `${DARWINBOX_DATASET_KEY}`,
       },
     };
+
     const response = await axios(options);
 
     const employees = response.data.employee_data;
 
-    // Process each employee data
+    const filteredEmployees = employees.filter(
+      (emp) => !syncOffEmployee.includes(emp.employee_id)
+    );
+
     const results = await Promise.all(
-      employees.map(async (emp) => {
+      filteredEmployees.map(async (emp) => {
         try {
           const employeeData = {
             employee_id: emp.employee_id,
@@ -93,12 +99,10 @@ exports.syncEmployeeData = async (req, res) => {
             business_unit: emp.business_unit,
           };
 
-          // Check if employee already exists in database
           const existingEmployee = await Employee.findOne({
             employee_id: emp.employee_id,
           });
 
-          // If employee exists, update it, otherwise create a new one
           if (existingEmployee) {
             await Employee.findByIdAndUpdate(
               existingEmployee._id,
@@ -117,7 +121,6 @@ exports.syncEmployeeData = async (req, res) => {
       })
     );
 
-    // Compile statistics of the operation
     const stats = {
       total: results.length,
       created: results.filter((r) => r.status === "created").length,
@@ -134,7 +137,6 @@ exports.syncEmployeeData = async (req, res) => {
 
     console.log("Unique Departments:", uniqueDepartments);
 
-    // Send the response
     res.status(200).json({
       message: "Sync completed",
       stats,
@@ -313,7 +315,7 @@ exports.verifyUser = async (req, res) => {
       : "Unknown User";
 
     console.log("Employee data", employeeData);
-    const subject = "Login Notification from Capillary Technologies";
+    const subject = "Login Notification from PO Request Portal";
     const textContent = "";
     const htmlContent = `
     <!DOCTYPE html>
@@ -322,13 +324,13 @@ exports.verifyUser = async (req, res) => {
       <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
         <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
           <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
-            <h1>Capillary Technologies</h1>
+            <h1>Capillary Technologies - PO Request Portal</h1>
           </div>
           <div style="padding: 20px; color: #333;">
             <p>Hi <strong>${full_name}</strong>,</p>
-            <p>You have successfully logged in to your account!</p>
-            <p>If you did not perform this action, please contact our support team immediately.</p>
-            <p>Thank you,<br>The Capillary Technologies Team</p>
+            <p>You have successfully logged in to PO Request Portal!</p>
+            <p>If you did not perform this action, please sign out immediately and notify us.</p>
+            <p>Thank you,<br>Capillary Finance</p>
           </div>
         </div>
       </div>
@@ -374,7 +376,7 @@ exports.createNewReq = async (req, res) => {
       { _id: req.params.id },
       { full_name: 1, employee_id: 1, department: 1 }
     );
-    console.log("empData",empData)
+    console.log("empData", empData);
 
     const newRequest = new CreateNewReq({
       reqid,

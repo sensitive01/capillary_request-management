@@ -84,32 +84,31 @@ const SuppliesDetails = ({
             <div className="overflow-hidden border rounded-lg">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
-                      Product Name<span className="text-red-500">*</span>
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Description<span className="text-red-500">*</span>
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Purpose<span className="text-red-500">*</span>
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
-                      Qty<span className="text-red-500">*</span>
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
-                      Price<span className="text-red-500">*</span>
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
-                      Tax (%)
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
-                      Total
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
+                <tr className="bg-gray-100 border-b-2 border-gray-200">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                Product / Service Name<span className="text-red-500">*</span>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                Product / Service Description<span className="text-red-500">*</span>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                Product / Service Purpose<span className="text-red-500">*</span>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                  Quantity<span className="text-red-500">*</span>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-2">
+                  Price<span className="text-red-500">*</span>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                  Tax (%)
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                  Row Total
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                </th>
+              </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {services.map((service, index) => (
@@ -235,7 +234,7 @@ const SuppliesDetails = ({
             className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             <PlusCircle className="w-4 h-4 mr-2" />
-            Add Service
+            Add Product/Service
           </button>
         </div>
 
@@ -256,16 +255,16 @@ const SuppliesDetails = ({
         <div className="mt-8 flex justify-between">
           <button
             onClick={onBack}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            className="px-8 py-3 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             Back
           </button>
           <button
             onClick={handleSubmit}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            className="inline-flex items-center px-7 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             <CheckCircle2 className="w-4 h-4 mr-2" />
-            Submit Request
+           Next
           </button>
         </div>
       </div>

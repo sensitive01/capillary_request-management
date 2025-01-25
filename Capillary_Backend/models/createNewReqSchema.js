@@ -88,6 +88,8 @@ const approvalSchema = new mongoose.Schema({
   approvalId: { type: String },
   approvalDate: { type: Date, default: Date.now() },
   remarks: { type: String, default: "" },
+  receivedOn: { type: Date },
+
 });
 
 // Main schema for 'CreateNewReq'
