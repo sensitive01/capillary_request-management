@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import capilary_logo from "../../assets/images/capilary_logo.png";
 import { Navigate, useNavigate } from "react-router-dom";
-import { verifyUser } from "../../api/service/axiosService";
+import { verifyUser } from "../../api/service/adminServices";
 import { toast } from "react-toastify";
 
 const HomePage = () => {
@@ -34,18 +34,17 @@ const HomePage = () => {
 
   const handleSuccess = async (credentialResponse) => {
     const user = decodeJWT(credentialResponse.credential);
-    console.log("User Info:", user);
     const { email } = user;
     localStorage.setItem("email", email);
 
     try {
       const response = await verifyUser(email);
-      console.log("response", response);
       if(response.status===200){
         localStorage.setItem("userId", response?.data?.data?._id);
         localStorage.setItem("role", response?.data?.data?.role);
         localStorage.setItem("user", JSON.stringify({ ...user }));
         localStorage.setItem("department",response?.data?.data?.department);
+        localStorage.setItem("empAccessToken",response?.data?.token)
 
         navigate("/dashboard");
 

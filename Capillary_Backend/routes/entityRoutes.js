@@ -6,17 +6,18 @@ const {
     updateEntity,
     deleteEntity,
     updateManyEntities,
-} = require('../controllers/entityController'); // Adjust according to your controller file
+} = require('../controllers/entityController');
 
-const router = express.Router(); // Use Router() for modular routing
+const router = express.Router(); 
 
-// Define routes
-router.post('/create', createEntity); // Create an entity
-router.get('/get-all', getAllEntities); // Get all entities
-router.get('/get/:id', getEntityById); // Get an entity by ID
-router.put('/update/:id', updateEntity); // Update an entity by ID
-router.delete('/delete/:id', deleteEntity); // Delete an entity by ID
-router.put('/update-many', updateManyEntities); // Update multiple entities
+
+
+router.post('/create', createEntity); 
+router.get('/get-all', getAllEntities); 
+router.get('/get/:id', getEntityById);
+router.put('/update/:id', updateEntity);
+router.delete('/delete/:id', deleteEntity); 
+router.put('/update-many', updateManyEntities);
 
 // Uncomment this if bulk deletion is required
 // router.delete('/delete-many', deleteManyEntities);

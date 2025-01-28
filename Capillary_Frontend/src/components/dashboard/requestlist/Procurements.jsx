@@ -3,6 +3,7 @@ import { fetchAllVendorData } from "../../../api/service/adminServices";
 import { uploadCloudinary } from "../../../utils/cloudinaryUtils";
 import { FaFilePdf } from "react-icons/fa";
 import { toast } from "react-toastify";
+import uploadFiles from "../../../utils/s3BucketConfig.js"
 
 const Procurements = ({ formData, setFormData, onBack, onNext }) => {
   console.log("procurements formData",formData)
@@ -150,6 +151,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     const currentFileData = filesData[index];
     const fileType = getEffectiveFileType(currentFileData);
 
+    console.log(",files",files,"currentFileData",currentFileData,"fileType",fileType)
+
     if (!fileType) {
       alert("Please select a file type first");
       return;
@@ -158,7 +161,9 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     try {
       const uploadedUrls = await Promise.all(
         files.map(async (file) => {
-          const data = await uploadCloudinary(file);
+        //   const data = await uploadCloudinary(file);
+        const data = await uploadFiles(file,fileType);
+
           return data.url;
         })
       );

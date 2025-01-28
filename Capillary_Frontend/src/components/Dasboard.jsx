@@ -97,6 +97,46 @@ const Dashboard = () => {
       </div>
     </div>
   );
+  const BudgetCard = ({
+    title,
+    departmentBudgetByCurrency,
+    icon: Icon,
+    bgColor,
+    textColor,
+    onClick,
+  }) => (
+    <div
+      onClick={onClick}
+      className={`${bgColor} rounded-xl p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
+    >
+      <div className="flex items-center space-x-3 mb-3">
+        <Icon className={`w-8 h-8 ${textColor}`} />
+        <h4 className="font-semibold text-gray-900">{title}</h4>
+      </div>
+      <div className="space-y-1">
+        {departmentBudgetByCurrency &&
+          Object.entries(departmentBudgetByCurrency).map(
+            ([currency, value]) => (
+              <div key={currency} className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">{currency}</span>
+                <span className={`text-xl font-bold ${textColor}`}>
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: currency,
+                  }).format(value)}
+                </span>
+              </div>
+            )
+          )}
+        {(!departmentBudgetByCurrency ||
+          Object.keys(departmentBudgetByCurrency).length === 0) && (
+          <span className="text-sm text-gray-500">
+            No budget data available
+          </span>
+        )}
+      </div>
+    </div>
+  );
 
   const renderAdminCards = () => (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -136,21 +176,20 @@ const Dashboard = () => {
           )
         }
       />
-      <StatCard
-        title="Total Funds"
-        value={`₹${dashboardStats.adminAlltotalFunds}`}
-        icon={Wallet}
-        bgColor="bg-purple-50 hover:bg-purple-100"
-        textColor="text-purple-600"
-        onClick={() => navigate("#")}
+      <BudgetCard
+        title="Department Expense"
+        departmentBudgetByCurrency={dashboardStats?.departmentBudgetByCurrency}
+        icon={Building2}
+        bgColor="bg-blue-100"
+        textColor="text-blue-600"
       />
     </div>
   );
 
   const renderHODCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <StatCard
-        title="My Requests"
+        title="I submitted Requests"
         value={dashboardStats.myRequests}
         icon={FileText}
         bgColor="bg-blue-50 hover:bg-blue-100"
@@ -158,65 +197,20 @@ const Dashboard = () => {
         onClick={() => navigate("/req-list-table")}
       />
       <StatCard
-        title="My Approvals"
-        value={dashboardStats.myApprovals}
-        icon={CheckSquare}
-        bgColor="bg-green-50 hover:bg-green-100"
-        textColor="text-green-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
-      />
-      <StatCard
-        title="Pending Requests"
-        value={dashboardStats.pendingRequests}
+        title="My submitted Pending Requests"
+        value={dashboardStats.pendingRequest}
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
         onClick={() => navigate("#")}
       />
       <StatCard
-        title="Pending Approvals"
-        value={dashboardStats.pendingApprovals}
-        icon={ClipboardList}
-        bgColor="bg-yellow-50 hover:bg-yellow-100"
-        textColor="text-yellow-600"
-        onClick={() => navigate("#")}
-      />
-      <StatCard
-        title="Completed Requests"
-        value={dashboardStats.completedRequests}
+        title="My Completed Requests"
+        value={dashboardStats.completedApprovals}
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
         onClick={() => navigate("#")}
-      />
-      <StatCard
-        title="Completed Approvals"
-        value={dashboardStats.completedApprovals}
-        icon={CheckCircle2}
-        bgColor="bg-indigo-50 hover:bg-indigo-100"
-        textColor="text-indigo-600"
-        onClick={() => navigate("#")}
-      />
-      <StatCard
-        title="Department Budget"
-        value={`₹${dashboardStats.departmentBudget}`}
-        icon={Building2}
-        bgColor="bg-purple-50 hover:bg-purple-100"
-        textColor="text-purple-600"
-        onClick={() => navigate("#")}
-      />
-    </div>
-  );
-
-  const renderFinanceCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <StatCard
-        title="My Requests"
-        value={dashboardStats.myRequests}
-        icon={FileText}
-        bgColor="bg-blue-50 hover:bg-blue-100"
-        textColor="text-blue-600"
-        onClick={() => navigate("/req-list-table")}
       />
       <StatCard
         title="My Approvals"
@@ -224,7 +218,49 @@ const Dashboard = () => {
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
+        onClick={() =>
+          navigate(
+            "#"
+          )
+        }
+      />
+
+      <StatCard
+        title="Pending Approvals"
+        value={dashboardStats.pendingApprovals}
+        icon={ClipboardList}
+        bgColor="bg-yellow-50 hover:bg-yellow-100"
+        textColor="text-yellow-600"
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
+      />
+
+      <StatCard
+        title="Completed Approvals"
+        value={dashboardStats.deptCompleteReq}
+        icon={CheckCircle2}
+        bgColor="bg-indigo-50 hover:bg-indigo-100"
+        textColor="text-indigo-600"
         onClick={() => navigate("#")}
+      />
+      <BudgetCard
+        title="Department Expense"
+        departmentBudgetByCurrency={dashboardStats?.departmentBudgetByCurrency}
+        icon={Building2}
+        bgColor="bg-blue-100"
+        textColor="text-blue-600"
+      />
+    </div>
+  );
+
+  const renderFinanceCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <StatCard
+        title="My Requests"
+        value={dashboardStats.myRequests}
+        icon={FileText}
+        bgColor="bg-blue-50 hover:bg-blue-100"
+        textColor="text-blue-600"
+        onClick={() => navigate("/req-list-table")}
       />
       <StatCard
         title="Pending Requests"
@@ -234,15 +270,7 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() => navigate("#")}
       />
-      <StatCard
-        title="Pending Approvals"
-        value={dashboardStats.pendingApprovals}
-        icon={ClipboardList}
-        bgColor="bg-yellow-50 hover:bg-yellow-100"
-        textColor="text-yellow-600"
-        onClick={() => navigate("#")}
-      />
-      <StatCard
+       <StatCard
         title="Completed Requests"
         value={dashboardStats.completedApprovals}
         icon={CheckCircle2}
@@ -251,6 +279,24 @@ const Dashboard = () => {
         onClick={() => navigate("#")}
       />
       <StatCard
+        title="My Approvals"
+        value={dashboardStats.myApprovals}
+        icon={CheckSquare}
+        bgColor="bg-green-50 hover:bg-green-100"
+        textColor="text-green-600"
+        onClick={() => navigate("#")}
+      />
+      
+      <StatCard
+        title="Pending Approvals"
+        value={dashboardStats.pendingApprovals}
+        icon={ClipboardList}
+        bgColor="bg-yellow-50 hover:bg-yellow-100"
+        textColor="text-yellow-600"
+        onClick={() => navigate("#")}
+      />
+      
+      <StatCard
         title="Completed Approvals"
         value={dashboardStats.completedApprovals}
         icon={CheckCircle2}
@@ -258,13 +304,12 @@ const Dashboard = () => {
         textColor="text-indigo-600"
         onClick={() => navigate("#")}
       />
-      <StatCard
-        title="Total Funds"
-        value={`₹${formatCurrency(dashboardStats.departmentBudget)}`}
-        icon={Wallet}
-        bgColor="bg-purple-50 hover:bg-purple-100"
-        textColor="text-purple-600"
-        onClick={() => navigate("#")}
+      <BudgetCard
+        title="Department Expense"
+        departmentBudgetByCurrency={dashboardStats?.departmentBudgetByCurrency}
+        icon={Building2}
+        bgColor="bg-blue-100"
+        textColor="text-blue-600"
       />
     </div>
   );

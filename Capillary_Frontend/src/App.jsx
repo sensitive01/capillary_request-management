@@ -33,6 +33,10 @@ import QuestionsDetails from "./components/questions/QuestionDetails";
 import VendorPreview from "./components/dashboard/vendor/VendorPreview";
 import PageNotFoundPage from "./components/404/PageNotFoundPage";
 import RequestStatistcsTable from "./components/dashboard/requestlist/RequestStatistcsTable";
+import PanelMembers from "./components/dashboard/panels-members/PanelMembers";
+import PanelMemberTable from "./components/dashboard/panels-members/PanelMemberTable";
+import EditPanelmembers from "./components/dashboard/panels-members/EditPanelmembers";
+import SessionTimeout from "./components/session/SessionTimeOut";
 
 
 function App() {
@@ -55,6 +59,15 @@ function App() {
           <Route path="/req-list-table/edit-req/:id" element={<EditRequestForm/>} />
 
           <Route path="/approveal-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
+
+          <Route path="/panel-members-table/add-panel-members" element={<PanelMembers/>} />
+          <Route path="/panel-members-table" element={<PanelMemberTable/>} />
+          <Route path="/panel-members-table/edit-panel-members/:id" element={<EditPanelmembers/>} />
+
+
+          
+
+
 
 
 
@@ -88,6 +101,7 @@ function App() {
 
         </Route>
       </Routes>
+      <SessionTimeout/>
     </Router>
   );
 }

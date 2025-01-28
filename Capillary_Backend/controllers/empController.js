@@ -12,6 +12,8 @@ const {
   DARWINBOX_DATASET_KEY,
 } = require("../config/variables");
 
+const addPanelUsers = require("../models/addPanelUsers");
+
 exports.generateEmpId = async (req, res) => {
   try {
     console.log("Welcome to generating the employee ID");
@@ -167,6 +169,27 @@ exports.getAllEmployees = async (req, res) => {
   }
 };
 
+exports.getPanelMembers = async (req, res) => {
+  try {
+    const employees = await addPanelUsers.find();
+    console.log("Welcome to get all panemembers", employees);
+    res.status(200).json(employees);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getIndividualPanelMembers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employees = await addPanelUsers.findOne({ _id: id });
+    console.log("Welcome to get all panemembers", employees);
+    res.status(200).json(employees);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Read a single employee by empId
 exports.getEmployeeById = async (req, res) => {
   try {
@@ -205,6 +228,19 @@ exports.updateEmployee = async (req, res) => {
 exports.deleteEmployee = async (req, res) => {
   try {
     const employee = await Employee.findOneAndDelete({ _id: req.params.id });
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found" });
+    res.status(200).json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deletePanelEmployee = async (req, res) => {
+  try {
+    const employee = await addPanelUsers.findOneAndDelete({
+      _id: req.params.id,
+    });
     if (!employee)
       return res.status(404).json({ message: "Employee not found" });
     res.status(200).json({ message: "Employee deleted successfully" });
@@ -269,7 +305,7 @@ exports.createNewEmployee = async (req, res) => {
   try {
     console.log(req.body);
     const newEmployee = new Employee({
-      empId: req.body.empId,
+      employee_id: req.body.employee_id,
       name: req.body.name,
       contact: req.body.contact,
       email: req.body.email,
@@ -300,50 +336,74 @@ exports.createNewEmployee = async (req, res) => {
     res.status(400).json({ message: "Error creating employee", error: err });
   }
 };
-
 exports.verifyUser = async (req, res) => {
   try {
     console.log(req.body);
     const { email } = req.body;
+    let consolidatedData;
 
+    const panelUserData = await addPanelUsers
+      .findOne(
+        { company_email_id: email },
+        { _id: 1, full_name: 1, department: 1, role: 1 }
+      )
+      .lean(); // Use lean here as well
+    console.log("panelUserData", panelUserData);
+
+    // Find the employee data
     const employeeData = await Employee.findOne(
-      { company_email_id: req.body.email },
-      { _id: 1, role: 1, full_name: 1, department: 1 }
-    );
-    const full_name = employeeData?.full_name
-      ? employeeData?.full_name
-      : "Unknown User";
+      { company_email_id: email },
+      { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
+    ).lean(); // Use lean to get plain object
 
-    console.log("Employee data", employeeData);
+    const isEmpHod = await Employee.findOne({ hod_email_id: email }).lean(); // Use lean here too
+    console.log("isEmpHod", isEmpHod);
+
+    if (panelUserData) {
+      consolidatedData = panelUserData;
+    } else {
+      // Determine role dynamically
+      if (employeeData && !employeeData.role) {
+        consolidatedData = {
+          ...employeeData, // Include existing employee data
+          role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
+        };
+      }
+    }
+
+    const full_name = consolidatedData?.full_name || "Unknown User";
+
+    console.log("Consolidated Employee Data:", consolidatedData);
+
     const subject = "Login Notification from PO Request Portal";
     const textContent = "";
     const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <body>
-      <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
-        <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-          <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
-            <h1>Capillary Technologies - PO Request Portal</h1>
-          </div>
-          <div style="padding: 20px; color: #333;">
-            <p>Hi <strong>${full_name}</strong>,</p>
-            <p>You have successfully logged in to PO Request Portal!</p>
-            <p>If you did not perform this action, please sign out immediately and notify us.</p>
-            <p>Thank you,<br>Capillary Finance</p>
+      <!DOCTYPE html>
+      <html>
+      <body>
+        <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+          <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+            <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
+              <h1>Capillary Technologies - PO Request Portal</h1>
+            </div>
+            <div style="padding: 20px; color: #333;">
+              <p>Hi <strong>${full_name}</strong>,</p>
+              <p>You have successfully logged in to PO Request Portal!</p>
+              <p>If you did not perform this action, please sign out immediately and notify us.</p>
+              <p>Thank you,<br>Capillary Finance</p>
+            </div>
           </div>
         </div>
-      </div>
-    </body>
-    </html>
-  `;
+      </body>
+      </html>
+    `;
 
-    if (employeeData) {
+    if (consolidatedData) {
       await sendLoginEmail(email, subject, textContent, htmlContent);
       return res.status(200).json({
         success: true,
         message: "Employee verified successfully.",
-        data: employeeData,
+        data: consolidatedData,
       });
     } else {
       return res.status(401).json({
@@ -352,7 +412,6 @@ exports.verifyUser = async (req, res) => {
       });
     }
   } catch (err) {
-    // Log and send an error response if something goes wrong
     console.log("Error in verifying the employee", err);
     return res.status(500).json({
       success: false,
@@ -363,7 +422,7 @@ exports.verifyUser = async (req, res) => {
 
 exports.createNewReq = async (req, res) => {
   try {
-    console.log("Complinces", req.body);
+    console.log("Complinces", req.body, req.params.id);
 
     const date = new Date();
     const day = String(date.getDate()).padStart(2, "0");
@@ -372,12 +431,47 @@ exports.createNewReq = async (req, res) => {
     const randomNum = Math.floor(Math.random() * 100) + 1;
 
     const reqid = `INBH${day}${month}${year}${randomNum}`;
+
+    // Fetch employee data
     const empData = await Employee.findOne(
       { _id: req.params.id },
-      { full_name: 1, employee_id: 1, department: 1 }
+      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
     );
-    console.log("empData", empData);
 
+    if (!empData) {
+      return res.status(404).json({
+        message: "Employee not found. Please provide a valid employee ID.",
+      });
+    }
+
+    // Fetch panel members
+    const panelMembers = await addPanelUsers.find(
+      {},
+      { company_email_id: 1, _id: 0 }
+    );
+
+    const panelMemberEmail = panelMembers.map(
+      (member) => member.company_email_id
+    );
+
+    if (!empData.hod_email_id) {
+      return res.status(400).json({
+        message: "HOD email is missing for the employee.",
+      });
+    }
+
+    panelMemberEmail.push(empData.hod_email_id);
+
+    console.log("Panel Member Emails:", panelMemberEmail);
+    console.log("Compliance Data:", req.body.complinces);
+
+    if (!req.body.complinces || !req.body.commercials) {
+      return res.status(400).json({
+        message: "Missing required compliance or commercial data in the request body.",
+      });
+    }
+
+    // Create the new request
     const newRequest = new CreateNewReq({
       reqid,
       userId: req.params.id,
@@ -385,17 +479,25 @@ exports.createNewReq = async (req, res) => {
       procurements: req.body.procurements,
       supplies: req.body.supplies,
       complinces: req.body.complinces,
+      hasDeviations: req.body.hasDeviations ? 1 : 0,
+      firstLevelApproval: {
+        hodName: req.body.commercials.hod, // Assuming `empData.hod` contains the HOD's name
+        hodEmail: req.body.commercials.hodEmail,
+        hodDepartment: req.body.commercials.department,
+        status: "Pending",
+        approved: false,
+      },
     });
 
     await newRequest.save();
 
-    const email = [
-      "aswinrajr07@gmail.com",
-      "aswinrajachu09@gmail.com",
-      "aswinrajachu05@gmail.com",
-    ];
-
-    await sendBulkEmails(email, empData.full_name, empData.department, reqid);
+    // Send bulk emails
+    await sendBulkEmails(
+      panelMemberEmail,
+      empData.full_name,
+      empData.department,
+      reqid
+    );
 
     res.status(201).json({
       message: "Request created successfully",
@@ -410,6 +512,7 @@ exports.createNewReq = async (req, res) => {
     });
   }
 };
+
 
 exports.getAllEmployeeReq = async (req, res) => {
   try {
@@ -508,6 +611,53 @@ exports.getIndividualReq = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "An error occurred while fetching the requests",
+      error: err.message,
+    });
+  }
+};
+
+exports.addNewPanelsMembers = async (req, res) => {
+  try {
+    console.log("addNewPanelsMembers", req.body);
+    const { formData } = req.body;
+
+    const existingEmployee = await addPanelUsers.findOne({
+      employee_id: formData.employeeId,
+    });
+    console.log();
+
+    if (existingEmployee) {
+      existingEmployee.full_name = formData.empName;
+      existingEmployee.role = formData.role;
+      existingEmployee.department = formData.department;
+      existingEmployee.company_email_id = formData.email;
+
+      await existingEmployee.save();
+
+      res.status(200).json({
+        message: "Employee updated successfully!",
+        employee: existingEmployee,
+      });
+    } else {
+      const newEmployee = new addPanelUsers({
+        employee_id: formData.employeeId,
+        full_name: formData.empName,
+        company_email_id: formData.email,
+        role: formData.role,
+        department: formData.department,
+      });
+
+      await newEmployee.save();
+
+      res.status(201).json({
+        message: "Employee added successfully!",
+        employee: newEmployee,
+      });
+    }
+  } catch (err) {
+    console.error("Error adding/updating employee:", err);
+    res.status(500).json({
+      message: "Error adding/updating employee",
       error: err.message,
     });
   }

@@ -2,6 +2,15 @@ import { adminServices } from "../axiosInstance/adminService";
 
 
 
+export const verifyUser = async (email) => {
+  try {
+    const response = await adminServices.post(`/employees/verify-person`, { email:email });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 
 
 
@@ -149,9 +158,28 @@ export const deleteEmployee = async (id) => {
   }
 };
 
+export const deletePanelEmployee = async (id) => {
+  try {
+    const response = await adminServices.delete(`/employees/panel-delete/${id}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 export const getEmployeeList = async () => {
   try {
     const response = await adminServices.get(`/employees/get-all`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const getPanelMenberData = async () => {
+  try {
+    const response = await adminServices.get(`/employees/panel-member-get-all`);
     return response;
   } catch (err) {
     return err;
@@ -178,6 +206,19 @@ export const getEmployeeData = async (id) => {
     return err;
   }
 };
+
+
+export const getIndividualEmployee = async (id) => {
+  try {
+    const response = await adminServices.get(`/employees/get-panel-members/${id}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
 
 export const updateEmployeeData = async (id, formData) => {
   try {
@@ -603,6 +644,19 @@ export const fetcAllChats = async (id) => {
     const response = await adminServices.get(
       `/request/get-all-chats/${id}`,
       {}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const addNewUser = async (formData) => {
+  try {
+    const response = await adminServices.post(
+      `/employees/add-new-panels`,
+      {formData}
     );
     return response;
   } catch (err) {

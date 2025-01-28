@@ -9,8 +9,9 @@ const {
     updateManyUsers,
     verifyToken
 } = require('../controllers/userController');
-
 const router = express();
+
+
 
 // Define routes
 

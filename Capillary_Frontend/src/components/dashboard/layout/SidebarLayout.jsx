@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import TopBar from "./TopBar";
 import { emailRoleMapping, defaultRole } from "../../../config/rolesConfig";
+import { ToastContainer } from 'react-toastify';
+
 
 const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
   return (
@@ -37,7 +39,7 @@ const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
 
 const SidebarLayout = () => {
   const location = useLocation();
-  const userEmail = localStorage.getItem("email");
+  const role = localStorage.getItem("role") || "Employee";
 
   // Sidebar items for roles
   const roleToSidebarItems = {
@@ -46,6 +48,8 @@ const SidebarLayout = () => {
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
       { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
       { icon: Users, title: "Employees", path: "/employee-list-table" },
+      { icon: Users, title: "Users", path: "/panel-members-table" },
+
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
       { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
@@ -86,36 +90,9 @@ const SidebarLayout = () => {
     ],
   };
 
-  function getRoleByEmail(email) {
-    if (!email) return defaultRole;
-
-    // Check if the email is in the admin list
-    const adminEmails = import.meta.env.VITE_ADMIN_EMAILS?.split(",") || [];
-    if (adminEmails.includes(email.toLowerCase().trim())) {
-      return "Admin";
-    }
-
-    // Check other role mappings
-    for (const [mappedEmail, role] of Object.entries(emailRoleMapping)) {
-      if (email.toLowerCase().trim() === mappedEmail.toLowerCase().trim()) {
-        return role;
-      }
-    }
-
-    return defaultRole;
-  }
-
-  function getSidebarItems(email) {
-    const role = getRoleByEmail(email);
-    console.log("Role", role);
-    localStorage.setItem("role", role);
-    return roleToSidebarItems[role] || roleToSidebarItems.default;
-  }
-
-  const sidebarItems = getSidebarItems(userEmail);
-
-  const activeItem = sidebarItems.find((item) =>
-    location.pathname.startsWith(item.path)
+  const sidebarItems = roleToSidebarItems[role] || roleToSidebarItems.default;
+  const activeItem = sidebarItems.find(
+    (item) => location.pathname === item.path
   );
 
   return (
@@ -143,6 +120,15 @@ const SidebarLayout = () => {
             </div>
           </div>
         </div>
+        <ToastContainer
+        position="top-center"
+        autoClose={false}
+        newestOnTop
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable={false}
+      />
 
         {/* Main Content */}
         <div className="flex-1 ml-32 scrollbar-none overflow-y-scroll bg-gray-50">

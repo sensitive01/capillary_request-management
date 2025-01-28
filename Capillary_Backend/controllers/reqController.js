@@ -3,6 +3,7 @@ const empModel = require("../models/empModel");
 const reqModel = require("../models/reqModel");
 const { createNewReq } = require("./empController");
 const PDFDocument = require("pdfkit");
+const addPanelUsers = require("../models/addPanelUsers");
 
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 
@@ -579,38 +580,68 @@ const approveRequest = async (req, res) => {
       });
     }
 
-    // Fetch the approver's data
-    const approverData = await empModel.findOne(
-      { _id: id },
-      { name: 1, employee_id: 1, department: 1 }
-    );
+    let approverData;
 
-    if (!approverData) {
-      return res.status(404).json({ message: "Approver not found" });
+    const panelUserData = await addPanelUsers
+      .findOne(
+        { _id: id },
+        { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
+      )
+      .lean(); // Use lean here as well
+    console.log("panelUserData", panelUserData);
+
+    // Find the employee data
+    const employeeData = await empModel
+      .findOne(
+        { _id: id },
+        { _id: 1, full_name: 1, department: 1, hod_email_id: 1, employee_id: 1 }
+      )
+      .lean(); // Use lean to get plain object
+
+    if (panelUserData) {
+      approverData = panelUserData;
+    } else {
+      // Determine role dynamically
+      if (employeeData && !employeeData.role) {
+        const isEmpHod = await empModel
+          .findOne({ hod_email_id: employeeData.company_email_id })
+          .lean();
+        console.log("isEmpHod", isEmpHod);
+        approverData = {
+          ...employeeData, // Include existing employee data
+          role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
+        };
+      }
     }
 
     const { department } = approverData;
+    console.log("Approver department", department);
 
     // Fetch the request data
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { approvals: 1, userId: 1,createdAt:1 }
+      {
+        approvals: 1,
+        userId: 1,
+        createdAt: 1,
+        firstLevelApproval: 1,
+        hasDeviations: 1,
+      }
     );
     console.log("----->", reqData);
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
     }
-    const empData = await empModel.findOne(
-      { _id: reqData.userId },
-      { full_name: 1, deparment: 1, company_email_id: 1 }
-    );
+
+    const { firstLevelApproval } = reqData;
 
     const approvals = reqData.approvals || [];
+    console.log(firstLevelApproval);
 
     // Define the department workflow order
     const departmentOrder = [
-      "HOD Department",
+      firstLevelApproval.hodDepartment,
       "Business Finance",
       "Vendor Management",
       "Legal Team",
@@ -620,7 +651,10 @@ const approveRequest = async (req, res) => {
     ];
 
     // Validation 1: Check if HOD Department is the first approver
-    if (approvals.length === 0 && department !== "HOD Department") {
+    if (
+      approvals.length === 0 &&
+      department !== firstLevelApproval.hodDepartment
+    ) {
       return res.status(400).json({
         message: "HOD Department must approve the request first.",
       });
@@ -681,12 +715,15 @@ const approveRequest = async (req, res) => {
     const approvalRecord = {
       departmentName: department,
       status: status,
-      approverName: approverData.name,
+      approverName: approverData.full_name,
       approvalId: approverData.employee_id,
       approvalDate: new Date(), // Current date and time
       remarks: remarks || "",
       nextDepartment: status === "Approved" ? nextDepartment : null,
-      receivedOn: department === "HOD Department" ?  reqData.createdAt: latestApproval.approvalDate,
+      receivedOn:
+        department === firstLevelApproval.hodDepartment
+          ? reqData.createdAt
+          : latestApproval.approvalDate,
     };
 
     // Update request status
@@ -709,6 +746,13 @@ const approveRequest = async (req, res) => {
       }
     );
 
+    if (department === firstLevelApproval.hodDepartment) {
+      console.log("Inaide work flow");
+      firstLevelApproval.status = "Approved";
+      firstLevelApproval.approved = true;
+      await reqData.save();
+    }
+
     if (updateResult.modifiedCount === 0) {
       return res.status(400).json({
         message: "Unable to update request. Please verify the workflow state.",
@@ -726,23 +770,104 @@ const approveRequest = async (req, res) => {
       );
     }
 
-    await sendIndividualEmail(
-      "EMPLOYEE",
-      empData.company_email_id,
-      empData.full_name,
-      empData.department,
-      reqId,
-      approvalRecord
-    );
+    if (department === "Vendor Management" && reqData.hasDeviations === 0) {
+      console.log("Auto approved ",department === "Vendor Management",reqData.hasDeviations === 1)
+      const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
+      const remarks = "Auto-approved: No violations in the legal compliances";
 
-    await sendIndividualEmail(
-      "AUTHORITY",
-      "aswinrajr07@gmail.com",
-      empData.full_name,
-      empData.department,
-      reqId,
-      approvalRecord
-    );
+      for (let i = 0; i < autoApproveDepartments.length; i++) {
+        const autoDepartment = autoApproveDepartments[i];
+        const isLastDepartment = i === autoApproveDepartments.length - 1;
+        const nextAutoDepartment = isLastDepartment
+          ? null
+          : autoApproveDepartments[i + 1];
+
+        const autoApproverData = await addPanelUsers.findOne(
+          { department: autoDepartment },
+          { full_name: 1, employee_id: 1, company_email_id: 1 }
+        );
+        console.log("inside auto approve",autoApproverData)
+
+        if (autoApproverData) {
+          const autoApprovalRecord = {
+            departmentName: autoDepartment,
+            status: "Approved",
+            approverName: autoApproverData.full_name,
+            approvalId: autoApproverData.employee_id,
+            approvalDate: new Date(),
+            remarks: remarks,
+            nextDepartment: nextAutoDepartment, // Correctly assign the next department
+            receivedOn: new Date(),
+          };
+
+          // Update the request with the auto-approval record
+          await CreateNewReq.updateOne(
+            { _id: reqId },
+            {
+              $push: { approvals: autoApprovalRecord },
+              $set: {
+                currentStatus: "Approved",
+                currentDepartment: isLastDepartment
+                  ? autoDepartment
+                  : nextAutoDepartment,
+              },
+            }
+          );
+
+          // Send email to the approver for auto-approval notification
+          await sendIndividualEmail(
+            "EMPLOYEE",
+            autoApproverData.company_email_id,
+            autoApproverData.full_name,
+            autoDepartment,
+            reqId,
+            autoApprovalRecord
+          );
+
+          // Optionally send an email to an authority or admin
+          await sendIndividualEmail(
+            "AUTHORITY",
+            "aswinrajr07@gmail.com", // Replace with relevant admin email
+            autoApproverData.full_name,
+            autoDepartment,
+            reqId,
+            autoApprovalRecord
+          );
+
+          console.log(
+            `Auto-approval completed for department: ${autoDepartment}`
+          );
+        } else {
+          console.error(`No approver found for department: ${autoDepartment}`);
+          break; // Stop the auto-approval process if approver data is missing
+        }
+
+        // Ensure HOF is assigned after Info Security
+        if (autoDepartment === "Info Security") {
+          console.log(
+            "Info Security approved. Setting HOF as the next department."
+          );
+        }
+      }
+    } else {
+      await sendIndividualEmail(
+        "EMPLOYEE",
+        approverData.company_email_id,
+        approverData.full_name,
+        approverData.department,
+        reqId,
+        approvalRecord
+      );
+
+      await sendIndividualEmail(
+        "AUTHORITY",
+        "aswinrajr07@gmail.com",
+        approverData.full_name,
+        approverData.department,
+        reqId,
+        approvalRecord
+      );
+    }
 
     // Send success response with detailed message
     const message =
@@ -823,118 +948,175 @@ const getNewNotifications = async (req, res) => {
 const getStatisticData = async (req, res) => {
   try {
     const { empId, role } = req.params;
-    console.log("Welcome to statistics data", empId, role);
 
-    const empData = await empModel.findOne(
+    let consolidatedData;
+
+    const panelUserData = await addPanelUsers.findOne(
       { _id: empId },
-      { department: 1, role: 1, employee_id: 1, full_name: 1, _id: 1 }
+      { _id: 1, full_name: 1, department: 1, role: 1 }
     );
-    console.log("Employee data", empData);
+    if (panelUserData) {
+      console.log("I am panel user");
+      consolidatedData = panelUserData;
+    } else {
+      console.log("I am panel user");
 
-    if (!empData) {
+      const employeeData = await empModel.findOne(
+        { _id: empId },
+        {
+          _id: 1,
+          full_name: 1,
+          department: 1,
+          hod_email_id: 1,
+          company_email_id: 1,
+        }
+      );
+
+      const isEmpHod = await empModel.findOne({
+        hod_email_id: employeeData?.company_email_id,
+      });
+      if (employeeData && !employeeData.role) {
+        consolidatedData = {
+          ...employeeData, // Include existing employee data
+          role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
+        };
+      }
+    }
+
+    if (!consolidatedData) {
       return res.status(404).json({ message: "Employee not found" });
     }
+
+    // Initialize variables
+    let adminAllTotalRequests = 0;
+    let adminAllPendingRequests = 0;
+    let adminAllCompletedRequests = 0;
+    let departmentBudgetByCurrency = {};
 
     let myRequests = 0;
     let myApprovals = 0;
     let pendingApprovals = 0;
     let completedApprovals = 0;
-    let departmentBudget = 0;
     let pendingRequest = 0;
-
-    let adminAllTotalRequests = 0;
-    let adminAllpendingRequests = 0;
-    let adminAllcompletedRequests = 0;
-    let adminAlltotalFunds = 0;
+    let deptCompleteReq = 0;
 
     const reqData = await CreateNewReq.find();
-    if (role == "Admin") {
-      adminAllTotalRequests = reqData.length;
 
-      adminAllpendingRequests = reqData.filter(
+    // Role-based statistics
+    if (role === "Admin") {
+      adminAllTotalRequests = reqData.length;
+      adminAllPendingRequests = reqData.filter(
         (req) => req.status === "Pending"
       ).length;
-
-      adminAllcompletedRequests = reqData.filter(
+      adminAllCompletedRequests = reqData.filter(
         (req) => req.status === "Approved"
       ).length;
 
-      adminAlltotalFunds = reqData.reduce((sum, req) => {
-        if (req.supplies && req.supplies.totalValue) {
-          return sum + req.supplies.totalValue;
+      // Calculate department budget by currency
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
         }
-        return sum;
-      }, 0);
-      adminAlltotalFunds = Math.round(adminAlltotalFunds * 100) / 100;
+        return acc;
+      }, {});
     } else if (role === "Business Finance" || role === "HOF") {
-      let myrequestData = reqData.filter((req) => req.userId === empId);
-      myRequests = myrequestData.length;
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
 
-      const reqDataStatics = await CreateNewReq.find({
-        $or: [
-          { "approvals.approvalId": empData.employee_id },
-          { "approvals.approvalId": { $ne: empData.employee_id } },
-        ],
-      });
-      console.log("request statics", reqDataStatics);
+      const reqDataStatics = reqData.filter((req) =>
+        req.approvals.some((app) => app.approvalId === empId)
+      );
+
       myApprovals = reqDataStatics.length;
+
       reqDataStatics.forEach((request) => {
         const approval = request.approvals.find(
-          (app) => app.approvalId === empData.employee_id
+          (app) => app.approvalId === empId
         );
-        if (approval) {
-          if (approval.status === "Approved") {
-            completedApprovals++;
-          }
+        if (approval?.status === "Approved") {
+          completedApprovals++;
         } else {
           pendingApprovals++;
-          console.log(pendingApprovals);
         }
       });
 
-      departmentBudget = reqData.reduce((sum, req) => {
-        if (req.supplies && req.supplies.totalValue) {
-          return sum + req.supplies.totalValue;
+      // Calculate department budget by currency
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
         }
-        return sum;
-      }, 0);
-      departmentBudget = Math.round(departmentBudget * 100) / 100;
-
-      const pendingRequestData = reqData.filter(
-        (req) => req.status === "Pending"
-      );
-      pendingRequest = pendingRequestData.length;
+        return acc;
+      }, {});
     } else if (role === "Employee") {
-      let myrequestDatas = reqData.filter((req) => req.userId === empId);
-      myRequests = myrequestDatas.length;
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
 
-      myrequestDatas.forEach((request) => {
+      myRequestData.forEach((request) => {
         if (request.status === "Approved") {
           completedApprovals++;
         } else {
           pendingApprovals++;
-          console.log(pendingApprovals);
         }
       });
-    } else {
-      let myrequestDatas = reqData.filter((req) => req.userId === empId);
-      myRequests = myrequestDatas.length;
+    } else if (consolidatedData.role === "HOD Department") {
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
+
+      const hodApprovals = await CreateNewReq.find(
+        { "firstLevelApproval.hodDepartment": consolidatedData.department },
+        { firstLevelApproval: 1 }
+      );
+
+      hodApprovals.forEach((request) => {
+        if (request.firstLevelApproval?.status === "Approved") {
+          myApprovals++;
+        } else {
+          pendingApprovals++;
+        }
+      });
+
+      const completedApprovalsData = await CreateNewReq.find({
+        "firstLevelApproval.hodDepartment": consolidatedData.department,
+        status: "Approved",
+      });
+
+      deptCompleteReq = completedApprovalsData.length;
+
+      // Calculate department budget by currency
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (
+          req.supplies?.totalValue &&
+          req.supplies?.selectedCurrency &&
+          req.firstLevelApproval?.hodDepartment === consolidatedData.department
+        ) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+        }
+        return acc;
+      }, {});
     }
+
+    // Round the department budgets to 2 decimal places
+    Object.keys(departmentBudgetByCurrency).forEach((currency) => {
+      departmentBudgetByCurrency[currency] =
+        Math.round(departmentBudgetByCurrency[currency] * 100) / 100;
+    });
 
     // Send the response
     res.status(200).json({
-      role: empData.role,
+      role: consolidatedData.role,
       adminAllTotalRequests,
-      adminAllpendingRequests,
-      adminAllcompletedRequests,
-      adminAlltotalFunds,
-
+      adminAllPendingRequests,
+      adminAllCompletedRequests,
+      departmentBudgetByCurrency,
       myRequests,
       myApprovals,
       completedApprovals,
       pendingApprovals,
-      departmentBudget,
       pendingRequest,
+      deptCompleteReq,
     });
   } catch (err) {
     console.error("Error in getting the statistics", err);
@@ -942,24 +1124,81 @@ const getStatisticData = async (req, res) => {
   }
 };
 
+// Helper function to calculate budget
+const calculateBudget = (reqData, department = null) => {
+  return reqData.reduce((acc, req) => {
+    if (
+      req.supplies &&
+      req.supplies.totalValue &&
+      req.supplies.selectedCurrency &&
+      (!department || req.firstLevelApproval?.hodDepartment === department)
+    ) {
+      const { selectedCurrency, totalValue } = req.supplies;
+      acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+    }
+    return acc;
+  }, {});
+};
+
 const getApprovedReqData = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Id", id);
 
-    const employeData = await empModel.findOne(
-      { _id: id },
-      { empId: 1, department: 1 }
-    );
-    if (!employeData) {
-      return res.status(404).json({ message: "Employee not found" });
-    }
-    console.log("Employee Data", employeData);
+    // const employeData = await empModel.findOne(
+    //   { _id: id },
+    //   { empId: 1, department: 1 }
+    // );
+    // if (!employeData) {
+    //   return res.status(404).json({ message: "Employee not found" });
+    // }
+    // console.log("Employee Data", employeData);
 
     // const reqData = await CreateNewReq.find({
     //   "approvals.approvalId": { $eq: employeData.empId },
     // });
 
-    const reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
+    let consolidatedData;
+
+    const panelUserData = await addPanelUsers
+      .findOne({ _id: id }, { _id: 1, full_name: 1, department: 1, role: 1 })
+      .lean(); // Use lean here as well
+    console.log("panelUserData", panelUserData);
+
+    // Find the employee data
+    const employeeData = await empModel
+      .findOne(
+        { _id: id },
+        { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
+      )
+      .lean(); // Use lean to get plain object
+
+    if (panelUserData) {
+      consolidatedData = panelUserData;
+    } else {
+      // Determine role dynamically
+      if (employeeData && !employeeData.role) {
+        const isEmpHod = await empModel
+          .findOne({ hod_email_id: employeeData.company_email_id })
+          .lean(); // Use lean here too
+        console.log("isEmpHod", isEmpHod);
+        consolidatedData = {
+          ...employeeData, // Include existing employee data
+          role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
+        };
+      }
+    }
+    let reqData;
+
+    if (consolidatedData.role === "HOD Department") {
+      reqData = await CreateNewReq.find({
+        "firstLevelApproval.hodDepartment": consolidatedData.department,
+      })
+        .sort({ createdAt: -1 })
+        .exec();
+    } else {
+      reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
+    }
 
     console.log("Request Data", reqData);
 

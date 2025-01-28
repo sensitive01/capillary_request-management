@@ -15,10 +15,19 @@ const {
     getAdminEmployeeReq,
     deleteRequest,
     getIndividualReq,
-    syncEmployeeData
+    syncEmployeeData,
+    addNewPanelsMembers,
+    getPanelMembers,
+    addPanelUsers,
+    deletePanelEmployee,
+    getIndividualPanelMembers
 } = require('../controllers/empController');
 
+const capEmpController = require("../controllers/capEmpController")
+
 const router = express.Router(); // Use Router() for modular routing
+
+
 
 // Define routes
 router.get('/generate-empid',generateEmpId); 
@@ -27,14 +36,22 @@ router.get('/get/:id', getEmployeeById);
 router.get('/get-individual-req/:id',getIndividualReq); 
 router.get('/get-all-req/:id',getAllEmployeeReq); 
 router.get('/get-all-req-admin',getAdminEmployeeReq);
+router.get('/panel-member-get-all',getPanelMembers);
+router.get('/get-panel-members/:id',getIndividualPanelMembers);
 
+
+
+router.post('/verify-person',capEmpController.verifyUser); 
+// router.post('/verify-person',verifyUser); 
 
 
 
 router.post('/create', createEmployee); 
 router.post('/create-newrequest/:id',createNewReq); 
-router.post('/create-new-employee',createNewEmployee); 
-router.post('/verify-person',verifyUser); 
+router.post('/create-new-employee',createEmployee); 
+router.post('/add-new-panels',addNewPanelsMembers); 
+
+
 
 
 router.post('/sync-emp-data',syncEmployeeData); 
@@ -50,6 +67,8 @@ router.put('/update-status/:id',updateEmployeeStatus);
 
 
 router.delete('/delete/:id', deleteEmployee); 
+router.delete('/panel-delete/:id', deletePanelEmployee); 
+
 
 
 

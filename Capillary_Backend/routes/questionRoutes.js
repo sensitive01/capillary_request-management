@@ -4,6 +4,7 @@ const questionController = require("../controllers/questionController")
 
 const router = express.Router(); // Use Router() for modular routing
 
+
 // Define routes
 router.post('/create-new-question/:id', questionController.createQuestion);
 router.get('/get-my-question/:empId', questionController.getMyQuestion);

@@ -77,6 +77,7 @@ const complianceItemSchema = new mongoose.Schema({
   answer: { type: Boolean },
   department: { type: String },
   deviation: { type: mongoose.Schema.Types.Mixed },
+  hasDeviations: { type: Boolean, default: false },
 });
 
 // Define the approval schema
@@ -89,7 +90,6 @@ const approvalSchema = new mongoose.Schema({
   approvalDate: { type: Date, default: Date.now() },
   remarks: { type: String, default: "" },
   receivedOn: { type: Date },
-
 });
 
 // Main schema for 'CreateNewReq'
@@ -104,8 +104,16 @@ const createnewReqSchema = new mongoose.Schema(
     status: { type: String, default: "Pending" },
     commentLogs: [commentSchema],
     complinces: { type: [complianceItemSchema] }, // Array of compliance items
+    hasDeviations: { type: Number, default: 0 },
     approvals: { type: [approvalSchema], default: [] },
     approvedOn: { type: Date },
+    firstLevelApproval: {
+      hodName: { type: String },
+      hodEmail: { type: String },
+      approved: { type: Boolean, default: false },
+      hodDepartment: { type: String },
+      status: { type: String },
+    },
   },
   { timestamps: true }
 );

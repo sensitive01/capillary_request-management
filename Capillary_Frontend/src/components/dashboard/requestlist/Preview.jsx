@@ -547,6 +547,8 @@ const Preview = ({ formData, onSubmit, onBack }) => {
               >
                 Cancel
               </button>
+
+
               <button
                 onClick={() => {
                   onSubmit();
@@ -557,6 +559,8 @@ const Preview = ({ formData, onSubmit, onBack }) => {
               >
                  Submit Request
               </button>
+
+              
             </div>
           </div>
         </div>
