@@ -8,10 +8,11 @@ const createQuestion = async (req, res) => {
 
     const { id } = req.params;
 
-    const empData = await employeeSchema.findOne(
-      { _id: id },
-      { name: 1, department: 1 }
-    );
+    let empData =
+    (await empModel.findOne(
+      { _id: id},
+      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+    ).lean()) || (await addPanelUsers.findOne({ _id:id }).lean());
 
     if (!empData) {
       return res.status(404).json({ message: "Employee not found" });
