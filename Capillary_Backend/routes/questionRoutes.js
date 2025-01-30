@@ -8,8 +8,12 @@ const router = express.Router(); // Use Router() for modular routing
 // Define routes
 router.post('/create-new-question/:id', questionController.createQuestion);
 router.get('/get-my-question/:empId', questionController.getMyQuestion);
+router.get('/get-all-question', questionController.getAllQuestions);
+
 router.put('/update-question-visibility/:questionId', questionController.updateQuestionVisibility);
 router.get('/get-all-legal-questions', questionController.getAllLegalQuestions);
+router.delete('/delete-my-question/:quesId', questionController.deleteQuestion);
+
 
 
 

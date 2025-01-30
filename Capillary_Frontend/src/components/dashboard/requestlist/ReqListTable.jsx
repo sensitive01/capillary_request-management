@@ -7,6 +7,7 @@ import {
     Plus,
     Filter,
     FileText,
+    X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -39,6 +40,11 @@ const ReqListTable = () => {
     const [selectedDepartment, setSelectedDepartment] = useState("");
     const [isShowModal, setIsShowModal] = useState(false);
     const [isReminderNotification, setReminderNotification] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
+    const [dateFilters, setDateFilters] = useState({
+        fromDate: "",
+        toDate: "",
+    });
 
     const itemsPerPage = 10;
 
@@ -51,7 +57,6 @@ const ReqListTable = () => {
                 } else {
                     response = await getReqListEmployee(userId);
                 }
-                console.log("Response", response);
                 if (response && response.data) {
                     setUsers(response.data.data);
                     setFilteredUsers(response.data.data);
@@ -66,32 +71,90 @@ const ReqListTable = () => {
     useEffect(() => {
         let result = [...users];
 
-        if (searchTerm) {
-            result = result.filter((user) =>
-                Object.values(user).some((value) => {
-                    if (typeof value === "object" && value !== null) {
-                        return Object.values(value).some((v) =>
-                            String(v)
-                                .toLowerCase()
-                                .includes(searchTerm.toLowerCase())
-                        );
-                    }
-                    return String(value)
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase());
-                })
-            );
+        // Apply search filter
+        if (searchTerm.trim()) {
+            result = result.filter((user) => {
+                const searchLower = searchTerm.toLowerCase().trim();
+                return (
+                    // Search in reqid
+                    user.reqid?.toLowerCase().includes(searchLower) ||
+                    // Search in userName
+                    user.userName?.toLowerCase().includes(searchLower) ||
+                    // Search in department
+                    user.commercials?.department
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                    // Search in businessUnit
+                    user.commercials?.businessUnit
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                    // Search in entity
+                    user.commercials?.entity
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                    // Search in vendor
+                    user.procurements?.vendor
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                    // Search in vendorName
+                    user.procurements?.vendorName
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                    // Search in status
+                    user.status?.toLowerCase().includes(searchLower)
+                );
+            });
         }
 
-        if (selectedDepartment) {
-            result = result.filter(
-                (user) => user.commercials?.department === selectedDepartment
-            );
+        // Apply date filters
+        if (dateFilters.fromDate || dateFilters.toDate) {
+            result = result.filter((user) => {
+                const userDate = new Date(user.createdAt);
+                const fromDate = dateFilters.fromDate
+                    ? new Date(dateFilters.fromDate)
+                    : null;
+                const toDate = dateFilters.toDate
+                    ? new Date(dateFilters.toDate)
+                    : null;
+
+                if (fromDate && toDate) {
+                    // Set toDate to end of day for inclusive range
+                    toDate.setHours(23, 59, 59, 999);
+                    return userDate >= fromDate && userDate <= toDate;
+                } else if (fromDate) {
+                    return userDate >= fromDate;
+                } else if (toDate) {
+                    toDate.setHours(23, 59, 59, 999);
+                    return userDate <= toDate;
+                }
+                return true;
+            });
         }
 
         setFilteredUsers(result);
-        setCurrentPage(1);
-    }, [searchTerm, selectedDepartment, users]);
+        setCurrentPage(1); // Reset to first page when filters change
+    }, [searchTerm, dateFilters, users]);
+
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
+    const handleDateFilterChange = (e) => {
+        const { name, value } = e.target;
+        setDateFilters((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const clearFilters = () => {
+        setDateFilters({
+            fromDate: "",
+            toDate: "",
+        });
+        setSearchTerm("");
+        setShowFilters(false);
+    };
 
     const formatCurrency = (value, currencyCode) => {
         if (!value) return "N/A";
@@ -110,12 +173,6 @@ const ReqListTable = () => {
             return value;
         }
     };
-
-    const departments = [
-        ...new Set(
-            users.map((user) => user.commercials?.department).filter(Boolean)
-        ),
-    ];
 
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -186,15 +243,6 @@ const ReqListTable = () => {
                         >
                             Request Edit
                         </button>
-                        <button
-                            className="px-6 py-1 bg-primary text-white rounded-lg hover:bg-primary"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setReminderNotification(true);
-                            }}
-                        >
-                            Nudge
-                        </button>
                     </div>
                 </td>
             );
@@ -235,15 +283,18 @@ const ReqListTable = () => {
                         </div>
                         <input
                             type="text"
-                            placeholder="Search users..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={handleSearchChange}
+                            placeholder="Search by ID, name, or employee..."
                             className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                         />
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        <button
+                            className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
                             <Filter className="h-4 w-4 mr-2" />
                             Filter
                         </button>
@@ -265,6 +316,48 @@ const ReqListTable = () => {
                         </button>
                     </div>
                 </div>
+
+                {showFilters && (
+                    <div className="mt-4 w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-8 top-32 z-10">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-medium text-gray-700">
+                                Date Range
+                            </h3>
+                            <button
+                                onClick={clearFilters}
+                                className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            <div>
+                                <label className="text-xs text-gray-600 mb-1 block">
+                                    From
+                                </label>
+                                <input
+                                    type="date"
+                                    name="fromDate"
+                                    value={dateFilters.fromDate}
+                                    onChange={handleDateFilterChange}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-600 mb-1 block">
+                                    To
+                                </label>
+                                <input
+                                    type="date"
+                                    name="toDate"
+                                    value={dateFilters.toDate}
+                                    onChange={handleDateFilterChange}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="border border-gray-200 rounded-lg w-full">
                 <div className="overflow-x-auto">
@@ -277,7 +370,7 @@ const ReqListTable = () => {
                                             scope="col"
                                             className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[5%]"
                                         >
-                                            SL No
+                                            SNo
                                         </th>
                                         <th
                                             scope="col"
@@ -336,11 +429,11 @@ const ReqListTable = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {users?.length > 0 ? (
-                                        users.map((user, index) => (
+                                    {filteredUsers?.length > 0 ? (
+                                        filteredUsers.map((user, index) => (
                                             <tr
                                                 key={user.sno}
-                                                className="hover:bg-gray-50"
+                                                className="hover:bg-gray-50 cursor-pointer"
                                                 onClick={() =>
                                                     navigate(
                                                         `/req-list-table/preview-one-req/${user._id}`
@@ -348,7 +441,10 @@ const ReqListTable = () => {
                                                 }
                                             >
                                                 <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    {index + 1}
+                                                    {(currentPage - 1) *
+                                                        itemsPerPage +
+                                                        index +
+                                                        1}
                                                 </td>
 
                                                 <td className="px-6 py-4 text-sm text-gray-500">
@@ -357,28 +453,22 @@ const ReqListTable = () => {
 
                                                 <td className="px-4 py-4 text-sm text-gray-500">
                                                     {user.commercials
-                                                        .businessUnit || "NA"}
+                                                        ?.businessUnit || "NA"}
                                                 </td>
 
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     <div>
                                                         <span className="block font-medium">
                                                             {user.commercials
-                                                                .entity || "NA"}
+                                                                ?.entity ||
+                                                                "NA"}
                                                         </span>
-
                                                         <span className="block">
                                                             {user.commercials
-                                                                .site || "NA"}
+                                                                ?.site || "NA"}
                                                         </span>
                                                     </div>
                                                 </td>
-
-                                                {/* <td className="px-6 py-4 text-sm text-gray-500">
-                        {`${user.commercials.entity || "NA"} / ${
-                          user.commercials.site || "NA"
-                        }`}
-                      </td> */}
 
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     <div>
@@ -386,14 +476,14 @@ const ReqListTable = () => {
                                                             {
                                                                 user
                                                                     .procurements
-                                                                    .vendor
+                                                                    ?.vendor
                                                             }
                                                         </span>
                                                         <span className="block">
                                                             {
                                                                 user
                                                                     .procurements
-                                                                    .vendorName
+                                                                    ?.vendorName
                                                             }
                                                         </span>
                                                     </div>
@@ -417,7 +507,7 @@ const ReqListTable = () => {
                                                         <span className="block">
                                                             {
                                                                 user.commercials
-                                                                    .department
+                                                                    ?.department
                                                             }
                                                         </span>
                                                     </div>
@@ -426,6 +516,7 @@ const ReqListTable = () => {
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     {user.status || "Pending"}
                                                 </td>
+
                                                 <td className="px-4 py-3 text-sm text-gray-500 text-center">
                                                     {user.status ===
                                                     "Approved" ? (
@@ -450,9 +541,7 @@ const ReqListTable = () => {
                                                     )}
                                                 </td>
 
-                                                <td className=" text-sm text-gray-500 text-center">
-                                                    {renderActionColumn(user)}{" "}
-                                                </td>
+                                                {renderActionColumn(user)}
                                             </tr>
                                         ))
                                     ) : (
@@ -461,7 +550,7 @@ const ReqListTable = () => {
                                                 colSpan="13"
                                                 className="px-6 py-4 text-center text-gray-500"
                                             >
-                                                No data available.
+                                                No matching results found.
                                             </td>
                                         </tr>
                                     )}
@@ -472,16 +561,18 @@ const ReqListTable = () => {
                                     currentPage={currentPage}
                                     totalPages={totalPages}
                                     handlePageChange={handlePageChange}
-                                    itemsPerPage={10}
-                                    totalItems={users.length}
+                                    itemsPerPage={itemsPerPage}
+                                    totalItems={filteredUsers.length}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Modal for Edit Request */}
             {isShowModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                         <h3 className="text-xl font-semibold mb-4">
                             Send Edit Request
@@ -501,8 +592,9 @@ const ReqListTable = () => {
                             <button
                                 onClick={() => {
                                     setIsShowModal(false);
+                                    // Add your edit request logic here
                                 }}
-                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary"
+                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
                             >
                                 Send Request
                             </button>
@@ -510,8 +602,10 @@ const ReqListTable = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal for Reminder Notification */}
             {isReminderNotification && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                         <h3 className="text-xl font-semibold mb-4">
                             Send Reminder Notification
@@ -530,8 +624,9 @@ const ReqListTable = () => {
                             <button
                                 onClick={() => {
                                     setReminderNotification(false);
+                                    // Add your reminder notification logic here
                                 }}
-                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary"
+                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
                             >
                                 Notify
                             </button>

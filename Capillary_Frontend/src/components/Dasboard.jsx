@@ -32,8 +32,8 @@ const Dashboard = () => {
 
   const [dashboardStats, setDashboardStats] = useState({
     adminAllTotalRequests: 0,
-    adminAllpendingRequests: 0,
-    adminAllcompletedRequests: 0,
+    adminAllPendingRequests: 0,
+    adminAllCompletedRequests: 0,
     adminAlltotalFunds: 0,
 
     myRequests: 0,
@@ -154,7 +154,7 @@ const Dashboard = () => {
       />
       <StatCard
         title="Pending Requests"
-        value={dashboardStats.adminAllpendingRequests}
+        value={dashboardStats.adminAllPendingRequests}
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
@@ -166,7 +166,7 @@ const Dashboard = () => {
       />
       <StatCard
         title="Completed Requests"
-        value={dashboardStats.adminAllcompletedRequests}
+        value={dashboardStats.adminAllCompletedRequests}
         icon={CheckCircle2}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
@@ -189,7 +189,7 @@ const Dashboard = () => {
   const renderHODCards = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <StatCard
-        title="I submitted Requests"
+        title="My Requests"
         value={dashboardStats.myRequests}
         icon={FileText}
         bgColor="bg-blue-50 hover:bg-blue-100"
@@ -197,15 +197,15 @@ const Dashboard = () => {
         onClick={() => navigate("/req-list-table")}
       />
       <StatCard
-        title="My submitted Pending Requests"
+        title="Pending Requests"
         value={dashboardStats.pendingRequest}
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
       />
       <StatCard
-        title="My Completed Requests"
+        title="Completed Requests"
         value={dashboardStats.completedApprovals}
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
@@ -220,7 +220,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "#"
+            "/approveal-request-list/show-request-statistcs/Pending-Request"
           )
         }
       />
@@ -240,7 +240,7 @@ const Dashboard = () => {
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Approved-Request")}
       />
       <BudgetCard
         title="Department Expense"
@@ -268,23 +268,23 @@ const Dashboard = () => {
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
       />
        <StatCard
         title="Completed Requests"
-        value={dashboardStats.completedApprovals}
+        value={dashboardStats.completedRequest}
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Approved-Request")}
       />
       <StatCard
         title="My Approvals"
-        value={dashboardStats.myApprovals}
+        value={dashboardStats.completedApprovals}
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/My-Approvals")}
       />
       
       <StatCard
@@ -293,12 +293,12 @@ const Dashboard = () => {
         icon={ClipboardList}
         bgColor="bg-yellow-50 hover:bg-yellow-100"
         textColor="text-yellow-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
       />
       
       <StatCard
-        title="Completed Approvals"
-        value={dashboardStats.completedApprovals}
+        title="Total Approvals"
+        value={dashboardStats.myApprovals}
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
@@ -351,15 +351,75 @@ const Dashboard = () => {
     </div>
   );
 
+  const renderVendorManagement = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <StatCard
+        title="My Requests"
+        value={dashboardStats.myRequests}
+        icon={FileText}
+        bgColor="bg-blue-50 hover:bg-blue-100"
+        textColor="text-blue-600"
+        onClick={() => navigate("/req-list-table")}
+      />
+      <StatCard
+        title="Pending Requests"
+        value={dashboardStats.pendingRequest}
+        icon={Clock}
+        bgColor="bg-orange-50 hover:bg-orange-100"
+        textColor="text-orange-600"
+        onClick={() => navigate("#")}
+      />
+       <StatCard
+        title="Completed Requests"
+        value={dashboardStats.completedRequest}
+        icon={CheckCircle2}
+        bgColor="bg-teal-50 hover:bg-teal-100"
+        textColor="text-teal-600"
+        onClick={() => navigate("#")}
+      />
+      <StatCard
+        title="My Approvals"
+        value={dashboardStats.completedApprovals}
+        icon={CheckSquare}
+        bgColor="bg-green-50 hover:bg-green-100"
+        textColor="text-green-600"
+        onClick={() => navigate("#")}
+      />
+      
+      <StatCard
+        title="Pending Approvals"
+        value={dashboardStats.pendingApprovals}
+        icon={ClipboardList}
+        bgColor="bg-yellow-50 hover:bg-yellow-100"
+        textColor="text-yellow-600"
+        onClick={() => navigate("#")}
+      />
+      
+      <StatCard
+        title="Total Approvals"
+        value={dashboardStats.myApprovals}
+        icon={CheckCircle2}
+        bgColor="bg-indigo-50 hover:bg-indigo-100"
+        textColor="text-indigo-600"
+        onClick={() => navigate("#")}
+      />
+      
+    </div>
+  );
+
   const renderStatisticCards = () => {
     switch (role?.toLowerCase()) {
       case "admin":
         return renderAdminCards();
       case "hod department":
         return renderHODCards();
-      case "finance":
+      case "hof":
       case "business finance":
         return renderFinanceCards();
+      case "vendor management":
+        case "legal team":
+          case "info security":
+         return renderVendorManagement()
       default:
         return renderEmployeeCards();
     }

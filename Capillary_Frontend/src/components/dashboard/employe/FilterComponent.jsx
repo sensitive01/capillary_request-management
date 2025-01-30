@@ -4,9 +4,22 @@ import { useState } from "react";
 const FilterComponent = ({ isOpen, onClose, departments, hods, onFilter }) => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedHod, setSelectedHod] = useState("");
+  const [selectedSyncStatus, setSelectedSyncStatus] = useState("");
 
   const handleApplyFilter = () => {
-    onFilter({ department: selectedDepartment, hod: selectedHod });
+    onFilter({
+      department: selectedDepartment,
+      hod: selectedHod,
+      syncStatus: selectedSyncStatus,
+    });
+    onClose();
+  };
+
+  const handleReset = () => {
+    setSelectedDepartment("");
+    setSelectedHod("");
+    setSelectedSyncStatus("");
+    onFilter({ department: "", hod: "", syncStatus: "" });
     onClose();
   };
 
@@ -26,6 +39,21 @@ const FilterComponent = ({ isOpen, onClose, departments, hods, onFilter }) => {
         </div>
 
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sync Status
+            </label>
+            <select
+              value={selectedSyncStatus}
+              onChange={(e) => setSelectedSyncStatus(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">All Status</option>
+              <option value="true">Synced</option>
+              <option value="false">Not Synced</option>
+            </select>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Department
@@ -62,18 +90,24 @@ const FilterComponent = ({ isOpen, onClose, departments, hods, onFilter }) => {
             </select>
           </div>
 
-          <button
-            onClick={handleApplyFilter}
-            className="w-full bg-primary text-white rounded-md py-2 text-sm font-medium hover:bg-primary/90"
-          >
-            Apply Filters
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleApplyFilter}
+              className="flex-1 bg-primary text-white rounded-md py-2 text-sm font-medium hover:bg-primary/90"
+            >
+              Apply
+            </button>
+            <button
+              onClick={handleReset}
+              className="flex-1 bg-gray-100 text-gray-700 rounded-md py-2 text-sm font-medium hover:bg-gray-200"
+            >
+              Reset
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-
 
 export default FilterComponent;

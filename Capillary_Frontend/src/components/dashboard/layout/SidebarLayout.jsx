@@ -10,11 +10,11 @@ import {
   FileText,
   LogOut,
   CheckCircle,
+  Flag,
 } from "lucide-react";
 import TopBar from "./TopBar";
 import { emailRoleMapping, defaultRole } from "../../../config/rolesConfig";
-import { ToastContainer } from 'react-toastify';
-
+import { ToastContainer } from "react-toastify";
 
 const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
   return (
@@ -40,6 +40,7 @@ const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
 const SidebarLayout = () => {
   const location = useLocation();
   const role = localStorage.getItem("role") || "Employee";
+  console.log("role", role);
 
   // Sidebar items for roles
   const roleToSidebarItems = {
@@ -49,6 +50,7 @@ const SidebarLayout = () => {
       { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
       { icon: Users, title: "Employees", path: "/employee-list-table" },
       { icon: Users, title: "Users", path: "/panel-members-table" },
+      { icon: Flag, title: "Reports", path: "/genarate-report-page" },
 
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
       { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
@@ -78,6 +80,28 @@ const SidebarLayout = () => {
         path: "/approveal-request-list",
       },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
+    ],
+    "Vendor Management": [
+      { icon: Home, title: "Dashboard", path: "/dashboard" },
+      { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
+      {
+        icon: CheckCircle,
+        title: "Approvals",
+        path: "/approveal-request-list",
+      },
+      { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
+    ],
+    HOF:[
+      { icon: Home, title: "Dashboard", path: "/dashboard" },
+      { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
+      {
+        icon: CheckCircle,
+        title: "Approvals",
+        path: "/approveal-request-list",
+      },
+      { icon: Flag, title: "Reports", path: "/genarate-report-page" },
+
+
     ],
     default: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
@@ -121,14 +145,14 @@ const SidebarLayout = () => {
           </div>
         </div>
         <ToastContainer
-        position="top-center"
-        autoClose={false}
-        newestOnTop
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss={false}
-        draggable={false}
-      />
+          position="top-center"
+          autoClose={false}
+          newestOnTop
+          closeOnClick={false}
+          rtl={false}
+          pauseOnFocusLoss={false}
+          draggable={false}
+        />
 
         {/* Main Content */}
         <div className="flex-1 ml-32 scrollbar-none overflow-y-scroll bg-gray-50">

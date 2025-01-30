@@ -7,6 +7,7 @@ import {
   Plus,
   Filter,
   FileText,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { deleteReq, getApprovedReq } from "../../../api/service/adminServices";
@@ -23,10 +24,17 @@ const currencies = [
 const Approvals = () => {
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
-  console.log(role);
   const navigate = useNavigate();
+
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFilters, setDateFilters] = useState({
+    fromDate: "",
+    toDate: "",
+  });
 
   useEffect(() => {
     const fetchReqTable = async () => {
@@ -34,18 +42,74 @@ const Approvals = () => {
 
       if (role === "Admin") {
         // response = await getAdminReqListEmployee();
-        // console.log(response);
       } else {
         response = await getApprovedReq(userId);
-        console.log(response);
         if (response.status === 200) {
           setUsers(response.data.reqData);
+          setFilteredUsers(response.data.reqData);
         }
       }
     };
 
     fetchReqTable();
   }, [userId, role]);
+
+  // Search functionality
+  useEffect(() => {
+    const filtered = users.filter((user) => {
+      const searchString = searchTerm.toLowerCase();
+      const reqIdMatch = user.reqid?.toLowerCase().includes(searchString);
+      const nameMatch = user.userName?.toLowerCase().includes(searchString);
+      const employeeMatch = user.commercials?.department
+        ?.toLowerCase()
+        .includes(searchString);
+
+      return reqIdMatch || nameMatch || employeeMatch;
+    });
+
+    // Apply date filters if they exist
+    const filteredByDate = filtered.filter((user) => {
+      if (!dateFilters.fromDate && !dateFilters.toDate) return true;
+
+      const userDate = new Date(user.createdAt);
+      const fromDate = dateFilters.fromDate
+        ? new Date(dateFilters.fromDate)
+        : null;
+      const toDate = dateFilters.toDate ? new Date(dateFilters.toDate) : null;
+
+      if (fromDate && toDate) {
+        return userDate >= fromDate && userDate <= toDate;
+      } else if (fromDate) {
+        return userDate >= fromDate;
+      } else if (toDate) {
+        return userDate <= toDate;
+      }
+
+      return true;
+    });
+
+    setFilteredUsers(filteredByDate);
+  }, [searchTerm, users, dateFilters]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleDateFilterChange = (e) => {
+    const { name, value } = e.target;
+    setDateFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const clearFilters = () => {
+    setDateFilters({
+      fromDate: "",
+      toDate: "",
+    });
+    setShowFilters(false);
+  };
 
   const formatCurrency = (value, currencyCode) => {
     if (!value) return "N/A";
@@ -78,6 +142,7 @@ const Approvals = () => {
       prev.includes(sno) ? prev.filter((id) => id !== sno) : [...prev, sno]
     );
   };
+
   const handleEdit = async (e, userId) => {
     e.stopPropagation();
     navigate(`/req-list-table/edit-req/${userId}`);
@@ -107,13 +172,18 @@ const Approvals = () => {
             </div>
             <input
               type="text"
-              placeholder="Search users..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search by ID, name, or employee..."
               className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <button
+              className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </button>
@@ -130,7 +200,45 @@ const Approvals = () => {
             </button>
           </div>
         </div>
+
+        {/* Date Filter Panel */}
+        {showFilters && (
+          <div className="mt-4 w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-8 top-32 z-10">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-medium text-gray-700">Date Range</h3>
+              <button
+                onClick={clearFilters}
+                className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-600 mb-1 block">From</label>
+                <input
+                  type="date"
+                  name="fromDate"
+                  value={dateFilters.fromDate}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 mb-1 block">To</label>
+                <input
+                  type="date"
+                  name="toDate"
+                  value={dateFilters.toDate}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
       <div className="border border-gray-200 rounded-lg w-full">
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full align-middle">
@@ -142,7 +250,7 @@ const Approvals = () => {
                       scope="col"
                       className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[5%]"
                     >
-                      SL No
+                      SNo
                     </th>
                     <th
                       scope="col"
@@ -201,8 +309,8 @@ const Approvals = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users?.length > 0 ? (
-                    users.map((user, index) => (
+                  {filteredUsers?.length > 0 ? (
+                    filteredUsers.map((user, index) => (
                       <tr
                         key={user.sno}
                         className="hover:bg-gray-50"
@@ -215,33 +323,22 @@ const Approvals = () => {
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {index + 1}
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.reqid}
                         </td>
-
                         <td className="px-4 py-4 text-sm text-gray-500">
                           {user.commercials.businessUnit || "NA"}
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           <div>
                             <span className="block font-medium">
                               {user.commercials.entity || "NA"}
                             </span>
-
                             <span className="block">
                               {user.commercials.site || "NA"}
                             </span>
                           </div>
                         </td>
-
-                        {/* <td className="px-6 py-4 text-sm text-gray-500">
-                          {`${user.commercials.entity || "NA"} / ${
-                            user.commercials.site || "NA"
-                          }`}
-                        </td> */}
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           <div>
                             <span className="block font-medium">
@@ -252,25 +349,22 @@ const Approvals = () => {
                             </span>
                           </div>
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {formatCurrency(
                             user.supplies?.totalValue,
                             user.supplies?.selectedCurrency
                           )}
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           <div>
                             <span className="block font-medium">
-                              {user.requestor || "Employee"}
+                              {user.userName || "Employee"}
                             </span>
                             <span className="block">
                               {user.commercials.department}
                             </span>
                           </div>
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.status || "Pending"}
                         </td>
@@ -294,7 +388,6 @@ const Approvals = () => {
                             "N/A"
                           )}
                         </td>
-
                         <td className="px-6 py-4 text-sm text-gray-500 text-center">
                           <div className="flex justify-center items-center space-x-2">
                             <button
@@ -319,7 +412,11 @@ const Approvals = () => {
                         colSpan="13"
                         className="px-6 py-4 text-center text-gray-500"
                       >
-                        No data available.
+                        {searchTerm ||
+                        dateFilters.fromDate ||
+                        dateFilters.toDate
+                          ? "No matching results found."
+                          : "No data available."}
                       </td>
                     </tr>
                   )}

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Plus, ToggleLeft, ToggleRight, Info, X } from "lucide-react";
+import { Plus, ToggleLeft, ToggleRight, Info, X, Trash2 } from "lucide-react";
 import {
   addNewQuestion,
   changeQuestionVisibility,
+  fetchAllQuestions,
   fetchMyQuestions,
+  deleteQuestion,
 } from "../../api/service/adminServices";
 import { toast, ToastContainer } from "react-toastify";
 import Swal from "sweetalert2";
@@ -71,8 +73,8 @@ const LegalQuestionModal = ({ isOpen, onClose, onSubmit }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-            <Plus className="mr-3 text-primary" size={24} />
+          <h2 className="text-xl font-bold text-gray-800 flex items-center">
+            <Plus className="mr-3 text-primary" size={18} />
             Add Legal Question
           </h2>
         </div>
@@ -160,8 +162,12 @@ const LegalQuestionModal = ({ isOpen, onClose, onSubmit }) => {
 
 const LegalQuestions = () => {
   const userId = localStorage.getItem("userId");
+  const role = localStorage.getItem("role");
   const [questions, setQuestions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDeleteModal,setDeleteModal] = useState(false)
+  const [showDisableModal,setDisableModal] = useState(false)
+
   const [infoPopup, setInfoPopup] = useState({
     isOpen: false,
     title: "",
@@ -172,7 +178,13 @@ const LegalQuestions = () => {
   const fetchQuestions = async () => {
     try {
       setIsLoading(true);
-      const response = await fetchMyQuestions(userId);
+      let response;
+      if (role === "Admin") {
+        response = await fetchAllQuestions();
+      } else {
+        response = await fetchMyQuestions(userId);
+      }
+
       if (response?.status === 200 && response?.data?.data) {
         setQuestions(response.data.data);
       } else {
@@ -205,6 +217,32 @@ const LegalQuestions = () => {
     }
   };
 
+  const handleDeleteQuestion = async (questionId) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This action cannot be undone!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await deleteQuestion(questionId);
+        if (response?.status === 200) {
+          setQuestions(questions.filter((q) => q._id !== questionId));
+          toast.success("Question deleted successfully");
+        }
+      } catch (error) {
+        console.error("Error deleting question:", error);
+        toast.error("Failed to delete question");
+      }
+    }
+  };
+
   const toggleQuestionStatus = async (questionId) => {
     const question = questions.find((q) => q._id === questionId);
     const action = question.status ? "disable" : "enable";
@@ -233,7 +271,7 @@ const LegalQuestions = () => {
         Swal.fire("Updated!", `The question has been ${action}d.`, "success");
       } else {
         Swal.fire("Error!", `Failed to ${action} the question.`, "error");
-        fetchQuestions(); // Refresh questions if the API call fails
+        fetchQuestions();
       }
     } else {
       Swal.fire("Cancelled", "The status update was cancelled.", "info");
@@ -251,95 +289,121 @@ const LegalQuestions = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="p-8 text-center text-gray-500">
-          Loading questions...
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       );
     }
 
     if (!questions || questions.length === 0) {
       return (
-        <div className="p-8 text-center">
-          <div className="text-gray-500 text-lg mb-4">No questions found</div>
-          <div className="text-gray-400">
-            Click "Add New Question" to create your first question
-          </div>
+        <div className="p-12 text-center">
+          <div className="text-gray-400 text-xl mb-4">No questions found</div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="mr-2" size={15} />
+            Add Your First Question
+          </button>
         </div>
       );
     }
 
     return (
-      <table className="w-full">
-        <thead className="bg-primary/10">
-          <tr>
-            <th className="px-6 py-4 text-left text-lg font-semibold text-primary">
-              Question
-            </th>
-            <th className="px-6 py-4 text-center text-lg font-semibold text-primary">
-              Expected
-            </th>
-            <th className="px-6 py-4 text-center text-lg font-semibold text-primary">
-              Status
-            </th>
-            <th className="px-6 py-4 text-center text-lg font-semibold text-primary">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {questions.map((item) => (
-            <tr key={item._id} className="border-b hover:bg-gray-50">
-              <td className="px-6 py-4 text-lg text-gray-700">
-                <div className="flex items-center">
-                  <span className="mr-3">{item.question}</span>
-                  {item.description && (
-                    <button
-                      onClick={() => showInfo(item.question, item.description)}
-                      className="text-primary hover:text-primary/80 transition-colors"
-                    >
-                      <Info size={20} />
-                    </button>
-                  )}
-                </div>
-              </td>
-              <td className="px-6 py-4 text-center">
-                <span
-                  className={`${
-                    item.expectedAnswer
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-orange-100 text-orange-800"
-                  } px-4 py-2 rounded-full text-base font-medium`}
-                >
-                  {item.expectedAnswer ? "Yes" : "No"}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-center">
-                <span
-                  className={`${
-                    item.status
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  } px-4 py-2 rounded-full text-base font-medium`}
-                >
-                  {item.status ? "Enabled" : "Disabled"}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-center">
-                <button
-                  onClick={() => toggleQuestionStatus(item._id)}
-                  className={`${
-                    item.status
-                      ? "bg-red-500 hover:bg-red-400"
-                      : "bg-green-500 hover:bg-green-400"
-                  } text-white px-6 py-3 text-base font-medium rounded-lg transition-all duration-200 ease-in-out`}
-                >
-                  {item.status ? "Disable" : "Enable"}
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-gray-50 border-y border-gray-200">
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                Question
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                Expected
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                Status
+              </th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                Actions
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {questions.map((item) => (
+              <tr
+                key={item._id}
+                className="hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-6 py-4">
+                  <div className="flex items-center space-x-3 max-w-xl">
+                    <span className="text-sm text-gray-900 line-clamp-2">
+                      {item.question}
+                    </span>
+                    {item.description && (
+                      <button
+                        onClick={() =>
+                          showInfo(item.question, item.description)
+                        }
+                        className="flex-shrink-0 text-gray-400 hover:text-primary transition-colors"
+                      >
+                        <Info size={18} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex justify-center">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        item.expectedAnswer
+                          ? "bg-blue-50 text-blue-700"
+                          : "bg-orange-50 text-orange-700"
+                      }`}
+                    >
+                      {item.expectedAnswer ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex justify-center">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        item.status
+                          ? "bg-green-50 text-green-700"
+                          : "bg-red-50 text-red-700"
+                      }`}
+                    >
+                      {item.status ? "Enabled" : "Disabled"}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex justify-center space-x-2">
+                    <button
+                      onClick={() => toggleQuestionStatus(item._id)}
+                      className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${
+                        item.status
+                          ? "bg-red-500 hover:bg-red-600 text-white"
+                          : "bg-green-500 hover:bg-green-600 text-white"
+                      } transition-colors`}
+                    >
+                      {item.status ? "Disable" : "Enable"}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteQuestion(item._id)}
+                      className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                    >
+                      <Trash2 size={14} className="mr-1" />
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   };
 
@@ -349,13 +413,12 @@ const LegalQuestions = () => {
         <h2 className="text-3xl font-bold text-primary">Legal Questions</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center bg-primary text-white px-6 py-3 text-lg rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center bg-primary text-white px-2 py-1 text-lg rounded-lg hover:bg-primary/90 transition-colors"
         >
-          <Plus className="mr-2" size={24} />
+          <Plus className="mr-2" size={14} />
           Add New Question
         </button>
       </div>
-
       <div className="bg-white shadow-lg rounded-xl overflow-hidden">
         {renderContent()}
       </div>
@@ -382,6 +445,70 @@ const LegalQuestions = () => {
         draggable
         pauseOnFocusLoss
       />
+         {/* {showDeleteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Bell className="text-primary w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-semibold">Notify</h3>
+                            <p className="mt-2 text-gray-600 text-center">
+                                Do you want to make a reminder?
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setShowDialog(false)}
+                                className="px-4 py-2 border rounded-lg hover:bg-gray-100 text-gray-700 font-medium transition-colors duration-200"
+                            >
+                                No
+                            </button>
+
+                            <button
+                                onClick={handleNotify}
+                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium flex items-center gap-2"
+                            >
+                                <Bell size={16} />
+                                Yes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+              {showDisableModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Bell className="text-primary w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-semibold">Notify</h3>
+                            <p className="mt-2 text-gray-600 text-center">
+                                Do you want to make a the questance disable?
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setShowDialog(false)}
+                                className="px-4 py-2 border rounded-lg hover:bg-gray-100 text-gray-700 font-medium transition-colors duration-200"
+                            >
+                                No
+                            </button>
+
+                            <button
+                                onClick={handleNotify}
+                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium flex items-center gap-2"
+                            >
+                                <Bell size={16} />
+                                Yes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )} */}
     </div>
   );
 };

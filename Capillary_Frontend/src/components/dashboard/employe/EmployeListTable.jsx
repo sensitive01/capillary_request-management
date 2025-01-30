@@ -37,6 +37,7 @@ const EmployeeListTable = () => {
   const [activeFilters, setActiveFilters] = useState({
     department: "",
     hod: "",
+    syncStatus: ""
   });
 
   const itemsPerPage = 20;
@@ -48,12 +49,18 @@ const EmployeeListTable = () => {
       setEmployees(response.data);
       setFilteredEmployees(response.data);
 
-      // Set default sync state to true for all employees
-      const defaultSyncStates = response.data.reduce((acc, employee) => {
-        acc[employee.employee_id] = true;
+      // Set sync states based on employee data
+      const initialSyncStates = response.data.reduce((acc, employee) => {
+        acc[employee.employee_id] = employee.sync;
         return acc;
       }, {});
-      setEmployeeSyncStates(defaultSyncStates);
+      setEmployeeSyncStates(initialSyncStates);
+
+      // Initialize syncOffEmployee with employees that have sync set to false
+      const initialSyncOffEmployees = response.data
+        .filter(employee => !employee.sync)
+        .map(employee => employee.employee_id);
+      setSyncOffEmployee(initialSyncOffEmployees);
     } catch (err) {
       toast.error("Error fetching employees");
       console.error("Error fetching employees:", err);
@@ -66,15 +73,11 @@ const EmployeeListTable = () => {
   }, []);
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  useEffect(() => {
     let result = [...employees];
 
     if (searchTerm) {
       result = result.filter((employee) =>
-        ["full_name", "employee._id", "department"].some((key) =>
+        ["full_name", "employee_id", "department"].some((key) =>
           String(employee[key] || "")
             .toLowerCase()
             .includes(searchTerm.toLowerCase())
@@ -90,10 +93,14 @@ const EmployeeListTable = () => {
     if (activeFilters.hod) {
       result = result.filter((employee) => employee.hod === activeFilters.hod);
     }
+    if (activeFilters.syncStatus !== "") {
+      const syncValue = activeFilters.syncStatus === "true";
+      result = result.filter((employee) => employeeSyncStates[employee.employee_id] === syncValue);
+    }
 
     setFilteredEmployees(result);
     setCurrentPage(1);
-  }, [searchTerm, activeFilters, employees]);
+  }, [searchTerm, activeFilters, employees, employeeSyncStates]);
 
   const handleDelete = async (id) => {
     const response = await deleteEmployee(id);
@@ -138,26 +145,17 @@ const EmployeeListTable = () => {
   };
 
   const handleIndividualSyncToggle = (employeeId) => {
-    console.log(employeeId);
     setEmployeeSyncStates((prevStates) => {
       const newStates = {
         ...prevStates,
-        [employeeId]: !prevStates[employeeId], // Toggle the state
+        [employeeId]: !prevStates[employeeId],
       };
 
-      console.log(
-        `Sync for employee ${employeeId}: ${
-          newStates[employeeId] ? "ON" : "OFF"
-        }`
-      );
-
-      // Get employees with sync state "OFF"
+      // Update syncOffEmployee based on the new states
       const employeesWithSyncOff = Object.keys(newStates).filter(
         (id) => !newStates[id]
       );
       setSyncOffEmployee(employeesWithSyncOff);
-
-      console.log("Employees with sync OFF:", employeesWithSyncOff);
 
       return newStates;
     });
@@ -239,10 +237,10 @@ const EmployeeListTable = () => {
             <thead className="bg-primary">
               <tr>
                 {[
-                  "SL NO",
+                  "SNO",
                   "Employee",
                   "Sync",
-                  "Business_Unit",
+                  "Bus_Unit",
                   "Head Of Department",
                   "Direct Manager",
                   "Actions",
@@ -355,7 +353,6 @@ const EmployeeListTable = () => {
           </table>
         </div>
 
-        {/* Pagination component remains the same */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

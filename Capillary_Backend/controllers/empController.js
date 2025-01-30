@@ -79,8 +79,12 @@ exports.syncEmployeeData = async (req, res) => {
     };
 
     const response = await axios(options);
-
     const employees = response.data.employee_data;
+
+    await Employee.updateMany(
+      { employee_id: { $in: syncOffEmployee } },
+      { $set: { sync: false } }
+    );
 
     const filteredEmployees = employees.filter(
       (emp) => !syncOffEmployee.includes(emp.employee_id)
@@ -99,6 +103,7 @@ exports.syncEmployeeData = async (req, res) => {
             hod_email_id: emp.hod_email_id,
             department: emp.department,
             business_unit: emp.business_unit,
+            sync: true,
           };
 
           const existingEmployee = await Employee.findOne({
@@ -109,7 +114,7 @@ exports.syncEmployeeData = async (req, res) => {
             await Employee.findByIdAndUpdate(
               existingEmployee._id,
               employeeData,
-              { new: true }
+              { new: false }
             );
             return { status: "updated", id: emp.employee_id };
           } else {
@@ -131,13 +136,9 @@ exports.syncEmployeeData = async (req, res) => {
     };
 
     const empDept = await Employee.find({}, { department: 1 });
-    console.log("empDept", empDept);
 
     const departmentArray = empDept.map((emp) => emp.department);
-
     const uniqueDepartments = [...new Set(departmentArray)];
-
-    console.log("Unique Departments:", uniqueDepartments);
 
     res.status(200).json({
       message: "Sync completed",
@@ -433,15 +434,19 @@ exports.createNewReq = async (req, res) => {
     const reqid = `INBH${day}${month}${year}${randomNum}`;
 
     // Fetch employee data
-    const empData = await Employee.findOne(
+    let empData = await Employee.findOne(
       { _id: req.params.id },
       { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
     );
 
     if (!empData) {
-      return res.status(404).json({
-        message: "Employee not found. Please provide a valid employee ID.",
-      });
+      empData = await addPanelUsers.findOne({ _id: req.params.id });
+
+      if (!empData) {
+        return res.status(404).json({
+          message: "Employee not found. Please provide a valid employee ID.",
+        });
+      }
     }
 
     // Fetch panel members
@@ -455,19 +460,25 @@ exports.createNewReq = async (req, res) => {
     );
 
     if (!empData.hod_email_id) {
-      return res.status(400).json({
-        message: "HOD email is missing for the employee.",
-      });
+      const hodEmail = await Employee.findOne(
+        { employee_id: empData.employee_id },
+        { hod_email_id: 1 }
+      );
+      if (!hodEmail) {
+        return res.status(400).json({
+          message: "HOD email is missing for the employee.",
+        });
+      }
+      panelMemberEmail.push(empData.hod_email_id || hodEmail.hod_email_id);
     }
-
-    panelMemberEmail.push(empData.hod_email_id);
 
     console.log("Panel Member Emails:", panelMemberEmail);
     console.log("Compliance Data:", req.body.complinces);
 
     if (!req.body.complinces || !req.body.commercials) {
       return res.status(400).json({
-        message: "Missing required compliance or commercial data in the request body.",
+        message:
+          "Missing required compliance or commercial data in the request body.",
       });
     }
 
@@ -489,21 +500,21 @@ exports.createNewReq = async (req, res) => {
       },
     });
 
-    await newRequest.save();
+    // await newRequest.save();
 
     // Send bulk emails
-    await sendBulkEmails(
-      panelMemberEmail,
-      empData.full_name,
-      empData.department,
-      reqid
-    );
+    // await sendBulkEmails(
+    //   panelMemberEmail,
+    //   empData.full_name,
+    //   empData.department,
+    //   reqid
+    // );
 
-    res.status(201).json({
-      message: "Request created successfully",
-      data: newRequest,
-      approvals: newRequest?.approvals || [],
-    });
+    // res.status(201).json({
+    //   message: "Request created successfully",
+    //   data: newRequest,
+    //   approvals: newRequest?.approvals || [],
+    // });
   } catch (error) {
     console.error("Error creating request:", error);
     res.status(500).json({
@@ -512,7 +523,6 @@ exports.createNewReq = async (req, res) => {
     });
   }
 };
-
 
 exports.getAllEmployeeReq = async (req, res) => {
   try {

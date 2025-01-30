@@ -1,5 +1,6 @@
 const Question = require("../models/questionModel");
 const employeeSchema = require("../models/empModel");
+const addPanelUsers = require("../models/addPanelUsers");
 
 const createQuestion = async (req, res) => {
   try {
@@ -44,13 +45,23 @@ const getMyQuestion = async (req, res) => {
     const { empId } = req.params;
     console.log("Employee ID:", empId);
 
-    const empData = await employeeSchema.findOne(
+    let empData = await employeeSchema.findOne(
       { _id: empId },
       { department: 1 }
     );
 
     if (!empData) {
-      return res.status(404).json({ message: "Employee not found" });
+      const panelUsers = await addPanelUsers
+        .findOne(
+          { _id: empId },
+          { _id: 1, full_name: 1, department: 1, role: 1 }
+        )
+        .lean();
+      if (!panelUsers) {
+        return res.status(404).json({ message: "Employee not found" });
+      }else{
+        empData = panelUsers
+      }
     }
 
     console.log("Employee Department:", empData.department);
@@ -78,11 +89,34 @@ const getMyQuestion = async (req, res) => {
   }
 };
 
+const getAllQuestions = async (req, res) => {
+  try {
+    const questionData = await Question.find();
+
+    if (questionData.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No questions found for this department" });
+    }
+
+    console.log("Questions Data:", questionData);
+
+    res
+      .status(200)
+      .json({ message: "Questions fetched successfully", data: questionData });
+  } catch (err) {
+    console.error("Error in fetching the questions:", err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
+  }
+};
+
 const updateQuestionVisibility = async (req, res) => {
   try {
     const { questionId } = req.params;
     const question = await Question.findById(questionId);
-    console.log("question",question)
+    console.log("question", question);
 
     if (!question) {
       return res.status(404).json({ message: "Question not found" });
@@ -105,41 +139,42 @@ const updateQuestionVisibility = async (req, res) => {
   }
 };
 
-
 const getAllLegalQuestions = async (req, res) => {
-    try {
-        const getQuestionData = await Question.find({ status: true });
-        console.log(getQuestionData);
-        return res.status(200).json({
-            success: true,
-            data: getQuestionData
-        });
-    } catch (err) {
-        console.log("Error in fetching the questions", err);
-        return res.status(500).json({
-            success: false,
-            message: "Error in fetching the questions",
-            error: err.message
-        });
+  try {
+    const getQuestionData = await Question.find({ status: true });
+    console.log(getQuestionData);
+    return res.status(200).json({
+      success: true,
+      data: getQuestionData,
+    });
+  } catch (err) {
+    console.log("Error in fetching the questions", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error in fetching the questions",
+      error: err.message,
+    });
+  }
+};
+
+const deleteQuestion = async (req, res) => {
+  try {
+    const { quesId } = req.params;
+
+    const deletedQuestion = await Question.findByIdAndDelete(quesId);
+
+    if (!deletedQuestion) {
+      return res.status(404).json({ message: "Question not found" });
     }
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    res
+      .status(200)
+      .json({ message: "Question deleted successfully", deletedQuestion });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 // Read all questions
 // exports.getAllQuestions = async (req, res) => {
@@ -241,5 +276,7 @@ module.exports = {
   createQuestion,
   getMyQuestion,
   updateQuestionVisibility,
-  getAllLegalQuestions
+  getAllLegalQuestions,
+  getAllQuestions,
+  deleteQuestion,
 };

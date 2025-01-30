@@ -8,9 +8,14 @@ import {
     PauseCircle,
     FileIcon,
     Loader2,
+    Bell,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchIndividualReq } from "../../../api/service/adminServices";
+import {
+    fetchIndividualReq,
+    releseReqStatus,
+    sendReminder,
+} from "../../../api/service/adminServices";
 import { toast, ToastContainer } from "react-toastify";
 import ChatComments from "./ChatComments";
 import handleApprove from "./handleApprove";
@@ -31,6 +36,8 @@ const PreviewTheReq = () => {
     const params = useParams();
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
+    const department = localStorage.getItem("department")
+    const [showDialog, setShowDialog] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
     const [loadingAction, setLoadingAction] = useState("");
@@ -697,37 +704,133 @@ const PreviewTheReq = () => {
         }
     };
 
-    const renderApprovalButtons = () => {
-        if (role === "Employee") return null;
+    const handleRelese = async(status)=>{
+        const response = await releseReqStatus(status,department,userId,request._id,role)
+        console.log(response)
+        if(response.success===200){
+            toast.success(response.data.message)
+        }else{
+            toast.error("Some thing went wrong")
+        }
+    }
 
+    const handleNotify = async () => {
+        try {
+            console.log("Notification");
+            const response = await sendReminder(request._id); // Assuming sendReminder is your API call
+
+            console.log(response);
+
+            if (response.status === 200) {
+                toast.success("Notification sent successfully!");
+                setShowDialog(false);
+            } else {
+                toast.error("Failed to send notification.");
+            }
+        } catch (error) {
+            console.log("Error:", error);
+            // Show an error toast in case of failure
+            toast.error("An error occurred while sending the notification.");
+        }
+    };
+
+    const renderApprovalButtons = (request) => {
         return (
-            <div className="bg-white p-4 flex justify-end items-end border-t shadow-md">
-                <div className="flex space-x-4">
-                    <button
-                        onClick={() => approveRequest("Rejected")}
-                        disabled={isLoading}
-                        className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <XCircle className="mr-2" /> Reject
-                    </button>
-                    <button
-                        onClick={() => approveRequest("Hold")}
-                        disabled={isLoading}
-                        className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <PauseCircle className="mr-2" /> Hold
-                    </button>
-                    <button
-                        onClick={() => approveRequest("Approved")}
-                        disabled={isLoading}
-                        className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <CheckCircle2 className="mr-2" /> Submit
-                    </button>
-                </div>
+            <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
+                <button
+                    onClick={() => setShowDialog(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm shadow-sm active:scale-95 transform"
+                >
+                    <Bell size={16} className="animate-bounce" />
+                    <span>Nudge</span>
+                </button>
+    
+                {role !== "Employee" && (
+                    <div className="flex space-x-4">
+                        {/* Status: Pending → Reject, Hold, Submit */}
+                        {request.status === "Pending" && (
+                            <>
+                                <button
+                                    onClick={() => approveRequest("Rejected")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <XCircle className="mr-2" /> Reject
+                                </button>
+                                <button
+                                    onClick={() => approveRequest("Hold")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <PauseCircle className="mr-2" /> Hold
+                                </button>
+                                <button
+                                    onClick={() => approveRequest("Approved")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <CheckCircle2 className="mr-2" /> Submit
+                                </button>
+                            </>
+                        )}
+    
+                        {/* Status: Hold → Reject, Release Hold, Submit */}
+                        {request.status === "Hold" && (
+                            <>
+                                <button
+                                    // onClick={() => approveRequest("Rejected")}
+                                    disabled
+                                    className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <XCircle className="mr-2" /> Reject
+                                </button>
+                                <button
+                                    onClick={() => handleRelese("Release Hold")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <PauseCircle className="mr-2" /> Release Hold
+                                </button>
+                                <button
+                                    disabled
+                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <CheckCircle2 className="mr-2" /> Submit
+                                </button>
+                            </>
+                        )}
+    
+                        {/* Status: Rejected → Release Reject, Hold, Submit */}
+                        {request.status === "Rejected" && (
+                            <>
+                                <button
+                                    onClick={() => handleRelese("Release Reject")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <XCircle className="mr-2" /> Release Reject
+                                </button>
+                                <button
+                                    disabled
+                                    className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <PauseCircle className="mr-2" /> Hold
+                                </button>
+                                <button
+                                    disabled
+                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <CheckCircle2 className="mr-2" /> Submit
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         );
     };
+    
+    
 
     if (!request) {
         return <div className="text-center py-10">Loading...</div>;
@@ -747,8 +850,40 @@ const PreviewTheReq = () => {
                 </div>
             </div>
 
-            {renderApprovalButtons()}
+            {renderApprovalButtons(request)}
             <ToastContainer position="top-right" autoClose={5000} />
+            {showDialog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Bell className="text-primary w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-semibold">Notify</h3>
+                            <p className="mt-2 text-gray-600 text-center">
+                                Do you want to make a reminder?
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setShowDialog(false)}
+                                className="px-4 py-2 border rounded-lg hover:bg-gray-100 text-gray-700 font-medium transition-colors duration-200"
+                            >
+                                No
+                            </button>
+
+                            <button
+                                onClick={handleNotify}
+                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium flex items-center gap-2"
+                            >
+                                <Bell size={16} />
+                                Yes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

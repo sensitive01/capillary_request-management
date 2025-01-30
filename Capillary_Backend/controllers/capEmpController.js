@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const addPanelUsers = require("../models/addPanelUsers");
 const Employee = require("../models/empModel");
 const sendLoginEmail = require("../utils/sendEmail");
+const { sendBulkEmails } = require("../utils/otherTestEmail");
+const CreateNewReq = require("../models/createNewReqSchema");
 
 const { CAPILLARY_JWT_SECRET } = require("../config/variables");
 console.log(CAPILLARY_JWT_SECRET);
@@ -81,7 +83,7 @@ const verifyUser = async (req, res) => {
       );
       console.log("Token", token);
 
-        await sendLoginEmail(email, subject, textContent, htmlContent);
+      await sendLoginEmail(email, subject, textContent, htmlContent);
 
       return res.status(200).json({
         success: true,
@@ -90,7 +92,7 @@ const verifyUser = async (req, res) => {
         token,
       });
     } else {
-        console.log("else")
+      console.log("else");
       return res.status(401).json({
         success: false,
         message: "Employee not found.",
@@ -105,6 +107,80 @@ const verifyUser = async (req, res) => {
   }
 };
 
+const createNewReq = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { complinces, commercials, procurements, supplies, hasDeviations } =
+      req.body;
+
+    if (!complinces || !commercials) {
+      return res
+        .status(400)
+        .json({ message: "Missing required compliance or commercial data." });
+    }
+
+    const date = new Date();
+    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
+      Math.floor(Math.random() * 100) + 1
+    }`;
+
+    let empData =
+      (await Employee.findOne(
+        { _id: id },
+        { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+      ).lean()) || (await addPanelUsers.findOne({ _id: id }).lean());
+
+    if (!empData) {
+      return res.status(404).json({
+        message: "Employee not found. Please provide a valid employee ID.",
+      });
+    }
+
+    const panelMemberEmail = (
+      await addPanelUsers.find({}, { company_email_id: 1, _id: 0 }).lean()
+    ).map((member) => member.company_email_id);
+
+    panelMemberEmail.push(commercials.hodEmail);
+    console.log("panel members",panelMemberEmail)
+
+    const newRequest = new CreateNewReq({
+      reqid,
+      userId: id,
+      userName:empData.full_name,
+      commercials,
+      procurements,
+      supplies,
+      complinces,
+      hasDeviations: hasDeviations ? 1 : 0,
+      firstLevelApproval: {
+        hodName: commercials.hod,
+        hodEmail: commercials.hodEmail,
+        hodDepartment: commercials.department,
+        status: "Pending",
+        approved: false,
+      },
+    });
+
+    await newRequest.save();
+    // const from =  `"Capillary Technology" ${process.env.EMAIL_ADDRESS}`
+    // await sendBulkEmails(from,panelMemberEmail, empData.full_name, empData.department, reqid);
+
+    res.status(201).json({
+      message: "Request created successfully",
+      data: newRequest,
+      approvals: newRequest?.approvals || [],
+    });
+  } catch (error) {
+    console.error("Error creating request:", error);
+    res
+      .status(500)
+      .json({ message: "Error creating request", error: error.message });
+  }
+};
+
 module.exports = {
   verifyUser,
+  createNewReq,
 };

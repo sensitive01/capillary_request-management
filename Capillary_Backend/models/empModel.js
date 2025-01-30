@@ -11,7 +11,8 @@ const employeeSchema = new mongoose.Schema(
     hod_email_id: { type: String },
     department: { type: String },
     business_unit: { type: String },
-    role:{type:String}
+    role:{type:String},
+    sync:{type:Boolean,default:false}
   },
   {
     timestamps: true,

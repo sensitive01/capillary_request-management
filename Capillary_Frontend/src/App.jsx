@@ -37,6 +37,7 @@ import PanelMembers from "./components/dashboard/panels-members/PanelMembers";
 import PanelMemberTable from "./components/dashboard/panels-members/PanelMemberTable";
 import EditPanelmembers from "./components/dashboard/panels-members/EditPanelmembers";
 import SessionTimeout from "./components/session/SessionTimeOut";
+import ReportPage from "./components/dashboard/report/ReportPage";
 
 
 function App() {
@@ -98,6 +99,8 @@ function App() {
           <Route path="/invoice" element={<Invoice/>} />
           <Route path="/admin/domain" element={<AllowDomainList/>} />
           <Route path="/admin/domain-table" element={<DomainListTable/>} />
+          <Route path="/genarate-report-page" element={<ReportPage/>} />
+
 
         </Route>
       </Routes>

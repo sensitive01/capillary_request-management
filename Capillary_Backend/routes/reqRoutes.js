@@ -31,11 +31,17 @@ router.post('/accept-request-po-team/:id', reqController.approveRequest);
 router.post('/accept-request-hof-team/:id', reqController.approveRequest); 
 router.get('/invoice/download/:id', reqController.downloadInvoicePdf); 
 
+router.post('/send-reminder/:reqId', reqController.sendNudgeNotification); 
+
+
 
 
 
 
 router.post('/add-request', reqController.addReqForm); 
+
+router.put('/relese-status/:empId/:reqId', reqController.releaseReqStatus); 
+
 
 
 router.put('/update-request/:id', reqController.updateRequest); 

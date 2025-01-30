@@ -42,12 +42,13 @@ router.get('/get-panel-members/:id',getIndividualPanelMembers);
 
 
 router.post('/verify-person',capEmpController.verifyUser); 
+router.post('/create-newrequest/:id',capEmpController.createNewReq); 
+
+
 // router.post('/verify-person',verifyUser); 
-
-
+// router.post('/create-newrequest/:id',createNewReq); 
 
 router.post('/create', createEmployee); 
-router.post('/create-newrequest/:id',createNewReq); 
 router.post('/create-new-employee',createEmployee); 
 router.post('/add-new-panels',addNewPanelsMembers); 
 

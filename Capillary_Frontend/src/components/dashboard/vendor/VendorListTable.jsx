@@ -1,9 +1,9 @@
-import { Search, Download, Filter, Plus, Edit, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Search, Download, Filter, Plus, Edit, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import * as XLSX from 'xlsx';
-import Pagination from "./Pagination"; // Adjust the import path as needed
+import * as XLSX from "xlsx";
+import Pagination from "./Pagination";
 import {
   deleteVendor,
   getVendorList,
@@ -15,6 +15,8 @@ const VendorListTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const fileInputRef = useRef(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -35,11 +37,14 @@ const VendorListTable = () => {
     const matchesSearch = Object.values(person).some((value) =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
     );
-    
-    const matchesFilter = filterStatus === "all" ? true 
-      : filterStatus === "active" ? person.status === "active"
-      : person.status === "inactive";
-    
+
+    const matchesFilter =
+      filterStatus === "all"
+        ? true
+        : filterStatus === "active"
+        ? person.Inactive?.toLowerCase() === "no"
+        : person.Inactive?.toLowerCase() === "yes";
+
     return matchesSearch && matchesFilter;
   });
 
@@ -66,72 +71,84 @@ const VendorListTable = () => {
     }
   };
 
-  const exportToExcel = () => {
-    try {
-      const exportData = filteredData.map((person) => {
-        // Handle all possible field mappings
-        return {
-          'Vendor ID': person?.vendorId || person?.ID || person?.id || '',
-          'Name': person?.firstName || person?.Name || person?.name || '',
-          'Last Name': person?.lastName || person?.LastName || person?.last_name || '',
-          'Phone': person?.phoneNumber || person?.Phone || person?.phone || '',
-          'Email': person?.email || person?.Email || person?.email_address || '',
-          'Address': person?.streetAddress1 || person?.["Shipping Address"] || person?.address || '',
-          'City': person?.city || person?.City || '',
-          'State': person?.state || person?.State || '',
-          'Postal Code': person?.postalCode || person?.["Postal Code"] || person?.zip || '',
-          'GST Number': person?.gstNumber || person?.["Tax Number"] || person?.["GST No"] || '',
-          'Status': person?.status || person?.Status || '',
-          'Company': person?.company || person?.Company || person?.company_name || '',
-          'Website': person?.website || person?.Website || '',
-          'Registration Date': person?.registrationDate || person?.["Registration Date"] || '',
-          'Notes': person?.notes || person?.Notes || '',
-          'Alternate Phone': person?.alternatePhone || person?.["Alternative Phone"] || '',
-          'Contact Person': person?.contactPerson || person?.["Contact Person"] || '',
-          'Payment Terms': person?.paymentTerms || person?.["Payment Terms"] || '',
-          'Credit Limit': person?.creditLimit || person?.["Credit Limit"] || '',
-          'Tax ID': person?.taxId || person?.["Tax ID"] || '',
-          'Bank Name': person?.bankName || person?.["Bank Name"] || '',
-          'Account Number': person?.accountNumber || person?.["Account Number"] || '',
-          'IFSC Code': person?.ifscCode || person?.["IFSC Code"] || '',
-          'PAN Number': person?.panNumber || person?.["PAN Number"] || '',
-        };
-      });
-
-      // Remove empty columns
-      const cleanedData = exportData.map(row => {
-        const cleanRow = {};
-        Object.entries(row).forEach(([key, value]) => {
-          if (value !== '') {
-            cleanRow[key] = value;
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const workbook = XLSX.read(e.target.result, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const data = XLSX.utils.sheet_to_json(worksheet);
+          
+          // Here you would typically send this data to your API
+          console.log('Imported data:', data);
+          toast.success('File imported successfully');
+          setShowImportModal(false);
+          
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
           }
-        });
-        return cleanRow;
-      });
-
-      const ws = XLSX.utils.json_to_sheet(cleanedData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Vendors");
-      
-      // Auto-size columns
-      const columnWidths = {};
-      cleanedData.forEach(row => {
-        Object.entries(row).forEach(([key, value]) => {
-          const length = Math.max(String(value).length, key.length);
-          columnWidths[key] = Math.max(columnWidths[key] || 0, length);
-        });
-      });
-
-      ws['!cols'] = Object.values(columnWidths).map(width => ({ width }));
-
-      XLSX.writeFile(wb, `vendors_list_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success("Export successful!");
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Error exporting data");
+        } catch (error) {
+          console.error('Import error:', error);
+          toast.error('Error importing file');
+        }
+      };
+      reader.readAsArrayBuffer(file);
     }
   };
 
+  const ImportModal = () => {
+    if (!showImportModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Import Vendors</h3>
+            <button
+              onClick={() => setShowImportModal(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".xlsx,.xls,.csv"
+                className="w-full"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Supported formats: .xlsx, .xls, .csv
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90"
+              >
+                Upload File
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="p-8 bg-white rounded-lg shadow-sm h-full">
@@ -171,11 +188,11 @@ const VendorListTable = () => {
               <option value="inactive">Inactive</option>
             </select>
             <button
-              onClick={exportToExcel}
+              onClick={() => setShowImportModal(true)}
               className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export
+              <Upload className="h-4 w-4 mr-2" />
+              Import
             </button>
             <button
               className="inline-flex items-center px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
@@ -191,19 +208,14 @@ const VendorListTable = () => {
       <div className="border border-gray-200 rounded-lg">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
+            {/* Table header and body remain the same */}
             <thead className="bg-primary">
               <tr>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Sno
                 </th>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Vendor ID
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Phone
+                  Vendor
                 </th>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Email
@@ -212,63 +224,58 @@ const VendorListTable = () => {
                   Address
                 </th>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  GST Number
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-center text-xs font-medium text-white uppercase tracking-wider">
-                  View More
-                </th>
-                <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentData?.map((person, index) => (
-                <tr key={person._id} className="hover:bg-gray-50">
+                <tr
+                  key={person._id}
+                  onClick={() =>
+                    navigate(`/vendor-list-table/get-vendor/${person._id}`)
+                  }
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {startIndex + index + 1}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {person?.vendorId || person.ID}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {person?.firstName || person.Name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {person?.phoneNumber}
+                    <div className="space-y-1">
+                      <span className="block text-sm text-gray-500">
+                        {person?.vendorId || person.ID}
+                      </span>
+                      <span className="block font-semibold text-gray-900">
+                        {person?.firstName || person.Name}
+                      </span>
+                      <span className="block font-sm text-gray-900">
+                        Tax ID: {person?.gstNumber || person["Tax Number"]}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {person?.email || person.Email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 max-w-[400px] break-words whitespace-normal">
                     {person?.streetAddress1 || person["Shipping Address"]}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {person?.gstNumber || person["Tax Number"]}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() =>
-                        navigate(`/vendor-list-table/get-vendor/${person._id}`)
-                      }
-                      className="text-primary hover:text-primary/80"
-                    >
-                      View Details
-                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-4">
                       <button
                         className="text-primary hover:text-primary/80"
-                        onClick={() =>
-                          navigate(`/vendor-list-table/edit-vendor/${person._id}`)
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/vendor-list-table/edit-vendor/${person._id}`);
+                        }}
                       >
                         <Edit className="h-5 w-5" />
                       </button>
                       <button
                         className="text-red-600 hover:text-red-800"
-                        onClick={() => handleDelete(person?._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(person?._id);
+                        }}
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -288,6 +295,8 @@ const VendorListTable = () => {
         itemsPerPage={itemsPerPage}
         totalItems={filteredData?.length || 0}
       />
+
+      <ImportModal />
 
       <ToastContainer
         position="top-right"

@@ -1,20 +1,17 @@
 import React from "react";
 import { extractDateTime } from "../../../utils/extractDateTime";
-import { ChevronRight, FileText, Info } from "lucide-react";
+import { ChevronRight, FileText, Info, Bell, BellDot } from "lucide-react";
 
-// Helper function to calculate duration between two dates
 const calculateDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return { days: "-", hours: "-", minutes: "-" };
 
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Calculate the difference in milliseconds
     const diffInMs = end - start;
 
     if (diffInMs < 0) return { days: "-", hours: "-", minutes: "-" };
 
-    // Convert to days, hours, and minutes
     const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
     const hours = Math.floor(
         (diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -24,7 +21,6 @@ const calculateDuration = (startDate, endDate) => {
     return { days, hours, minutes };
 };
 
-// Helper function to format duration
 const formatDuration = (duration) => {
     if (duration.days === "-") return "Pending";
 
@@ -38,6 +34,16 @@ const formatDuration = (duration) => {
 
 const RequestLogsTable = ({ createdAt, logData }) => {
     const empRole = localStorage.getItem("role");
+
+    const handleNudge = async (logEntry) => {
+        try {
+            // Implement your nudge logic here
+            console.log("Sending nudge for log:", logEntry);
+            // Add your API call or notification logic
+        } catch (error) {
+            console.error("Error sending nudge:", error);
+        }
+    };
 
     const getStatusColorClasses = (status) => {
         switch (status.toLowerCase()) {
@@ -105,10 +111,12 @@ const RequestLogsTable = ({ createdAt, logData }) => {
                             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b">
                                 Proceeded To
                             </th>
+                           
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {logData.map((log, index) => {
+                          
                             const { date: approvalDate, time: approvalTime } =
                                 extractDateTime(log.approvalDate);
                             const { date: requestDate, time: requestTime } =
@@ -147,9 +155,9 @@ const RequestLogsTable = ({ createdAt, logData }) => {
                                     <td className="px-6 py-4">
                                         <div className="space-y-2">
                                             <span
-                                                className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColorClasses(
+                                                className={getStatusColorClasses(
                                                     log.status
-                                                )}`}
+                                                )}
                                             >
                                                 {log.status}
                                             </span>
@@ -204,6 +212,7 @@ const RequestLogsTable = ({ createdAt, logData }) => {
                                             />
                                         </div>
                                     </td>
+                                    
                                 </tr>
                             );
                         })}

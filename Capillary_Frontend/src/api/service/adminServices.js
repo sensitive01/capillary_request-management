@@ -287,6 +287,29 @@ export const fetchMyQuestions = async (userId) => {
   }
 };
 
+export const deleteQuestion = async (userId) => {
+  try {
+    const response = await adminServices.delete(
+      `/questions/delete-my-question/${userId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const fetchAllQuestions = async () => {
+  try {
+    const response = await adminServices.get(
+      `/questions/get-all-question`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 export const changeQuestionVisibility = async (questionId) => {
   try {
     const response = await adminServices.put(
@@ -314,6 +337,16 @@ export const verifyToken = async (crediantial) => {
     const response = await adminServices.post(`/verify-token`, {
       token: crediantial,
     });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const sendReminder = async (reqId) => {
+  try {
+    const response = await adminServices.post(`/request/send-reminder/${reqId}`);
     return response;
   } catch (err) {
     return err;
@@ -569,6 +602,16 @@ export const downloadInvoicePdf = async (id) => {
   } catch (error) {
     console.error("Error downloading PDF:", error);
     return { success: false, error: error.message };
+  }
+};
+
+
+export const releseReqStatus = async (status,department,userId,reqId,role) => {
+  try {
+    const response = await adminServices.put(`/request/relese-status/${userId}/${reqId}`,{status,department,role});
+    return response;
+  } catch (err) {
+    return err;
   }
 };
 
