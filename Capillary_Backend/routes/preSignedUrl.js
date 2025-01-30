@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const express = require("express");
 const multer = require("multer");
 require("dotenv").config();
+const s3Controller = require("../controllers/awsS3Controller")
 
 const s3Router = express();
 
@@ -48,5 +49,9 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
     res.status(500).json({ error: "Failed to upload files" });
   }
 });
+
+
+s3Router.post("/delete-s3-image",s3Controller.deleteImageFromS3Bucket)
+
 
 module.exports = s3Router;

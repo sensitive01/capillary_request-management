@@ -3,8 +3,6 @@ import * as Yup from "yup";
 const CommercialValidationSchema = Yup.object().shape({
   businessUnit: Yup.string().required("Business Unit is required"),
   entity: Yup.string().required("Entity is required"),
-  city: Yup.string().required("City is required"),
-  site: Yup.string().required("Site is required"),
   department: Yup.string().required("Department is required"),
   hod: Yup.string().required("Head of Department is required"),
   paymentMode: Yup.string().required("Payment Mode is required"),

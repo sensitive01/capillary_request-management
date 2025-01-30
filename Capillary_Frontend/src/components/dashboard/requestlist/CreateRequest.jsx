@@ -123,7 +123,7 @@ const CreateRequest = () => {
             ),
         },
         {
-            title: "Agreement Compliences",
+            title: "Agreement Compliance",
             icon: FileText,
             content: (
                 <AgreementCompliences

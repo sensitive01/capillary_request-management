@@ -402,7 +402,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
           <div className="flex items-center space-x-2 text-primary">
             <FileText size={24} />
             <h2 className="text-2xl font-bold border-b pb-3">
-              Compliances Details
+            Compliance Details
             </h2>
           </div>
 

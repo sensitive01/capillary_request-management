@@ -284,7 +284,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              City <span className="text-red-500">*</span>
+              City 
             </label>
             <input
               type="text"
@@ -301,7 +301,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Site <span className="text-red-500">*</span>
+              Site
             </label>
             <input
               type="text"

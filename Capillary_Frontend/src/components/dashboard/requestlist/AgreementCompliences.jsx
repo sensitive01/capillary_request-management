@@ -10,6 +10,7 @@ import {
 import { getAllLegalQuestions } from "../../../api/service/adminServices";
 import { uploadCloudinary } from "../../../utils/cloudinaryUtils";
 import { FaFilePdf } from "react-icons/fa";
+import uploadFiles from "../../../utils/s3BucketConfig";
 
 const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
     const [questions, setQuestions] = useState([]);
@@ -136,14 +137,15 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
     const handleFileUpload = async (questionId, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
-                uploadCloudinary(file)
+                uploadFiles(file,"deviation")
             );
             const responses = await Promise.all(uploadPromises);
+            console.log(responses)
 
             const fileUrls = responses.flatMap((response) => response.url);
             const updatedAttachments = [
                 ...(deviations[questionId]?.attachments || []),
-                ...fileUrls,
+                ...responses,
             ];
 
             handleDeviationChange(

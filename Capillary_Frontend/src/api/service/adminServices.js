@@ -440,6 +440,19 @@ export const dispalyIsApproved = async (userId,role,department) => {
   }
 }
 
+export const deleteFileFromAwsS3 = async (url) => {
+  try {
+
+  
+    const response = await adminServices.post(
+      `/upload-s3/delete-s3-image`,{url}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+}
+
 
 
 

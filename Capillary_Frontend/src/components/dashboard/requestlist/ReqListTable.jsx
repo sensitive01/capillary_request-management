@@ -433,7 +433,7 @@ const ReqListTable = () => {
                                         filteredUsers.map((user, index) => (
                                             <tr
                                                 key={user.sno}
-                                                className="hover:bg-gray-50 cursor-pointer"
+                                                className="hover:bg-gray-100 cursor-pointer"
                                                 onClick={() =>
                                                     navigate(
                                                         `/req-list-table/preview-one-req/${user._id}`

@@ -13,26 +13,30 @@ const SessionTimeout = () => {
       clearTimeout(timeout);
       clearTimeout(activityTimer);
 
-
       timeout = setTimeout(() => {
         setIsInactive(true);
-        localStorage.clear(); 
+        localStorage.clear();
         navigate("/");
-      }, 15 * 60 * 1000); 
+      }, 15 * 60 * 1000);
 
- 
       activityTimer = setTimeout(() => {
         setIsInactive(false);
-      }, 1000); 
+      }, 1000);
     };
 
-    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
-    events.forEach(event => {
+    const events = [
+      "mousemove",
+      "mousedown",
+      "keypress",
+      "scroll",
+      "touchstart",
+    ];
+    events.forEach((event) => {
       window.addEventListener(event, resetTimer);
     });
     resetTimer();
     return () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         window.removeEventListener(event, resetTimer);
       });
       clearTimeout(timeout);
@@ -40,15 +44,7 @@ const SessionTimeout = () => {
     };
   }, [navigate]);
 
-  return (
-    <div>
-      {isInactive ? (
-        <div>Your session has timed out due to inactivity. Please log in again.</div>
-      ) : (
-        <div>Session is active</div>
-      )}
-    </div>
-  );
+  return <></>;
 };
 
 export default SessionTimeout;

@@ -50,7 +50,7 @@ const PreviewTheReq = () => {
         const fetchReq = async () => {
             try {
                 const response = await fetchIndividualReq(params.id);
-                
+
                 if (response.status === 200) {
                     setRequest(response.data.data);
                 }
@@ -61,13 +61,13 @@ const PreviewTheReq = () => {
         fetchReq();
     }, [params.id]);
 
-    // useEffect(()=>{
-    //     const isApprove = async()=>{
-    //         const isDisable = await dispalyIsApproved(userId,role,department)
+    useEffect(()=>{
+        const isApprove = async()=>{
+            const isDisable = await dispalyIsApproved(userId,role,department)
 
-    //     }
-    //     isApprove()
-    // }),[]
+        }
+        isApprove()
+    }),[]
 
     const formatCurrency = (value) => {
         const currency = currencies.find(
@@ -197,8 +197,8 @@ const PreviewTheReq = () => {
         return (
             <div className="space-y-8">
                 {/* Commercial Details Section */}
-                <div className="p-6 space-y-6">
-                    <h2 className="text-2xl font-bold text-primary border-b pb-3">
+                <div className="p-5 space-y-6">
+                    <h2 className="text-2xl font-bold text-primary border-b pb-2">
                         Commercial Details
                     </h2>
                     {request.commercials &&
@@ -366,7 +366,7 @@ const PreviewTheReq = () => {
                 </div>
 
                 {/* Procurement Details Section */}
-                <div className="p-6 space-y-6">
+                <div className="p-5 space-y-6">
                     <h2 className="text-2xl font-bold text-primary border-b pb-3">
                         Procurement Details
                     </h2>
@@ -756,102 +756,6 @@ const PreviewTheReq = () => {
         }
     };
 
-    // const renderApprovalButtons = (request) => {
-    //     return (
-    //         <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
-    //             <button
-    //                 onClick={() => setShowDialog(true)}
-    //                 className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm shadow-sm active:scale-95 transform"
-    //             >
-    //                 <Bell size={16} className="animate-bounce" />
-    //                 <span>Nudge</span>
-    //             </button>
-
-    //             {role !== "Employee" && (
-    //                 <div className="flex space-x-4">
-    //                     {/* Status: Pending → Reject, Hold, Submit */}
-    //                     {request.status === "Pending" && (
-    //                         <>
-    //                             <button
-    //                                 onClick={() => approveRequest("Rejected")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Reject
-    //                             </button>
-    //                             <button
-    //                                 onClick={() => approveRequest("Hold")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Hold
-    //                             </button>
-    //                             <button
-    //                                 onClick={() => approveRequest("Approved")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Submit
-    //                             </button>
-    //                         </>
-    //                     )}
-
-    //                     {/* Status: Hold → Reject, Release Hold, Submit */}
-    //                     {request.status === "Hold" && (
-    //                         <>
-    //                             <button
-    //                                 // onClick={() => approveRequest("Rejected")}
-    //                                 disabled
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Reject
-    //                             </button>
-    //                             <button
-    //                                 onClick={() => handleRelese("Release Hold")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Release Hold
-    //                             </button>
-    //                             <button
-    //                                 disabled
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Submit
-    //                             </button>
-    //                         </>
-    //                     )}
-
-    //                     {/* Status: Rejected → Release Reject, Hold, Submit */}
-    //                     {request.status === "Rejected" && (
-    //                         <>
-    //                             <button
-    //                                 onClick={() => handleRelese("Release Reject")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Release Reject
-    //                             </button>
-    //                             <button
-    //                                 disabled
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Hold
-    //                             </button>
-    //                             <button
-    //                                 disabled
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Submit
-    //                             </button>
-    //                         </>
-    //                     )}
-    //                 </div>
-    //             )}
-    //         </div>
-    //     );
-    // };
-
     const renderApprovalButtons = (request) => {
         return (
             <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
@@ -887,7 +791,7 @@ const PreviewTheReq = () => {
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <CheckCircle2 className="mr-2" /> Submit
+                                    <CheckCircle2 className="mr-2" /> Approve
                                 </button>
                             </>
                         )}
@@ -957,7 +861,7 @@ const PreviewTheReq = () => {
     }
 
     return (
-        <div className="flex flex-col bg-white h-screen">
+        <div className="flex flex-col bg-white">
             {isLoading && <LoadingOverlay />}
             <div className="bg-primary text-white p-4 text-center shadow-md">
                 <h1 className="text-2xl font-bold">Purchase Order Preview</h1>
@@ -969,8 +873,8 @@ const PreviewTheReq = () => {
                     {renderSectionContent()}
                 </div>
             </div>
+                {renderApprovalButtons(request)}
 
-            {renderApprovalButtons(request)}
             <ToastContainer position="top-right" autoClose={5000} />
             {showDialog && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

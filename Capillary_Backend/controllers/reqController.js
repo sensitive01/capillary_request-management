@@ -31,10 +31,18 @@ const postComments = async (req, res) => {
     const { id } = req.params;
     const { data } = req.body;
 
-    const empData = await empModel.findOne(
+    console.log(id,data)
+
+    // const empData = await empModel.findOne(
+    //   { _id: data.senderId },
+    //   { full_name: 1, empId: 1 }
+    // );
+
+    let empData =
+    (await empModel.findOne(
       { _id: data.senderId },
-      { full_name: 1, empId: 1 }
-    );
+      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+    ).lean()) || (await addPanelUsers.findOne({ _id: data.senderId }).lean());
 
     const commentData = {
       senderId: data.senderId,
@@ -2129,13 +2137,7 @@ module.exports = {
   postComments,
   getAllChats,
   getReports,
-  // approveReqByHod,
-  // approveReqByBusiness,
-  // approveReqByVendorManagement,
-  // approveReqByLegalTeam,
-  // approveReqByInfoSecurity,
-  // approveReqByPoTeam,
-  // approveReqByHofTeam,
+
 
   approveRequest,
   getNewNotifications,

@@ -16,13 +16,7 @@ router.get('/get-all-chats/:id', reqController.getAllChats);
 router.get('/get-reports', reqController.getReports); 
 
 
-// router.post('/accept-request-hod/:id', reqController.approveReqByHod); 
-// router.post('/accept-request-business/:id', reqController.approveReqByBusiness); 
-// router.post('/accept-request-vendor/:id', reqController.approveReqByVendorManagement); 
-// router.post('/accept-request-legal/:id', reqController.approveReqByLegalTeam); 
-// router.post('/accept-request-info-security/:id', reqController.approveReqByInfoSecurity); 
-// router.post('/accept-request-po-team/:id', reqController.approveReqByPoTeam); 
-// router.post('/accept-request-hof-team/:id', reqController.approveReqByHofTeam); 
+
 
 
 

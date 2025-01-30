@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { deleteReq, getApprovedReq } from "../../../api/service/adminServices";
+import Pagination from "../requestlist/Pagination";
 
 const currencies = [
   { code: "USD", symbol: "$", locale: "en-US" },
@@ -31,10 +32,13 @@ const Approvals = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [dateFilters, setDateFilters] = useState({
     fromDate: "",
     toDate: "",
   });
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchReqTable = async () => {
@@ -126,6 +130,17 @@ const Approvals = () => {
     } catch (error) {
       console.error("Currency formatting error:", error);
       return value;
+    }
+  };
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setSelectedUsers([]);
     }
   };
 
@@ -313,7 +328,7 @@ const Approvals = () => {
                     filteredUsers.map((user, index) => (
                       <tr
                         key={user.sno}
-                        className="hover:bg-gray-50"
+                        className="hover:bg-gray-100 cursor-pointer"
                         onClick={() =>
                           navigate(
                             `/req-list-table/preview-one-req/${user._id}`
@@ -321,7 +336,9 @@ const Approvals = () => {
                         }
                       >
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {index + 1}
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </td>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {user.reqid}
@@ -426,6 +443,13 @@ const Approvals = () => {
           </div>
         </div>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        handlePageChange={handlePageChange}
+        itemsPerPage={itemsPerPage}
+        totalItems={filteredUsers.length}
+      />
     </div>
   );
 };

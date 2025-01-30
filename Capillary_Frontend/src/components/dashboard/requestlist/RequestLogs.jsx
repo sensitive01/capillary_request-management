@@ -219,6 +219,7 @@ const RequestLogsTable = ({ createdAt, logData }) => {
                     </tbody>
                 </table>
             </div>
+            
         </div>
     );
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchAllVendorData } from "../../../api/service/adminServices";
+import { deleteFileFromAwsS3, fetchAllVendorData } from "../../../api/service/adminServices";
 import { uploadCloudinary } from "../../../utils/cloudinaryUtils";
 import { FaFilePdf } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -163,8 +163,10 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         files.map(async (file) => {
         //   const data = await uploadCloudinary(file);
         const data = await uploadFiles(file,fileType);
+        console.log("uploadedUrls",data[0])
 
-          return data.url;
+
+          return data[0];
         })
       );
 
@@ -202,8 +204,11 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     }
   };
   // Remove a specific file
-  const handleRemoveFile = (fileType, fileIndex) => {
-    // Remove from formData
+  const handleRemoveFile = async(fileType, fileIndex,url) => {
+    console.log(fileType, fileIndex,url)
+    const removeS3Image = await deleteFileFromAwsS3(url)
+    console.log("fileDeleted",removeS3Image)
+   
     setFormData((prevState) => {
       const updatedFiles = { ...prevState.uploadedFiles };
       if (updatedFiles[fileType]) {
@@ -343,7 +348,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                   {`${fileType}-${fileIndex}`}
                 </a>
                 <button
-                  onClick={() => handleRemoveFile(fileType, fileIndex)}
+                  onClick={() => handleRemoveFile(fileType, fileIndex,url)}
                   className="ml-2 text-red-500 hover:text-red-700"
                 >
                   ×
