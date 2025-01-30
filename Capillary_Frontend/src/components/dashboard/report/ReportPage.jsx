@@ -1,83 +1,82 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, PieChart, Pie, Cell
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
 } from 'recharts';
 import { Calendar, BarChart3, FileBarChart, Download } from 'lucide-react';
-
-// Dummy data for the charts
-const monthlyData = [
-  { month: 'Jan', total: 65, pending: 12, rejected: 8, hold: 4 },
-  { month: 'Feb', total: 78, pending: 15, rejected: 5, hold: 6 },
-  { month: 'Mar', total: 92, pending: 18, rejected: 7, hold: 3 },
-  { month: 'Apr', total: 85, pending: 14, rejected: 6, hold: 5 },
-  { month: 'May', total: 98, pending: 20, rejected: 4, hold: 7 },
-  { month: 'Jun', total: 88, pending: 16, rejected: 9, hold: 4 }
-];
-
-const statusData = [
-  { name: 'Approved', value: 63, color: '#4CAF50' },
-  { name: 'Pending', value: 20, color: '#FFC107' },
-  { name: 'Rejected', value: 10, color: '#F44336' },
-  { name: 'On Hold', value: 7, color: '#9E9E9E' }
-];
-
-const departments = [
-  'All Departments',
-  'IT',
-  'HR',
-  'Finance',
-  'Marketing',
-  'Operations',
-  'Sales'
-];
+import { getReqReports } from '../../../api/service/adminServices';
 
 const ReportPage = () => {
-  const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
-  const [dateRange, setDateRange] = useState('last6months');
 
-  const stats = {
-    totalRequests: 245,
-    totalBudget: '₹2,45,000',
-    pendingRequests: 32,
-    rejectedRequests: 18
+  const [reportData,setReportData] = useState({
+    totalRequests:0,
+    pendingRequests:0,
+    rejectedRequests:0,
+    departmentBudgetByCurrency:{}
+  })
+
+  useEffect(()=>{
+    const repostData = async()=>{
+      const response = await getReqReports()
+      console.log(response)
+    if(response.status===200){
+      setReportData(response.data)
+    }
+    }
+    repostData()
+  })
+
+  // Format currency with proper symbol
+  const formatCurrency = (amount, currency) => {
+    if (!amount || !currency) return '0';
+    
+    const formatters = {
+      USD: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
+      GBP: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }),
+      JPY: new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' })
+    };
+    return formatters[currency]?.format(amount) || amount;
   };
+
+  // Calculate total budget across all currencies
+  const calculateTotalBudget = (budgetByCurrency) => {
+    if (!budgetByCurrency) return '0';
+    
+    return Object.entries(budgetByCurrency)
+      .filter(([_, amount]) => amount != null)
+      .map(([currency, amount]) => formatCurrency(amount, currency))
+      .join(' + ') || '0';
+  };
+
+  // Prepare data for pie chart
+  const statusData = [
+    { name: 'Pending', value: reportData.pendingRequests || 0, color: '#FFC107' },
+    { name: 'Rejected', value: reportData.rejectedRequests || 0, color: '#F44336' },
+    { 
+      name: 'Approved', 
+      value: Math.max(0, (reportData.totalRequests || 0) - ((reportData.pendingRequests || 0) + (reportData.rejectedRequests || 0))),
+      color: '#4CAF50' 
+    }
+  ].filter(item => item.value > 0);
+
+  // Prepare data for budget distribution pie chart
+  const budgetDistributionData = Object.entries(reportData.departmentBudgetByCurrency).map(([currency, amount]) => ({
+    name: currency,
+    value: amount,
+    color: {
+      USD: '#4CAF50',
+      GBP: '#2196F3',
+      JPY: '#9C27B0'
+    }[currency]
+  }));
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Department Reports</h1>
-        
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Department Filter */}
-          <select 
-            className="px-4 py-2 border rounded-lg bg-white shadow-sm"
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-          >
-            {departments.map(dept => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
-
-          {/* Date Range Filter */}
-          <select 
-            className="px-4 py-2 border rounded-lg bg-white shadow-sm"
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-          >
-            <option value="last6months">Last 6 Months</option>
-            <option value="last3months">Last 3 Months</option>
-            <option value="lastmonth">Last Month</option>
-          </select>
-
-          {/* Export Button */}
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700">
-            <Download size={20} />
-            Export Report
-          </button>
-        </div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold text-gray-800"> Reports</h1>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700">
+          <Download size={20} />
+          Export Report
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -89,7 +88,7 @@ const ReportPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Requests</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.totalRequests}</p>
+              <p className="text-2xl font-bold text-gray-800">{reportData.totalRequests}</p>
             </div>
           </div>
         </div>
@@ -101,7 +100,9 @@ const ReportPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Budget</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.totalBudget}</p>
+              <p className="text-lg font-bold text-gray-800">
+                {calculateTotalBudget(reportData.departmentBudgetByCurrency)}
+              </p>
             </div>
           </div>
         </div>
@@ -113,7 +114,7 @@ const ReportPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Pending Requests</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.pendingRequests}</p>
+              <p className="text-2xl font-bold text-gray-800">{reportData.pendingRequests}</p>
             </div>
           </div>
         </div>
@@ -125,7 +126,7 @@ const ReportPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Rejected Requests</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.rejectedRequests}</p>
+              <p className="text-2xl font-bold text-gray-800">{reportData.rejectedRequests}</p>
             </div>
           </div>
         </div>
@@ -133,27 +134,7 @@ const ReportPage = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Line Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">Request Trends</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="total" stroke="#2196F3" name="Total" />
-                <Line type="monotone" dataKey="pending" stroke="#FFC107" name="Pending" />
-                <Line type="monotone" dataKey="rejected" stroke="#F44336" name="Rejected" />
-                <Line type="monotone" dataKey="hold" stroke="#9E9E9E" name="Hold" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Pie Chart */}
+        {/* Request Status Pie Chart */}
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h2 className="text-lg font-semibold mb-4">Request Status Distribution</h2>
           <div className="h-80">
@@ -174,6 +155,33 @@ const ReportPage = () => {
                   ))}
                 </Pie>
                 <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Budget Distribution Pie Chart */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <h2 className="text-lg font-semibold mb-4">Budget Distribution by Currency</h2>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={budgetDistributionData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name} ${formatCurrency(value, name)}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {budgetDistributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value, name) => formatCurrency(value, name)} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>

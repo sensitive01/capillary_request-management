@@ -37,6 +37,8 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
           existingCompliances = Object.values(formData.complinces.complinces);
         }
 
+     
+
         // Create a map for quick lookup
         const complianceMap = existingCompliances.reduce((acc, compliance) => {
           acc[compliance.questionId] = compliance;

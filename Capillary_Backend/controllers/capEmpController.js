@@ -83,7 +83,7 @@ const verifyUser = async (req, res) => {
       );
       console.log("Token", token);
 
-      await sendLoginEmail(email, subject, textContent, htmlContent);
+      // await sendLoginEmail(email, subject, textContent, htmlContent);
 
       return res.status(200).json({
         success: true,

@@ -10,6 +10,8 @@ import {
   FileIcon,
   User,
 } from "lucide-react";
+import pfdIcon from "../../../../assets/images/pdfIcon.png";
+
 
 const currencies = [
   { code: "USD", symbol: "$", locale: "en-US" },
@@ -36,45 +38,53 @@ const Preview = ({ formData, onSubmit, onBack }) => {
     }).format(value);
   };
 
-  const renderUploadedFiles = (uploadedFiles) => {
-    if (!uploadedFiles || Object.keys(uploadedFiles).length === 0) {
-      return <div className="text-gray-500">No files uploaded</div>;
-    }
-
-    return (
-      <div className="mt-4 space-y-2">
-        {Object.entries(uploadedFiles).map(
-          ([key, files]) =>
-            files &&
-            files.length > 0 && (
-              <div key={key} className="bg-gray-50 p-3 rounded-lg">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2 capitalize">
-                  {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-                </h4>
-                <div className="space-y-1">
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center text-sm text-gray-700"
-                    >
-                      <FileIcon className="mr-2 text-primary" size={16} />
-                      <a
-                        href={file}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-primary underline"
-                      >
-                        View File {index + 1}
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-        )}
-      </div>
-    );
-  };
+    const renderUploadedFiles = (uploadedFiles) => {
+        if (!uploadedFiles || Object.keys(uploadedFiles).length === 0) {
+            return <div className="text-gray-500">No files uploaded</div>;
+        }
+        return (
+            <div className="grid grid-cols-3 gap-4">
+                {Object.entries(uploadedFiles).map(
+                    ([key, files]) =>
+                        files &&
+                        files.length > 0 && (
+                            <div
+                                key={key}
+                                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                            >
+                                <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
+                                    {key
+                                        .replace(/([A-Z])/g, " $1")
+                                        .toLowerCase()}
+                                </h4>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {files.map((file, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex flex-col items-center bg-gray-50 rounded p-2"
+                                        >
+                                            <a
+                                                href={file}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xs text-blue-600 hover:text-blue-800 truncate max-w-full text-center"
+                                            >
+                                                {" "}
+                                                <img
+                                                    src={pfdIcon}
+                                                    alt={`Icon ${index + 1}`}
+                                                    className="w-10 h-10 object-cover mb-2"
+                                                />
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                )}
+            </div>
+        );
+    };
 
   return (
     <div className="max-w-8xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">

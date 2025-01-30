@@ -427,6 +427,22 @@ export const fetchIndividualReq = async (id) => {
     return err;
   }
 };
+export const dispalyIsApproved = async (userId,role,department) => {
+  try {
+    console.log(userId,role,department)
+  
+    const response = await adminServices.post(
+      `/request/is-approved/${userId}`,{role,department}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+}
+
+
+
+
 
 export const deleteReq = async (id) => {
   try {
@@ -609,6 +625,15 @@ export const downloadInvoicePdf = async (id) => {
 export const releseReqStatus = async (status,department,userId,reqId,role) => {
   try {
     const response = await adminServices.put(`/request/relese-status/${userId}/${reqId}`,{status,department,role});
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getReqReports = async () => {
+  try {
+    const response = await adminServices.get(`/request/get-reports`);
     return response;
   } catch (err) {
     return err;
