@@ -10,7 +10,7 @@ const uploadFiles = async (files, fileType) => {
     formData.append("fileType", fileType);
 
     const response = await axios.post(
-      `https://porequests.corp.capillarytech.com/upload-s3/upload`,
+      `http://localhost:3001/upload-s3/upload`,
       formData,
       {
         headers: {
@@ -20,6 +20,7 @@ const uploadFiles = async (files, fileType) => {
     );
 
     const { fileUrls } = response.data;
+    console.log("response",response)
 
     console.log("Uploaded file URLs:", fileUrls);
     return fileUrls;
