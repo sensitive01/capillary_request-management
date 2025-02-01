@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { Link, useLocation, Outlet } from "react-router-dom";
 import {
   Home,
@@ -13,7 +12,6 @@ import {
   Flag,
 } from "lucide-react";
 import TopBar from "./TopBar";
-import { emailRoleMapping, defaultRole } from "../../../config/rolesConfig";
 import { ToastContainer } from "react-toastify";
 
 const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
@@ -40,9 +38,21 @@ const SidebarItem = ({ icon: Icon, title, isActive, path }) => {
 const SidebarLayout = () => {
   const location = useLocation();
   const role = localStorage.getItem("role") || "Employee";
-  console.log("role", role);
 
-  // Sidebar items for roles
+  // Function to check if a route is active (including subroutes)
+  const isRouteActive = (path) => {
+    // Handle exact matches
+    if (location.pathname === path) return true;
+
+    // Handle subroutes
+    if (path !== "/dashboard") {
+      // Exclude dashboard from partial matching
+      return location.pathname.startsWith(path);
+    }
+
+    return false;
+  };
+
   const roleToSidebarItems = {
     Admin: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
@@ -51,7 +61,6 @@ const SidebarLayout = () => {
       { icon: Users, title: "Employees", path: "/employee-list-table" },
       { icon: Users, title: "Users", path: "/panel-members-table" },
       { icon: Flag, title: "Reports", path: "/genarate-report-page" },
-
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
       { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
@@ -64,60 +73,35 @@ const SidebarLayout = () => {
     "Legal Team": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      {
-        icon: CheckCircle,
-        title: "Approvals",
-        path: "/approveal-request-list",
-      },
+      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
     ],
     "Info Security": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      {
-        icon: CheckCircle,
-        title: "Approvals",
-        path: "/approveal-request-list",
-      },
+      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
     ],
     "Vendor Management": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      {
-        icon: CheckCircle,
-        title: "Approvals",
-        path: "/approveal-request-list",
-      },
+      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
     ],
-    HOF:[
+    HOF: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      {
-        icon: CheckCircle,
-        title: "Approvals",
-        path: "/approveal-request-list",
-      },
+      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
       { icon: Flag, title: "Reports", path: "/genarate-report-page" },
-
-
     ],
     default: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      {
-        icon: CheckCircle,
-        title: "Approvals",
-        path: "/approveal-request-list",
-      },
+      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
     ],
   };
 
   const sidebarItems = roleToSidebarItems[role] || roleToSidebarItems.default;
-  const activeItem = sidebarItems.find(
-    (item) => location.pathname === item.path
-  );
 
   return (
     <div className="flex flex-col h-screen scrollbar-none overflow-y-scroll">
@@ -138,12 +122,13 @@ const SidebarLayout = () => {
                   icon={item.icon}
                   title={item.title}
                   path={item.path}
-                  isActive={activeItem?.path === item.path}
+                  isActive={isRouteActive(item.path)}
                 />
               ))}
             </div>
           </div>
         </div>
+
         <ToastContainer
           position="top-center"
           autoClose={false}

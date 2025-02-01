@@ -4,6 +4,7 @@ const reqModel = require("../models/reqModel");
 // const { createNewReq } = require("./empController");
 const PDFDocument = require("pdfkit");
 const addPanelUsers = require("../models/addPanelUsers");
+const sendLoginEmail = require("../utils/sendEmail");
 
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 
@@ -31,18 +32,22 @@ const postComments = async (req, res) => {
     const { id } = req.params;
     const { data } = req.body;
 
-    console.log(id,data)
-
-    // const empData = await empModel.findOne(
-    //   { _id: data.senderId },
-    //   { full_name: 1, empId: 1 }
-    // );
+    console.log(id, data);
 
     let empData =
-    (await empModel.findOne(
-      { _id: data.senderId },
-      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
-    ).lean()) || (await addPanelUsers.findOne({ _id: data.senderId }).lean());
+      (await empModel
+        .findOne(
+          { _id: data.senderId },
+          {
+            full_name: 1,
+            employee_id: 1,
+            department: 1,
+            hod: 1,
+            hod_email_id: 1,
+          }
+        )
+        .lean()) ||
+      (await addPanelUsers.findOne({ _id: data.senderId }).lean());
 
     const commentData = {
       senderId: data.senderId,
@@ -1063,23 +1068,66 @@ const getNewNotifications = async (req, res) => {
   try {
     const { id } = req.params; // Employee ID
     console.log("Notification for employee ID:", id);
+    let consolidatedData;
+    let notificationCount = 0;
+    let reqData;
 
-    // Fetch employee data
-    const employeData = await empModel.findOne({ _id: id }, { employee_id: 1 });
-    if (!employeData) {
+    const panelUserData = await addPanelUsers
+      .findOne(
+        { _id: id },
+        { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
+      )
+      .lean();
+
+    if (panelUserData) {
+      consolidatedData = { ...panelUserData };
+    } else {
+      const employeeData = await empModel
+        .findOne(
+          { _id: id },
+          {
+            _id: 1,
+            full_name: 1,
+            department: 1,
+            hod_email_id: 1,
+            company_email_id: 1,
+          }
+        )
+        .lean();
+
+      if (employeeData) {
+        const isEmpHod =
+          employeeData.company_email_id &&
+          (await empModel
+            .findOne({ hod_email_id: employeeData.company_email_id })
+            .lean());
+
+        consolidatedData = {
+          ...employeeData,
+          role: employeeData.role || (isEmpHod ? "HOD Department" : "Employee"),
+        };
+      }
+    }
+
+    console.log("consolidatedData", consolidatedData);
+    if (!consolidatedData) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    console.log("Employee Data:", employeData);
 
-    const employeeId = employeData.employee_id;
+    const employeeId = consolidatedData.employee_id;
 
     // Fetch all requests related to the employee
-    const reqData = await CreateNewReq.find({
-      $or: [
-        { "approvals.approvalId": employeeId },
-        { "approvals.approvalId": { $ne: employeeId } },
-      ],
-    });
+    if (consolidatedData.role === "HOD Department") {
+      reqData = await CreateNewReq.find({
+        "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+        "firstLevelApproval.status": "Pending",
+      },{_id:1,reqid:1});
+    } else {
+      reqData = await CreateNewReq.find({
+        "approvals.nextDepartment": consolidatedData.department,
+        "approvals.status": "Approved",
+      },{reqid:1,_id:1});
+    }
 
     if (!reqData || reqData.length === 0) {
       return res
@@ -1087,29 +1135,8 @@ const getNewNotifications = async (req, res) => {
         .json({ message: "No requests found for this employee" });
     }
 
-    // Calculate total, approved, and pending counts
-    const totalRequests = reqData.length;
-    let approvedRequests = 0;
-    let pendingRequests = 0;
 
-    reqData.forEach((request) => {
-      const approval = request.approvals.find(
-        (app) => app.approvalId === employeeId
-      );
-      if (approval) {
-        if (approval.status === "Approved") {
-          approvedRequests++;
-        }
-      } else {
-        pendingRequests++;
-      }
-    });
-
-    // Respond with counts
     res.status(200).json({
-      totalRequests,
-      approvedRequests,
-      pendingRequests,
       reqData,
     });
   } catch (err) {
@@ -1178,6 +1205,7 @@ const getStatisticData = async (req, res) => {
     let pendingRequest = 0;
     let deptCompleteReq = 0;
     let completedRequest = 0;
+    let totalApprovals = 0
 
     const reqData = await CreateNewReq.find();
     console.log("reqDta.length", reqData.length);
@@ -1285,6 +1313,7 @@ const getStatisticData = async (req, res) => {
     } else if (consolidatedData.role === "HOD Department") {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
+      
 
       myRequestData.forEach((request) => {
         if (request.status === "Approved") {
@@ -1298,6 +1327,7 @@ const getStatisticData = async (req, res) => {
         { "firstLevelApproval.hodDepartment": consolidatedData.department },
         { firstLevelApproval: 1 }
       ).lean();
+      totalApprovals = hodApprovals.length
 
       hodApprovals.forEach((request) => {
         if (request.firstLevelApproval?.status === "Pending") {
@@ -1345,6 +1375,9 @@ const getStatisticData = async (req, res) => {
       pendingRequest,
       deptCompleteReq,
       completedRequest,
+      totalApprovals
+      
+
     });
   } catch (err) {
     console.error("Error in getting the statistics", err);
@@ -1373,51 +1406,38 @@ const getApprovedReqData = async (req, res) => {
     const { id } = req.params;
     console.log("Id", id);
 
-    // const employeData = await empModel.findOne(
-    //   { _id: id },
-    //   { empId: 1, department: 1 }
-    // );
-    // if (!employeData) {
-    //   return res.status(404).json({ message: "Employee not found" });
-    // }
-    // console.log("Employee Data", employeData);
-
-    // const reqData = await CreateNewReq.find({
-    //   "approvals.approvalId": { $eq: employeData.empId },
-    // });
-
     let consolidatedData;
 
     const panelUserData = await addPanelUsers
       .findOne({ _id: id }, { _id: 1, full_name: 1, department: 1, role: 1 })
-      .lean(); // Use lean here as well
+      .lean(); 
     console.log("panelUserData", panelUserData);
 
-    // Find the employee data
     const employeeData = await empModel
       .findOne(
         { _id: id },
-        { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
+        { _id: 1, full_name: 1, department: 1, hod_email_id: 1,company_email_id:1 }
       )
-      .lean(); // Use lean to get plain object
+      .lean(); 
 
     if (panelUserData) {
       consolidatedData = panelUserData;
     } else {
-      // Determine role dynamically
+
       if (employeeData && !employeeData.role) {
         const isEmpHod = await empModel
           .findOne({ hod_email_id: employeeData.company_email_id })
-          .lean(); // Use lean here too
+          .lean(); 
         console.log("isEmpHod", isEmpHod);
         consolidatedData = {
-          ...employeeData, // Include existing employee data
-          role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
+          ...employeeData, 
+          role: isEmpHod ? "HOD Department" : "Employee",
         };
       }
     }
     let reqData;
-
+    
+    console.log("inside firstLevelApproval.hodDepartment",consolidatedData.role)
     if (consolidatedData.role === "HOD Department") {
       reqData = await CreateNewReq.find({
         "firstLevelApproval.hodDepartment": consolidatedData.department,
@@ -1425,10 +1445,12 @@ const getApprovedReqData = async (req, res) => {
         .sort({ createdAt: -1 })
         .exec();
     } else {
+      console.log("else")
       reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
     }
 
     console.log("Request Data", reqData);
+    console.log("ReqData.count",reqData.length)
 
     res.status(200).json({ reqData });
   } catch (err) {
@@ -2071,7 +2093,7 @@ const getReports = async (req, res) => {
     let totalRequests = 0;
     let pendingRequests = 0;
     let rejectedRequests = 0;
-    let departmentBudgetByCurrency = 0
+    let departmentBudgetByCurrency = 0;
 
     // Loop through the data and count based on the 'status'
     reqData.forEach((request) => {
@@ -2102,7 +2124,7 @@ const getReports = async (req, res) => {
       totalRequests,
       pendingRequests,
       rejectedRequests,
-      departmentBudgetByCurrency
+      departmentBudgetByCurrency,
     });
   } catch (err) {
     console.log("Error in getting the reports", err);
@@ -2110,25 +2132,83 @@ const getReports = async (req, res) => {
   }
 };
 
-const isApproved = async(req,res)=>{
-  try{
-    console.log("is approve")
-    const {userId} = req.params
-    const {role,department} = req.body
-    console.log(userId,role,department)
+const isApproved = async (req, res) => {
+  try {
+    console.log("is approve");
+    const { userId } = req.params;
+    const { role, department } = req.body;
+    console.log(userId, role, department);
 
     const empData =
-    (await empModel.findOne(
-      { _id: userId },
-      { full_name: 1, employee_id: 1, company_email_id: 1,department }
-    )) || (await addPanelUsers.findOne({ _id: userId }));
-    console.log("empData","empData",empData)
-    
-
-  }catch(err){
-    console.log("Error in getting the is approve",err)
+      (await empModel.findOne(
+        { _id: userId },
+        { full_name: 1, employee_id: 1, company_email_id: 1, department }
+      )) || (await addPanelUsers.findOne({ _id: userId }));
+    console.log("empData", "empData", empData);
+  } catch (err) {
+    console.log("Error in getting the is approve", err);
   }
-}
+};
+
+const editSendRequestMail = async (req, res) => {
+  try {
+    const { empId, reqId } = req.params;
+    console.log("Welcome sending the edit request mail", empId);
+
+    const reqData = await CreateNewReq.findOne({ _id: reqId }, { reqid: 1 });
+
+    const empData =
+      (await empModel.findOne(
+        { _id: empId },
+        {
+          full_name: 1,
+          employee_id: 1,
+          company_email_id: 1,
+          department: 1,
+          hod: 1,
+          hod_email_id: 1,
+        }
+      )) || (await addPanelUsers.findOne({ _id: empId }));
+    console.log(empData);
+
+    if (!empData) {
+      return res.status(404).send("Employee not found");
+    }
+
+    const {
+      full_name,
+      hod_email_id,
+      hod,
+      employee_id,
+      department,
+      company_email_id,
+    } = empData;
+
+    const subject = `Edit Request for Employee - ${employee_id}-${full_name}: ${reqData.reqid}`;
+    const textContent = `
+      Dear ${hod},
+
+      This is to inform you that employee with ID ${empId} ${full_name} has requested an edit for the request with ID ${reqData.reqid}. 
+
+      Please review the request at your earliest convenience.
+
+      Best regards,
+      ${full_name}
+      ${company_email_id}
+    
+    
+    `;
+
+    const htmlContent = "";
+
+    await sendLoginEmail(hod_email_id, subject, textContent, htmlContent);
+
+    res.status(200).send("Edit request email sent successfully");
+  } catch (err) {
+    console.log("Error in sending the edit request mail", err);
+    res.status(500).send("Error in sending the email");
+  }
+};
 
 module.exports = {
   releaseReqStatus,
@@ -2137,8 +2217,6 @@ module.exports = {
   postComments,
   getAllChats,
   getReports,
-
-
   approveRequest,
   getNewNotifications,
   getApprovedReqData,
@@ -2148,4 +2226,5 @@ module.exports = {
   downloadInvoicePdf,
   getStatisticData,
   sendNudgeNotification,
+  editSendRequestMail,
 };

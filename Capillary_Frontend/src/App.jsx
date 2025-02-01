@@ -38,6 +38,7 @@ import PanelMemberTable from "./components/dashboard/panels-members/PanelMemberT
 import EditPanelmembers from "./components/dashboard/panels-members/EditPanelmembers";
 import SessionTimeout from "./components/session/SessionTimeOut";
 import ReportPage from "./components/dashboard/report/ReportPage";
+import MyRequestStatistics from "./components/dashboard/requestlist/MyRequestStatistics";
 
 
 function App() {
@@ -58,21 +59,18 @@ function App() {
           <Route path="/req-list-table/invoice/:id" element={<Invoice/>} />
           <Route path="/req-list-table/preview-one-req/:id" element={<PreviewTheReq/>} />
           <Route path="/req-list-table/edit-req/:id" element={<EditRequestForm/>} />
+          <Route path="/req-list-table/show-request-statistcs/:action" element={<MyRequestStatistics/>} />
 
-          <Route path="/approveal-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
+          <Route path="/approval-request-list" element={<Approvals/>} />
+          <Route path="/approval-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
+
+          <Route path="/approval-request-list/preview-one-req/:id" element={<PreviewTheReq/>} />
+
 
           <Route path="/panel-members-table/add-panel-members" element={<PanelMembers/>} />
           <Route path="/panel-members-table" element={<PanelMemberTable/>} />
           <Route path="/panel-members-table/edit-panel-members/:id" element={<EditPanelmembers/>} />
 
-
-          
-
-
-
-
-
-          <Route path="/approveal-request-list" element={<Approvals/>} />
           <Route path="/questions" element={<QuestionsDetails/>} />
 
 
@@ -104,7 +102,7 @@ function App() {
 
         </Route>
       </Routes>
-      <SessionTimeout/>
+      {/* <SessionTimeout/> */}
     </Router>
   );
 }

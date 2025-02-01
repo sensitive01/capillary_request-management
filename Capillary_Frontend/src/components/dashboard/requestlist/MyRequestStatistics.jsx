@@ -91,32 +91,23 @@ const EmptyState = ({ action }) => {
     );
 };
 
-const RequestStatistcsTable = () => {
+const MyRequestStatistics = () => {
     const { action } = useParams();
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
-    const department = localStorage.getItem("department");
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     let filterAction;
-    let newStatus;
     if (action === "Pending-Request") {
         filterAction = "Pending";
-    } else if (action === "Approved-Request") {
+    } else if (
+        action === "Approved-Request" ||
+        action === "Completed-Request"
+    ) {
         filterAction = "Approved";
-    } else if (action === "Completed-Request") {
-        filterAction = "Approved";
-    } else if (action === "Pending-Approvals") {
-        filterAction = "Pending";
-    } else if (action === "Approved-Approvals") {
-        newStatus = "Approved-Approvals";
-        filterAction = "Approved";
-    } else if (action === "Pending-Approvals") {
-        filterAction = "";
-    } else if (action === "Total-Approvals") {
     }
 
     useEffect(() => {
@@ -136,60 +127,25 @@ const RequestStatistcsTable = () => {
                         setUsers(filteredData);
                     }
                 } else {
-                    if (role === "Employee") {
-                        response = await getReqListEmployee(userId);
-                        if (response.status === 200) {
-                            const filteredData = response.data.data.filter(
-                                (item) => item.status === filterAction
-                            );
-                            setUsers(filteredData);
-                        }
-                    } else {
-                        response = await getApprovedReq(userId);
-                        console.log("respeonse hod", response);
-                        if (response.status === 200) {
-                            if (action === newStatus) {
-                                const filteredData =
-                                    response.data.reqData.filter((items) =>
-                                        items.approvals.some((app) => {
-                                            console.log(app.status);
-                                            return app.status === filterAction;
-                                        })
-                                    );
-                                setUsers(filteredData);
-                            } else if (action === "Pending-Approvals") {
-                                if (role === "HOD Department") {
-                                    const filteredData =
-                                        response.data.reqData.filter(
-                                            (items) =>
-                                                items.firstLevelApproval
-                                                    .status === "Pending"
-                                        );
-                                    setUsers(filteredData);
-                                } else {
-                                    const filteredData =
-                                        response.data.reqData.filter((items) =>
-                                            items.approvals.some((app) => {
-                                                return (
-                                                    app.nextDepartment === role
-                                                );
-                                            })
-                                        );
-                                    setUsers(filteredData);
-                                }
-                            } else if (action === "Total-Approvals") {
-                                const filteredData = response.data.reqData;
-                                setUsers(filteredData);
-                            } else {
-                                console.log("else");
-                                const filteredData =
-                                    response.data.reqData.filter(
-                                        (item) => item.status === "Approved"
-                                    );
-                                setUsers(filteredData);
-                            }
-                        }
+                    // if (role === "Employee") {
+                    response = await getReqListEmployee(userId);
+                    if (response.status === 200) {
+                        const filteredData = response.data.data.filter(
+                            (item) => item.status === filterAction
+                        );
+                        setUsers(filteredData);
                     }
+                    // }
+
+                    // else {
+                    //     response = await getApprovedReq(userId);
+                    //     if (response.status === 200) {
+                    //         const filteredData = response.data.reqData.filter(
+                    //             (item) => item.status === filterAction
+                    //         );
+                    //         setUsers(filteredData);
+                    //     }
+                    // }
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -516,4 +472,4 @@ const RequestStatistcsTable = () => {
     );
 };
 
-export default RequestStatistcsTable;
+export default MyRequestStatistics;

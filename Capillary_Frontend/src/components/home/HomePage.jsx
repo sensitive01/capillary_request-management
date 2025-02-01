@@ -3,7 +3,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import capilary_logo from "../../assets/images/capilary_logo.png";
 import { Navigate, useNavigate } from "react-router-dom";
 import { verifyUser } from "../../api/service/adminServices";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 const HomePage = () => {
   const [showSignInButton, setShowSignInButton] = useState(false);
@@ -39,40 +39,25 @@ const HomePage = () => {
 
     try {
       const response = await verifyUser(email);
-      if(response.status===200){
+      if (response.status === 200) {
         localStorage.setItem("userId", response?.data?.data?._id);
         localStorage.setItem("role", response?.data?.data?.role);
         localStorage.setItem("user", JSON.stringify({ ...user }));
-        localStorage.setItem("department",response?.data?.data?.department);
-        localStorage.setItem("empAccessToken",response?.data?.token)
+        localStorage.setItem("department", response?.data?.data?.department);
+        localStorage.setItem("empAccessToken", response?.data?.token);
 
         navigate("/dashboard");
-
-      }else if(response.status===401){
-        toast.error(response.data.message)
+      } else if (response.status === 401) {
+        toast.error(response.response.data.message);
         setTimeout(() => {
-          return <Navigate to="/" />;
-          
+          navigate("/");
         }, 1000);
-
       }
-   
-
-    } catch (error) {
-      if (error.response) {
-        const errorMessage =
-          error.response.data?.message || "An unknown error occurred.";
-        console.log("error msg", errorMessage);
-      } else if (error.request) {
-        alert("Error: No response received from the server.");
-      } else {
-        alert(`Error: ${error.message}`);
-      }
-    }
+    } catch (error) {}
   };
 
   const handleFailure = () => {
-    console.error("Login Failed");
+    toast.error("Login Failed");
   };
 
   return (
@@ -120,7 +105,7 @@ const HomePage = () => {
               onSuccess={handleSuccess}
               onError={handleFailure}
               useOneTap
-              clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID} 
+              clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
             />
           )}
         </div>
@@ -131,6 +116,15 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </div>
   );
 };

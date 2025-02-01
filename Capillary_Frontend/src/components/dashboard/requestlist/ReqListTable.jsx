@@ -14,9 +14,11 @@ import {
     deleteReq,
     getAdminReqListEmployee,
     getReqListEmployee,
+    sendReqEditMail,
 } from "../../../api/service/adminServices";
 import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
+import LoadingSpinner from "../../spinner/LoadingSpinner";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -34,13 +36,14 @@ const ReqListTable = () => {
 
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
-    const [selectedUsers, setSelectedUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedDepartment, setSelectedDepartment] = useState("");
     const [isShowModal, setIsShowModal] = useState(false);
     const [isReminderNotification, setReminderNotification] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const [reqId, setReqId] = useState(null);
     const [dateFilters, setDateFilters] = useState({
         fromDate: "",
         toDate: "",
@@ -50,6 +53,8 @@ const ReqListTable = () => {
 
     useEffect(() => {
         const fetchReqTable = async () => {
+            setIsLoading(true);
+
             try {
                 let response;
                 if (role === "Admin") {
@@ -63,6 +68,11 @@ const ReqListTable = () => {
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
+            } finally {
+                // Add a small delay to prevent flash of loading state
+                setTimeout(() => {
+                    setIsLoading(false);
+                }, 500);
             }
         };
         fetchReqTable();
@@ -71,42 +81,32 @@ const ReqListTable = () => {
     useEffect(() => {
         let result = [...users];
 
-        // Apply search filter
         if (searchTerm.trim()) {
             result = result.filter((user) => {
                 const searchLower = searchTerm.toLowerCase().trim();
                 return (
-                    // Search in reqid
                     user.reqid?.toLowerCase().includes(searchLower) ||
-                    // Search in userName
                     user.userName?.toLowerCase().includes(searchLower) ||
-                    // Search in department
                     user.commercials?.department
                         ?.toLowerCase()
                         .includes(searchLower) ||
-                    // Search in businessUnit
                     user.commercials?.businessUnit
                         ?.toLowerCase()
                         .includes(searchLower) ||
-                    // Search in entity
                     user.commercials?.entity
                         ?.toLowerCase()
                         .includes(searchLower) ||
-                    // Search in vendor
                     user.procurements?.vendor
                         ?.toLowerCase()
                         .includes(searchLower) ||
-                    // Search in vendorName
                     user.procurements?.vendorName
                         ?.toLowerCase()
                         .includes(searchLower) ||
-                    // Search in status
                     user.status?.toLowerCase().includes(searchLower)
                 );
             });
         }
 
-        // Apply date filters
         if (dateFilters.fromDate || dateFilters.toDate) {
             result = result.filter((user) => {
                 const userDate = new Date(user.createdAt);
@@ -118,7 +118,6 @@ const ReqListTable = () => {
                     : null;
 
                 if (fromDate && toDate) {
-                    // Set toDate to end of day for inclusive range
                     toDate.setHours(23, 59, 59, 999);
                     return userDate >= fromDate && userDate <= toDate;
                 } else if (fromDate) {
@@ -132,7 +131,7 @@ const ReqListTable = () => {
         }
 
         setFilteredUsers(result);
-        setCurrentPage(1); // Reset to first page when filters change
+        setCurrentPage(1);
     }, [searchTerm, dateFilters, users]);
 
     const handleSearchChange = (e) => {
@@ -182,7 +181,6 @@ const ReqListTable = () => {
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
-            setSelectedUsers([]);
         }
     };
 
@@ -239,6 +237,7 @@ const ReqListTable = () => {
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setIsShowModal(true);
+                                setReqId(user._id);
                             }}
                         >
                             Request Edit
@@ -269,7 +268,19 @@ const ReqListTable = () => {
         }
     };
 
+    const sendEditMail = async () => {
+        try {
+            console.log("Sending...");
+            const response = await sendReqEditMail(userId, reqId);
+            console.log(response);
+        } catch (error) {
+            console.error("Error sending mail", error);
+        }
+    };
+
     return (
+        <>
+        {isLoading && <LoadingSpinner />}
         <div className="p-8 bg-white rounded-lg shadow-sm h-full">
             <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -592,7 +603,7 @@ const ReqListTable = () => {
                             <button
                                 onClick={() => {
                                     setIsShowModal(false);
-                                    // Add your edit request logic here
+                                    sendEditMail();
                                 }}
                                 className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
                             >
@@ -635,6 +646,7 @@ const ReqListTable = () => {
                 </div>
             )}
         </div>
+        </>
     );
 };
 

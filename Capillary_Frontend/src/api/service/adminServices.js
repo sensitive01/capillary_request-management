@@ -25,6 +25,15 @@ export const getStatisticData = async (empId,role) => {
 
 
 
+export const sendReqEditMail = async (empId,reqId) => {
+  try {
+    const response = await adminServices.post(`/request/send-edit-request-mail/${empId}/${reqId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 
 
 // ............................VENDOR SIDE..........................................................

@@ -42,6 +42,7 @@ const Dashboard = () => {
     completedApprovals: 0,
     departmentBudget: 0,
     pendingRequest: 0,
+    totalApprovals:0
   });
 
   useEffect(() => {
@@ -148,7 +149,7 @@ const Dashboard = () => {
         textColor="text-blue-600"
         onClick={() =>
           navigate(
-            "/approveal-request-list/show-request-statistcs/Total-Request"
+            "/approval-request-list/show-request-statistcs/Total-Request"
           )
         }
       />
@@ -160,19 +161,19 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() =>
           navigate(
-            "/approveal-request-list/show-request-statistcs/Pending-Request"
+            "/approval-request-list/show-request-statistcs/Pending-Request"
           )
         }
       />
       <StatCard
-        title="Completed Requests"
+        title="Approved Requests"
         value={dashboardStats.adminAllCompletedRequests}
         icon={CheckCircle2}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "/approveal-request-list/show-request-statistcs/Approved-Request"
+            "/approval-request-list/show-request-statistcs/Approved-Request"
           )
         }
       />
@@ -202,16 +203,21 @@ const Dashboard = () => {
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
+        onClick={() =>
+          navigate("/req-list-table/show-request-statistcs/Pending-Request")
+        }
       />
       <StatCard
-        title="Completed Requests"
+        title="Approved Requests"
         value={dashboardStats.completedApprovals}
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
-        onClick={() => navigate("#")}
+        onClick={() =>
+          navigate("/req-list-table/show-request-statistcs/Completed-Request")
+        }
       />
+
       <StatCard
         title="My Approvals"
         value={dashboardStats.myApprovals}
@@ -220,7 +226,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "/approveal-request-list/show-request-statistcs/Pending-Request"
+            "/approval-request-list/show-request-statistcs/Approved-Approvals"
           )
         }
       />
@@ -231,17 +237,25 @@ const Dashboard = () => {
         icon={ClipboardList}
         bgColor="bg-yellow-50 hover:bg-yellow-100"
         textColor="text-yellow-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+          )
+        }
       />
-
       <StatCard
-        title="Completed Approvals"
-        value={dashboardStats.deptCompleteReq}
+        title="Total Approvals"
+        value={dashboardStats.totalApprovals}
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Approved-Request")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Total-Approvals"
+          )
+        }
       />
+
       <BudgetCard
         title="Department Expense"
         departmentBudgetByCurrency={dashboardStats?.departmentBudgetByCurrency}
@@ -268,15 +282,23 @@ const Dashboard = () => {
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Pending-Request"
+          )
+        }
       />
-       <StatCard
+      <StatCard
         title="Completed Requests"
         value={dashboardStats.completedRequest}
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Approved-Request")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Approved-Request"
+          )
+        }
       />
       <StatCard
         title="My Approvals"
@@ -284,18 +306,24 @@ const Dashboard = () => {
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/My-Approvals")}
+        onClick={() =>
+          navigate("/approval-request-list/show-request-statistcs/My-Approvals")
+        }
       />
-      
+
       <StatCard
         title="Pending Approvals"
         value={dashboardStats.pendingApprovals}
         icon={ClipboardList}
         bgColor="bg-yellow-50 hover:bg-yellow-100"
         textColor="text-yellow-600"
-        onClick={() => navigate("/approveal-request-list/show-request-statistcs/Pending-Request")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Pending-Request"
+          )
+        }
       />
-      
+
       <StatCard
         title="Total Approvals"
         value={dashboardStats.myApprovals}
@@ -332,7 +360,7 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() =>
           navigate(
-            "/approveal-request-list/show-request-statistcs/Pending-Request"
+            "/approval-request-list/show-request-statistcs/Pending-Request"
           )
         }
       />
@@ -344,7 +372,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "/approveal-request-list/show-request-statistcs/Approved-Request"
+            "/approval-request-list/show-request-statistcs/Approved-Request"
           )
         }
       />
@@ -369,7 +397,7 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() => navigate("#")}
       />
-       <StatCard
+      <StatCard
         title="Completed Requests"
         value={dashboardStats.completedRequest}
         icon={CheckCircle2}
@@ -385,7 +413,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() => navigate("#")}
       />
-      
+
       <StatCard
         title="Pending Approvals"
         value={dashboardStats.pendingApprovals}
@@ -394,7 +422,7 @@ const Dashboard = () => {
         textColor="text-yellow-600"
         onClick={() => navigate("#")}
       />
-      
+
       <StatCard
         title="Total Approvals"
         value={dashboardStats.myApprovals}
@@ -403,7 +431,6 @@ const Dashboard = () => {
         textColor="text-indigo-600"
         onClick={() => navigate("#")}
       />
-      
     </div>
   );
 
@@ -417,9 +444,9 @@ const Dashboard = () => {
       case "business finance":
         return renderFinanceCards();
       case "vendor management":
-        case "legal team":
-          case "info security":
-         return renderVendorManagement()
+      case "legal team":
+      case "info security":
+        return renderVendorManagement();
       default:
         return renderEmployeeCards();
     }

@@ -165,7 +165,7 @@ const createNewReq = async (req, res) => {
 
     await newRequest.save();
     // const from =  `"Capillary Technology" ${process.env.EMAIL_ADDRESS}`
-    await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqid);
+    // await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqid);
 
     res.status(201).json({
       message: "Request created successfully",

@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-const sendLoginEmail = async (from,userEmail, subject, textContent, htmlContent) => {
+const sendLoginEmail = async (userEmail, subject, textContent, htmlContent) => {
   try {
     console.log("process.env.EMAIL_ADDRESS",process.env.EMAIL_ADDRESS)
     console.log("process.env.EMAIL_PASSWORD",process.env.EMAIL_PASSWORD)

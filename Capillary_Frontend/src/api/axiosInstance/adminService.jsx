@@ -7,7 +7,7 @@ export const adminServices = axios.create({
 adminServices.interceptors.request.use(
   (config) => {
     const empToken = localStorage.getItem("empAccessToken");
-    const extractedToken = empToken ? empToken.accessToken : null;
+    const extractedToken = empToken ? empToken : null; // Directly use the token string
 
     if (extractedToken) {
       config.headers.Authorization = `Bearer ${extractedToken}`;
@@ -29,17 +29,20 @@ adminServices.interceptors.response.use(
   (error) => {
     if (error.response) {
       console.log("Error in Axios interceptor response", error);
-      const { status, message } = error.response;
-      if (status === 401 && message === "Session Time Out") {
+
+      const { status, data } = error.response;
+      const errorMessage = data?.message || "An unknown error occurred"; // Default message if none provided
+      console.log("Error response:", errorMessage);
+
+      if (status === 401 && errorMessage === "Session Time Out") {
         localStorage.removeItem("empAccessToken");
         console.log("Token removed due to session timeout.");
-       
-      } else {
-        console.log("Error:", error.response.data);
       }
+
+      return Promise.reject(error); // Return the error to be handled by the calling code
     } else {
       console.log("Error:", error.message);
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
   }
 );
