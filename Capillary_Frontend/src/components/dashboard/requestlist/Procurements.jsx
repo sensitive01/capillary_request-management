@@ -100,10 +100,14 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     }
   };
 
-  const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 15);
-    return date.toISOString().split("T")[0];
+  const getDateRange = () => {
+    const maxDate = new Date().toISOString().split("T")[0]; // Today
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() - 10);
+    return {
+      min: minDate.toISOString().split("T")[0],
+      max: maxDate
+    };
   };
 
   // Open new vendor modal
@@ -422,7 +426,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                 name="quotationDate"
                 value={formData.quotationDate || ""}
                 onChange={handleInputChange}
-                min={getMinDate()}
+                min={getDateRange().min}
+                max={getDateRange().max}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               />
             </div>
@@ -477,6 +482,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                     name="poValidFrom"
                     value={formData.poValidFrom || ""}
                     onChange={handleInputChange}
+                    min={getDateRange().min}
+                    max={getDateRange().max}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                   />
                 </div>
@@ -489,6 +496,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                     name="poValidTo"
                     value={formData.poValidTo || ""}
                     onChange={handleInputChange}
+                   
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                   />
                 </div>

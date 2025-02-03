@@ -2734,8 +2734,8 @@ const isApproved = async (req, res) => {
       const lastApprovedDepartment = lastApproved[lastApproved.length - 1];
       console.log("lastApprovedDepartment", lastApprovedDepartment);
       if (
-        !lastApprovedDepartment ||
-        lastApprovedDepartment.nextDepartment !== empData.department
+        !lastApprovedDepartment &&
+        lastApprovedDepartment?.nextDepartment !== empData?.department && lastApprovedDepartment?.status!=="Approved"
       ) {
         disable = true;
       }
