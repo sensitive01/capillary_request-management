@@ -501,8 +501,8 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                         <option value="">Select Payment Type</option>
                         <option value="Full Payment">Full Payment</option>
                         <option value="Advance Payment">Advance Payment</option>
-                        <option value="Payment on Delivary">
-                          Payment on Delivary
+                        <option value="Payment on Delivery">
+                          Payment on Delivery
                         </option>
                         <option value="Part Payment">Part Payment</option>
                       </select>
