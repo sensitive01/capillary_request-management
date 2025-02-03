@@ -23,7 +23,7 @@ const ReportPage = () => {
     }
     }
     repostData()
-  })
+  },[])
 
   // Format currency with proper symbol
   const formatCurrency = (amount, currency) => {
