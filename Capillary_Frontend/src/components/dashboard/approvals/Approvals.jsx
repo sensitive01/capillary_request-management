@@ -329,6 +329,12 @@ const Approvals = () => {
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                       >
+                        Invoice_Document
+                      </th>
+                      <th
+                        scope="col"
+                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                      >
                         Actions
                       </th>
                     </tr>
@@ -393,6 +399,22 @@ const Approvals = () => {
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {user.status || "Pending"}
                           </td>
+                    
+                          <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                            {(user.status === "Invoice-Pending"||user.status === "Approved") ? (
+                              <div className="w-full flex justify-center">
+                                <a
+                                  href={`/${user?.poDocument?.link}`}
+                                  className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                >
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  View PO
+                                </a>
+                              </div>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-500 text-center">
                             {user.status === "Approved" ? (
                               <div className="w-full flex justify-center">
@@ -406,7 +428,7 @@ const Approvals = () => {
                                   className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
                                 >
                                   <FileText className="h-4 w-4 mr-1" />
-                                  View PO
+                                  Invoice
                                 </button>
                               </div>
                             ) : (

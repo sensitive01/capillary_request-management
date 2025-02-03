@@ -435,6 +435,12 @@ const ReqListTable = () => {
                                             scope="col"
                                             className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                                         >
+                                            Invoice_Document
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
+                                        >
                                             Actions
                                         </th>
                                     </tr>
@@ -545,6 +551,29 @@ const ReqListTable = () => {
                                                             >
                                                                 <FileText className="h-4 w-4 mr-1" />
                                                                 View PO
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        "N/A"
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                    {user.status ===
+                                                    "Approved" ? (
+                                                        <div className="w-full flex justify-center">
+                                                            <button
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    navigate(
+                                                                        `/req-list-table/invoice/${user._id}`
+                                                                    );
+                                                                }}
+                                                                className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary flex items-center space-x-1 w-full max-w-[120px]"
+                                                            >
+                                                                <FileText className="h-4 w-4 mr-1" />
+                                                                Invoice
                                                             </button>
                                                         </div>
                                                     ) : (

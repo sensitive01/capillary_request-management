@@ -160,11 +160,16 @@ const RequestStatistcsTable = () => {
                             } else if (action === "Pending-Approvals") {
                                 if (role === "HOD Department") {
                                     const filteredData =
-                                        response.data.reqData.filter(
-                                            (items) =>
-                                                items.firstLevelApproval
-                                                    .status === "Pending"
+                                        response.data.reqData.filter((items) =>
+                                            [
+                                                "Pending",
+                                                "Hold",
+                                                "Rejected",
+                                            ].includes(
+                                                items.firstLevelApproval.status
+                                            )
                                         );
+
                                     setUsers(filteredData);
                                 } else {
                                     const filteredData =
@@ -179,6 +184,19 @@ const RequestStatistcsTable = () => {
                                 }
                             } else if (action === "Total-Approvals") {
                                 const filteredData = response.data.reqData;
+                                setUsers(filteredData);
+                            } else if (action === "My-Approvals") {
+                                const filteredData =
+                                    response.data.reqData.filter(
+                                        (item) =>
+                                           
+                                            item.approvals.some(
+                                                (app) =>
+                                                    app.departmentName ===
+                                                    department
+                                            )
+                                    );
+
                                 setUsers(filteredData);
                             } else {
                                 console.log("else");
@@ -372,7 +390,7 @@ const RequestStatistcsTable = () => {
                                             {users.map((user, index) => (
                                                 <tr
                                                     key={user.sno}
-                                                    className="hover:bg-gray-50"
+                                                    className="hover:bg-gray-100 cursor-pointer"
                                                     onClick={() =>
                                                         navigate(
                                                             `/req-list-table/preview-one-req/${user._id}`

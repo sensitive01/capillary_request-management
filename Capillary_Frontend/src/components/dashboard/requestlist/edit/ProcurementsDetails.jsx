@@ -3,6 +3,7 @@ import { fetchAllVendorData } from "../../../../api/service/adminServices";
 import { uploadCloudinary } from "../../../../utils/cloudinaryUtils";
 import { FaFilePdf } from "react-icons/fa";
 import { toast } from "react-toastify";
+import uploadFiles from "../../../../utils/s3BucketConfig";
 
 const Procurements = ({ formData, setFormData, onBack, onNext }) => {
   const [vendors, setVendors] = useState([]);
@@ -159,8 +160,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     try {
       const uploadedUrls = await Promise.all(
         files.map(async (file) => {
-          const data = await uploadCloudinary(file);
-          return data.url;
+          const data = await uploadFiles(file,fileType);
+          return data[0];
         })
       );
 

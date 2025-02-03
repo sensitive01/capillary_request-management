@@ -140,7 +140,7 @@ const EditPanelmembers = () => {
               <option value="Info Security">Info Security</option>
               <option value="Payment">Payment</option>
               <option value="HOF">HOF</option>
-              <option value="PO Team">PO Team</option>
+              <option value="PO Uploader">PO Uploader</option>
             </select>
           </div>
         </div>

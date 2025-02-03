@@ -19,9 +19,9 @@ router.get('/invoice/download/:id', reqController.downloadInvoicePdf);
 
 
 
+router.get('/is-approved/:userId/:reqId', reqController.isApproved); 
 
 
-router.post('/is-approved/:userId', reqController.isApproved); 
 router.post('/accept-request-hod/:id', reqController.approveRequest); 
 router.post('/accept-request-business/:id', reqController.approveRequest); 
 router.post('/accept-request-vendor/:id', reqController.approveRequest); 
@@ -38,6 +38,10 @@ router.post('/send-edit-request-mail/:empId/:reqId',reqController.editSendReques
 router.put('/relese-status/:empId/:reqId', reqController.releaseReqStatus); 
 router.put('/update-request/:id', reqController.updateRequest); 
 router.put('/chats/:id', reqController.postComments); 
+router.put('/upload-po-documents/:empId/:reqId', reqController.uploadPoDocuments); 
+router.put('/upload-invoice-documents/:empId/:reqId', reqController.uploadInvoiceDocuments); 
+
+
 
 
 

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getStatisticData } from "../api/service/adminServices";
+import LoadingSpinner from "./spinner/LoadingSpinner";
 
 const currencies = [
   { code: "USD", symbol: "$", locale: "en-US" },
@@ -29,6 +30,7 @@ const Dashboard = () => {
   const role = localStorage.getItem("role");
   const empId = localStorage.getItem("userId");
   const department = localStorage.getItem("department");
+  const [isLoading, setIsLoading] = useState(true);
 
   const [dashboardStats, setDashboardStats] = useState({
     adminAllTotalRequests: 0,
@@ -42,11 +44,13 @@ const Dashboard = () => {
     completedApprovals: 0,
     departmentBudget: 0,
     pendingRequest: 0,
-    totalApprovals:0
+    totalApprovals: 0,
   });
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
+      setIsLoading(true);
+
       try {
         const response = await getStatisticData(empId, role);
         if (response.status === 200) {
@@ -54,6 +58,11 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error("Failed to fetch statistics:", error);
+      } finally {
+        // Add a small delay to prevent flash of loading state
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
       }
     };
     fetchDashboardStats();
@@ -284,7 +293,7 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Request"
+            "/req-list-table/show-request-statistcs/Pending-Request"
           )
         }
       />
@@ -296,7 +305,7 @@ const Dashboard = () => {
         textColor="text-teal-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Approved-Request"
+            "/req-list-table/show-request-statistcs/Approved-Request"
           )
         }
       />
@@ -319,18 +328,18 @@ const Dashboard = () => {
         textColor="text-yellow-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Request"
+            "/approval-request-list/show-request-statistcs/Pending-Approvals"
           )
         }
       />
 
       <StatCard
         title="Total Approvals"
-        value={dashboardStats.myApprovals}
+        value={dashboardStats.totalApprovals}
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approval-request-list/show-request-statistcs/Total-Approvals")}
       />
       <BudgetCard
         title="Department Expense"
@@ -360,7 +369,7 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Request"
+            "/req-list-table/show-request-statistcs/Pending-Request"
           )
         }
       />
@@ -372,7 +381,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Approved-Request"
+            "/req-list-table/show-request-statistcs/Approved-Request"
           )
         }
       />
@@ -395,15 +404,15 @@ const Dashboard = () => {
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/req-list-table/show-request-statistcs/Pending-Request")}
       />
       <StatCard
-        title="Completed Requests"
+        title="Approved Requests"
         value={dashboardStats.completedRequest}
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/req-list-table/show-request-statistcs/Completed-Request")}
       />
       <StatCard
         title="My Approvals"
@@ -411,7 +420,7 @@ const Dashboard = () => {
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approval-request-list/show-request-statistcs/My-Approvals")}
       />
 
       <StatCard
@@ -420,16 +429,16 @@ const Dashboard = () => {
         icon={ClipboardList}
         bgColor="bg-yellow-50 hover:bg-yellow-100"
         textColor="text-yellow-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approval-request-list/show-request-statistcs/Pending-Approvals")}
       />
 
       <StatCard
         title="Total Approvals"
-        value={dashboardStats.myApprovals}
+        value={dashboardStats.totalApprovals}
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
-        onClick={() => navigate("#")}
+        onClick={() => navigate("/approval-request-list/show-request-statistcs/Total-Approvals")}
       />
     </div>
   );
@@ -453,65 +462,69 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
-          <div className="bg-primary h-32" />
-          <div className="px-6 py-8 relative">
-            <div className="flex flex-col sm:flex-row -mt-16 sm:-mt-20 mb-8">
-              <div className="relative">
-                {user?.picture ? (
-                  <img
-                    src={user.picture}
-                    alt="Profile"
-                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white object-cover shadow-lg"
-                  />
-                ) : (
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-lg">
-                    <UserCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400" />
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 sm:mt-0 sm:ml-6 flex-1">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                  {user?.name || "User"}
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
-                    <Mail className="w-5 h-5 mr-3 text-primary" />
-                    <span className="text-base font-medium">
-                      {user?.email || "No email provided"}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
-                    <Briefcase className="w-5 h-5 mr-3 text-primary" />
-                    <span className="text-base font-medium">
-                      {department || "No department"}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
-                    <UserCircle2 className="w-5 h-5 mr-3 text-primary" />
-                    <span className="text-base font-medium">
-                      {role || "No role assigned"}
-                    </span>
+    <>
+      {isLoading && <LoadingSpinner />}
+
+      <div className="min-h-screen bg-gray-50/50 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Profile Card */}
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+            <div className="bg-primary h-32" />
+            <div className="px-6 py-8 relative">
+              <div className="flex flex-col sm:flex-row -mt-16 sm:-mt-20 mb-8">
+                <div className="relative">
+                  {user?.picture ? (
+                    <img
+                      src={user.picture}
+                      alt="Profile"
+                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white object-cover shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-lg">
+                      <UserCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 sm:mt-0 sm:ml-6 flex-1">
+                  <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                    {user?.name || "User"}
+                  </h2>
+                  <div className="space-y-3">
+                    <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
+                      <Mail className="w-5 h-5 mr-3 text-primary" />
+                      <span className="text-base font-medium">
+                        {user?.email || "No email provided"}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
+                      <Briefcase className="w-5 h-5 mr-3 text-primary" />
+                      <span className="text-base font-medium">
+                        {department || "No department"}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
+                      <UserCircle2 className="w-5 h-5 mr-3 text-primary" />
+                      <span className="text-base font-medium">
+                        {role || "No role assigned"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Statistics Cards */}
-        <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-            <span className="inline-block w-2 h-6 bg-primary rounded-full mr-3"></span>
-            Dashboard Statistics
-          </h3>
-          {renderStatisticCards()}
+          {/* Statistics Cards */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+              <span className="inline-block w-2 h-6 bg-primary rounded-full mr-3"></span>
+              Dashboard Statistics
+            </h3>
+            {renderStatisticCards()}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

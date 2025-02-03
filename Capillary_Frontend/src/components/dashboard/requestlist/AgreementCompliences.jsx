@@ -142,10 +142,10 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
             const responses = await Promise.all(uploadPromises);
             console.log(responses)
 
-            const fileUrls = responses.flatMap((response) => response.url);
+            const fileUrls = responses.flatMap((response) => response[0]);
             const updatedAttachments = [
                 ...(deviations[questionId]?.attachments || []),
-                ...responses,
+                ...fileUrls,
             ];
 
             handleDeviationChange(

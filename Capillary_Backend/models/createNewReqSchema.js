@@ -26,6 +26,7 @@ const commercialsSchema = new mongoose.Schema({
 
   department: { type: String },
   entity: { type: String },
+  entityId:{ type: String },
   hod: { type: String },
   isCreditCardSelected: { type: Boolean },
   paymentMode: { type: String },
@@ -44,6 +45,8 @@ const procurementsSchema = new mongoose.Schema({
   },
   vendor: { type: String },
   vendorName: { type: String },
+  email:{ type: String },
+  isNewVendor:{ type: String },
   servicePeriod: { type: String },
   projectCode: { type: String },
   clientName: { type: String },
@@ -114,6 +117,28 @@ const createnewReqSchema = new mongoose.Schema(
       hodDepartment: { type: String },
       status: { type: String },
     },
+    poDocuments:{
+      uploadedBy:{
+        empName:{type:String},
+        empId:{type:String},
+        department:{type:String},
+        uploadedOn:{type:Date},
+        receivedConfirmation:{type:Date}
+      },
+      poLink:{type:String}
+    },
+    invoiceDocumets:[
+      {
+        uploadedBy:{
+          empName:{type:String},
+          empId:{type:String},
+          department:{type:String},
+          uploadedOn:{type:Date},
+          receivedConfirmation:{type:Date},   
+        },
+        invoiceLink:{type:String}
+      }
+    ]
   },
   { timestamps: true }
 );

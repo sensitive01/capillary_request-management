@@ -436,12 +436,11 @@ export const fetchIndividualReq = async (id) => {
     return err;
   }
 };
-export const dispalyIsApproved = async (userId,role,department) => {
+export const dispalyIsApproved = async (userId,reqId) => {
   try {
-    console.log(userId,role,department)
   
-    const response = await adminServices.post(
-      `/request/is-approved/${userId}`,{role,department}
+    const response = await adminServices.get(
+      `/request/is-approved/${userId}/${reqId}`
     );
     return response;
   } catch (err) {
@@ -661,6 +660,29 @@ export const getReqReports = async () => {
     return err;
   }
 };
+
+
+export const addPODocument = async (empId,reqId,link) => {
+  try {
+    const response = await adminServices.put(`/request/upload-po-documents/${empId}/${reqId}`,{link});
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+export const addInvoiceDocument = async (empId,reqId,link) => {
+  try {
+    const response = await adminServices.put(`/request/upload-invoice-documents/${empId}/${reqId}`,{link});
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
 
 // ............................REQUEST SIDE..........................................................
 

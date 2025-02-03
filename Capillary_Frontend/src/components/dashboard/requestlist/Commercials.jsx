@@ -14,6 +14,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     site: formData.site || "",
     department: formData.department || "",
     amount: formData.amount || "",
+    entityId:formData.entityId||"",
 
     costCentre: formData.costCentre || "CT-ITDT-02",
     paymentMode: formData.paymentMode || "",
@@ -138,16 +139,19 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
     if (matchingEntities.length > 0) {
       const selectedEntity = matchingEntities[0];
+      console.log("Selected Entity:", selectedEntity);
       setSelectedEntityDetails(selectedEntity);
 
       const updatedFormData = {
         ...localFormData,
         entity: selectedEntityId,
+        entityId:selectedEntity._id,
         city: selectedEntity ? selectedEntity.city : "",
         site: selectedEntity ? selectedEntity.area : "",
         billTo: selectedEntity ? selectedEntity.addressLine : "",
         shipTo: selectedEntity ? selectedEntity.addressLine : "",
       };
+      console.log("updatedFormData",updatedFormData)
 
       setLocalFormData(updatedFormData);
       setFormData(updatedFormData);

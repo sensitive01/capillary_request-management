@@ -9,7 +9,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
   console.log("procurements formData",formData)
   const [vendors, setVendors] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [newVendor, setNewVendor] = useState({ name: "", email: "" });
+  const [newVendor, setNewVendor] = useState({ name: "", email: "",isNewVendor:false });
   const [filesData, setFilesData] = useState([
     { id: Date.now(), fileType: "", otherType: "", files: [], urls: [] },
   ]);
@@ -89,6 +89,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         vendorName: selectedVendor
           ? selectedVendor.firstName || selectedVendor.Name|| selectedVendor.name
           : "",
+          email:selectedVendor.email,
+          isNewVendor:selectedVendor.isNewVendor
       }));
     } else {
       setFormData((prevState) => ({
@@ -126,6 +128,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         ...prevState,
         vendor: newVendorObj._id,
         vendorName: newVendor.name,
+        email:newVendor.email,
+        isNewVendor:true
       }));
 
       setShowModal(false);
