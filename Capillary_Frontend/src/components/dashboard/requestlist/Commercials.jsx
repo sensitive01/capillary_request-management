@@ -107,8 +107,8 @@ const Commercials = ({ formData, setFormData, onNext }) => {
       updatedFormData.paymentTerms = [
         {
           percentageTerm: "100",
-          paymentTerm: "immediate",
-          paymentType: "fullPayment",
+          paymentTerm: "Immediate",
+          paymentType: "Full Payment",
         },
       ];
       updatedFormData.isCreditCardSelected = true;
@@ -370,10 +370,10 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                   <input
                     type="radio"
                     name="paymentMode"
-                    value={type.toLowerCase().replace(" ", "")}
+                    value={type}
                     checked={
                       localFormData.paymentMode ===
-                      type.toLowerCase().replace(" ", "")
+                      type
                     }
                     onChange={handleInputChange}
                     className="form-radio h-5 w-5 text-primary transition duration-300 focus:ring-2 focus:ring-primary"
@@ -569,9 +569,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
               placeholder="Enter Bill To"
               rows="4"
             ></textarea>
-            {errors.paymentMode && (
-              <p className="text-red-500 text-xs mt-1">{errors.billTo}</p>
-            )}
+ 
           </div>
 
           <div>
@@ -586,9 +584,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
               placeholder="Enter Ship To"
               rows="4"
             ></textarea>
-            {errors.paymentMode && (
-              <p className="text-red-500 text-xs mt-1">{errors.shipTo}</p>
-            )}
+     
           </div>
         </div>
 
