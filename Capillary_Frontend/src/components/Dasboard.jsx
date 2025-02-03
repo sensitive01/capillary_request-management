@@ -10,9 +10,12 @@ import {
   CheckSquare,
   Building2,
   Wallet,
+  Calendar,
+  Search,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getStatisticData } from "../api/service/adminServices";
+import { fetchDateFilterStatistics, getStatisticData } from "../api/service/adminServices";
 import LoadingSpinner from "./spinner/LoadingSpinner";
 
 const currencies = [
@@ -31,6 +34,11 @@ const Dashboard = () => {
   const empId = localStorage.getItem("userId");
   const department = localStorage.getItem("department");
   const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({
+    fromDate: "",
+    toDate: "",
+  });
+  const [isFilterActive, setIsFilterActive] = useState(false);
 
   const [dashboardStats, setDashboardStats] = useState({
     adminAllTotalRequests: 0,
@@ -59,7 +67,6 @@ const Dashboard = () => {
       } catch (error) {
         console.error("Failed to fetch statistics:", error);
       } finally {
-        // Add a small delay to prevent flash of loading state
         setTimeout(() => {
           setIsLoading(false);
         }, 500);
@@ -85,6 +92,87 @@ const Dashboard = () => {
       return value;
     }
   };
+  const clearFilters = () => {
+    setDateRange({
+      fromDate: '',
+      toDate: ''
+    });
+    setIsFilterActive(false);
+   
+  };
+
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    setDateRange(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFilter = async() => {
+    if (dateRange.fromDate && dateRange.toDate) {
+      setIsFilterActive(true);
+      console.log(dateRange.fromDate, dateRange.toDate);
+      const response = await fetchDateFilterStatistics(empId,role,dateRange.fromDate, dateRange.toDate)
+      console.log("Response",response)
+      if(response.status===200){
+        setDashboardStats(response.data)
+      }
+    } else {
+      alert('Please select both From and To dates');
+    }
+  };
+
+  const DateFilter = () => (
+    <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h3 className="text-xl font-bold text-gray-900 flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-primary" />
+          Date Range Filter
+        </h3>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">From:</label>
+            <input
+              type="date"
+              name="fromDate"
+              value={dateRange.fromDate}
+              onChange={handleDateChange}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">To:</label>
+            <input
+              type="date"
+              name="toDate"
+              value={dateRange.toDate}
+              onChange={handleDateChange}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleFilter}
+              className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Filter
+            </button>
+            {isFilterActive && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center px-4 py-2 text-red-600 bg-red-50 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const StatCard = ({
     title,
@@ -292,9 +380,7 @@ const Dashboard = () => {
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
         onClick={() =>
-          navigate(
-            "/req-list-table/show-request-statistcs/Pending-Request"
-          )
+          navigate("/req-list-table/show-request-statistcs/Pending-Request")
         }
       />
       <StatCard
@@ -304,9 +390,7 @@ const Dashboard = () => {
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
         onClick={() =>
-          navigate(
-            "/req-list-table/show-request-statistcs/Approved-Request"
-          )
+          navigate("/req-list-table/show-request-statistcs/Approved-Request")
         }
       />
       <StatCard
@@ -339,7 +423,11 @@ const Dashboard = () => {
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
-        onClick={() => navigate("/approval-request-list/show-request-statistcs/Total-Approvals")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Total-Approvals"
+          )
+        }
       />
       <BudgetCard
         title="Department Expense"
@@ -368,9 +456,7 @@ const Dashboard = () => {
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
         onClick={() =>
-          navigate(
-            "/req-list-table/show-request-statistcs/Pending-Request"
-          )
+          navigate("/req-list-table/show-request-statistcs/Pending-Request")
         }
       />
       <StatCard
@@ -380,9 +466,7 @@ const Dashboard = () => {
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
         onClick={() =>
-          navigate(
-            "/req-list-table/show-request-statistcs/Approved-Request"
-          )
+          navigate("/req-list-table/show-request-statistcs/Approved-Request")
         }
       />
     </div>
@@ -404,7 +488,9 @@ const Dashboard = () => {
         icon={Clock}
         bgColor="bg-orange-50 hover:bg-orange-100"
         textColor="text-orange-600"
-        onClick={() => navigate("/req-list-table/show-request-statistcs/Pending-Request")}
+        onClick={() =>
+          navigate("/req-list-table/show-request-statistcs/Pending-Request")
+        }
       />
       <StatCard
         title="Approved Requests"
@@ -412,7 +498,9 @@ const Dashboard = () => {
         icon={CheckCircle2}
         bgColor="bg-teal-50 hover:bg-teal-100"
         textColor="text-teal-600"
-        onClick={() => navigate("/req-list-table/show-request-statistcs/Completed-Request")}
+        onClick={() =>
+          navigate("/req-list-table/show-request-statistcs/Completed-Request")
+        }
       />
       <StatCard
         title="My Approvals"
@@ -420,7 +508,9 @@ const Dashboard = () => {
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
-        onClick={() => navigate("/approval-request-list/show-request-statistcs/My-Approvals")}
+        onClick={() =>
+          navigate("/approval-request-list/show-request-statistcs/My-Approvals")
+        }
       />
 
       <StatCard
@@ -429,7 +519,11 @@ const Dashboard = () => {
         icon={ClipboardList}
         bgColor="bg-yellow-50 hover:bg-yellow-100"
         textColor="text-yellow-600"
-        onClick={() => navigate("/approval-request-list/show-request-statistcs/Pending-Approvals")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+          )
+        }
       />
 
       <StatCard
@@ -438,7 +532,11 @@ const Dashboard = () => {
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
         textColor="text-indigo-600"
-        onClick={() => navigate("/approval-request-list/show-request-statistcs/Total-Approvals")}
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Total-Approvals"
+          )
+        }
       />
     </div>
   );
@@ -513,6 +611,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+          <DateFilter />
 
           {/* Statistics Cards */}
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">

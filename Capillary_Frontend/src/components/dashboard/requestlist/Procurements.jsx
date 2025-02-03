@@ -470,7 +470,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
               <>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    PO Valid From
+                    Service Valid From
                   </label>
                   <input
                     type="date"
@@ -482,7 +482,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    PO Valid To
+                    Service Valid To
                   </label>
                   <input
                     type="date"

@@ -9,8 +9,6 @@ import { getAllEntityData } from "../../../../api/service/adminServices";
 const CommercialValidationSchema = Yup.object().shape({
   businessUnit: Yup.string().required("Business Unit is required"),
   entity: Yup.string().required("Entity is required"),
-  city: Yup.string().required("City is required"),
-  site: Yup.string().required("Site is required"),
   department: Yup.string().required("Department is required"),
   hod: Yup.string().required("Head of Department is required"),
   paymentMode: Yup.string().required("Payment Mode is required"),
@@ -348,7 +346,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              City <span className="text-red-500">*</span>
+              City 
             </label>
             <input
               type="text"
@@ -365,7 +363,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Site <span className="text-red-500">*</span>
+              Site 
             </label>
             <input
               type="text"
@@ -375,9 +373,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext }) => {
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
               placeholder="Enter Site"
             />
-            {errors.site && (
-              <p className="text-red-500 text-xs mt-1">{errors.site}</p>
-            )}
+           
           </div>
         </div>
 

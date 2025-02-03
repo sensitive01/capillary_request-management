@@ -1392,6 +1392,226 @@ const getStatisticData = async (req, res) => {
   }
 };
 
+const filterByDateStatitics = async (req, res) => {
+  try {
+    const { empId, role } = req.params;
+    const { from, to } = req.body;
+
+    let consolidatedData;
+
+    const panelUserData = await addPanelUsers
+      .findOne(
+        { _id: empId },
+        { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
+      )
+      .lean();
+
+    if (panelUserData) {
+      consolidatedData = { ...panelUserData };
+    } else {
+      const employeeData = await empModel
+        .findOne(
+          { _id: empId },
+          {
+            _id: 1,
+            full_name: 1,
+            department: 1,
+            hod_email_id: 1,
+            company_email_id: 1,
+          }
+        )
+        .lean();
+
+      const isEmpHod = await empModel
+        .findOne({
+          hod_email_id: employeeData?.company_email_id,
+        })
+        .lean();
+
+      if (employeeData && !employeeData.role) {
+        consolidatedData = {
+          ...employeeData,
+          role: isEmpHod ? "HOD Department" : "Employee",
+        };
+      }
+    }
+
+    if (!consolidatedData) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    let adminAllTotalRequests = 0;
+    let adminAllPendingRequests = 0;
+    let adminAllCompletedRequests = 0;
+    let departmentBudgetByCurrency = {};
+
+    let myRequests = 0;
+    let myApprovals = 0;
+    let pendingApprovals = 0;
+    let completedApprovals = 0;
+    let pendingRequest = 0;
+    let deptCompleteReq = 0;
+    let completedRequest = 0;
+    let totalApprovals = 0;
+
+    const reqData = await CreateNewReq.find({
+      createdAt: {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      },
+    });
+
+    if (role === "Admin") {
+      adminAllTotalRequests = reqData.length;
+      adminAllPendingRequests = reqData.filter(
+        (req) => req.status === "Pending"
+      ).length;
+      adminAllCompletedRequests = reqData.filter(
+        (req) => req.status === "Approved"
+      ).length;
+
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+        }
+        return acc;
+      }, {});
+    } else if (
+      role === "Business Finance" ||
+      role === "HOF" ||
+      role === "Vendor Management" ||
+      role === "Info Security" ||
+      role === "Legal Team"
+    ) {
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
+
+      const reqDataStatics = reqData.filter((req) =>
+        req.approvals.some(
+          (app) => app.nextDepartment === consolidatedData.department
+        )
+      );
+
+      totalApprovals = reqData.length;
+
+      reqData.forEach((request) => {
+        if (!request.approvals || request.approvals.length === 0) {
+          return;
+        }
+
+        const pendingRequests = request.approvals.filter((app) => {
+          const isForEmployeeDept =
+            app.nextDepartment === consolidatedData.department;
+          const isPending =
+            app.status === "Approved" &&
+            !request.approvals.some(
+              (prevApp) =>
+                prevApp.departmentName === consolidatedData.department &&
+                prevApp.status === "Approved"
+            );
+
+          return isForEmployeeDept && isPending;
+        });
+
+        pendingApprovals = pendingRequests.length;
+
+        const approvalsForEmployee2 = request.approvals.filter(
+          (app) =>
+            app.departmentName === consolidatedData.department &&
+            app.status === "Approved"
+        );
+        completedApprovals = approvalsForEmployee2.length;
+      });
+
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+        }
+        return acc;
+      }, {});
+    } else if (role === "Employee") {
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
+
+      myRequestData.forEach((request) => {
+        if (request.status === "Approved") {
+          completedApprovals++;
+        } else {
+          pendingApprovals++;
+        }
+      });
+    } else if (consolidatedData.role === "HOD Department") {
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
+
+      myRequestData.forEach((request) => {
+        if (request.status === "Approved") {
+          completedRequest++;
+        } else {
+          pendingRequest++;
+        }
+      });
+
+      const hodApprovals = await CreateNewReq.find(
+        { "firstLevelApproval.hodDepartment": consolidatedData.department },
+        { firstLevelApproval: 1 }
+      ).lean();
+      totalApprovals = hodApprovals.length;
+
+      hodApprovals.forEach((request) => {
+        if (request.firstLevelApproval?.status === "Approved") {
+          myApprovals++;
+        } else {
+          pendingApprovals++;
+        }
+      });
+
+      const completedApprovalsData = await CreateNewReq.find({
+        "firstLevelApproval.hodDepartment": consolidatedData.department,
+        status: "Approved",
+      }).lean();
+
+      deptCompleteReq = completedApprovalsData.length;
+
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (
+          req.supplies?.totalValue &&
+          req.supplies?.selectedCurrency &&
+          req.firstLevelApproval?.hodDepartment === consolidatedData.department
+        ) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+        }
+        return acc;
+      }, {});
+    }
+
+    Object.keys(departmentBudgetByCurrency).forEach((currency) => {
+      departmentBudgetByCurrency[currency] =
+        Math.round(departmentBudgetByCurrency[currency] * 100) / 100;
+    });
+
+    res.status(200).json({
+      role: consolidatedData.role,
+      adminAllTotalRequests,
+      adminAllPendingRequests,
+      adminAllCompletedRequests,
+      departmentBudgetByCurrency,
+      myRequests,
+      myApprovals,
+      completedApprovals,
+      pendingApprovals,
+      pendingRequest,
+      deptCompleteReq,
+      completedRequest,
+      totalApprovals,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error in getting the statistics" });
+  }
+};
 // Helper function to calculate budget
 const calculateBudget = (reqData, department = null) => {
   return reqData.reduce((acc, req) => {
@@ -2495,6 +2715,7 @@ const isApproved = async (req, res) => {
       reqData.firstLevelApproval &&
       empData.department === reqData.firstLevelApproval.hodDepartment
     ) {
+      console.log("IF");
       if (reqData.firstLevelApproval.status === "Approved") {
         disable = true;
       }
@@ -2504,14 +2725,27 @@ const isApproved = async (req, res) => {
           app.departmentName === empData.department && app.status === "Approved"
       )
     ) {
+      console.log("Else if");
       disable = true;
+    } else {
+      console.log("else");
+      const lastApproved = reqData.approvals;
+      console.log("lastApproved", lastApproved);
+      const lastApprovedDepartment = lastApproved[lastApproved.length - 1];
+      console.log("lastApprovedDepartment", lastApprovedDepartment);
+      if (
+        !lastApprovedDepartment ||
+        lastApprovedDepartment.nextDepartment !== empData.department
+      ) {
+        disable = true;
+      }
     }
 
     console.log("disable", disable);
 
     return res.status(200).json({
       success: true,
-      message: "Approval status checked successfully",
+      message: "Approval status checked successfullyyes",
       isDisplay: disable,
     });
   } catch (err) {
@@ -2589,6 +2823,12 @@ const uploadPoDocuments = async (req, res) => {
     console.log("Welcome to upload documets");
     const { reqId, empId } = req.params;
     const { link } = req.body;
+    // const oldReqData = await CreateNewReq.findOne(
+    //   { _id: reqId },
+    //   { approvals: 1 }
+    // );
+    // const { approvals } = oldReqData;
+    // const latestApproval = approvals[approvals.length - 1];
 
     // Fetch employee data
     const empData =
@@ -2632,6 +2872,16 @@ const uploadPoDocuments = async (req, res) => {
     if (!updatedRequest) {
       return res.status(404).json({ message: "Request not found" });
     }
+
+    // const approvalRecord = {
+    //   departmentName: empData.department,
+    //   status: "PO-Uploaded",
+    //   uploadedByName: empData.full_name,
+    //   uploadedByEmpId: empData.employee_id,
+    //   uploadedDate: new Date(), // Current date and time
+    //   remarks: remarks || "",
+    //   receivedOn: latestApproval.approvalDate,
+    // };
 
     return res.status(200).json({
       message: "PO Document uploaded successfully",
@@ -2727,4 +2977,5 @@ module.exports = {
   getStatisticData,
   sendNudgeNotification,
   editSendRequestMail,
+  filterByDateStatitics,
 };

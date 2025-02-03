@@ -11,6 +11,16 @@ export const verifyUser = async (email) => {
   }
 };
 
+export const fetchDateFilterStatistics = async (empId,role,from,to) => {
+  try {
+    const response = await adminServices.post(`/request/filter-by-date/${empId}/${role}`, { from,to });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
 
 
 

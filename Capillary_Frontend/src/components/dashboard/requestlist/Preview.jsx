@@ -130,14 +130,14 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                       {formData.commercials.site}
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  {/* <div className="bg-gray-50 p-4 rounded-lg">
                     <span className="text-gray-600 font-medium">
                       Cost Centre
                     </span>
                     <div className="text-gray-800 font-semibold mt-1">
                       {formData.commercials.costCentre}
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">

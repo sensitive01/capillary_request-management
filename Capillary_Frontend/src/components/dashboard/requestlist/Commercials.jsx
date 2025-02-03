@@ -464,16 +464,16 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                       >
                         <option value="">Select Payment Term</option>
                         <option value="immediate">Immediate</option>
-                        <option value="advance_30">
+                        <option value=" 30 days credit period">
                           30 days credit period
                         </option>
-                        <option value="advance_45">
+                        <option value=" 45 days credit period">
                           45 days credit period
                         </option>
-                        <option value="advance_60">
+                        <option value="60 days credit period">
                           60 days credit period
                         </option>
-                        <option value="advance_60">
+                        <option value="90 days credit period">
                           90 days credit period
                         </option>
                       </select>

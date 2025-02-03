@@ -32,6 +32,8 @@ router.post('/accept-request-hof-team/:id', reqController.approveRequest);
 router.post('/send-reminder/:reqId', reqController.sendNudgeNotification); 
 router.post('/add-request', reqController.addReqForm); 
 router.post('/send-edit-request-mail/:empId/:reqId',reqController.editSendRequestMail)
+router.post('/filter-by-date/:empId/:role',reqController.filterByDateStatitics)
+
 
 
 

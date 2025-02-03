@@ -27,6 +27,7 @@ import handleApprove from "./handleApprove";
 import RequestLogs from "./RequestLogs";
 import pfdIcon from "../../../assets/images/pdfIcon.png";
 import uploadFiles from "../../../utils/s3BucketConfig";
+import { formatDateToDDMMYY } from "../../../utils/dateFormat";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -261,14 +262,14 @@ const PreviewTheReq = () => {
                                             {request.commercials.site}
                                         </div>
                                     </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                    {/* <div className="bg-gray-50 p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
                                             Cost Centre
                                         </span>
                                         <div className="text-gray-800 font-semibold mt-1">
                                             {request.commercials.costCentre}
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -402,8 +403,8 @@ const PreviewTheReq = () => {
                                     },
                                     {
                                         label: "Quotation Date",
-                                        value: request.procurements
-                                            .quotationDate,
+                                        value: formatDateToDDMMYY(request.procurements
+                                            .quotationDate),
                                     },
                                     {
                                         label: "Service Period",
@@ -412,11 +413,11 @@ const PreviewTheReq = () => {
                                     },
                                     {
                                         label: "PO Valid From",
-                                        value: request.procurements.poValidFrom,
+                                        value: formatDateToDDMMYY(request.procurements.poValidFrom),
                                     },
                                     {
                                         label: "PO Valid To",
-                                        value: request.procurements.poValidTo,
+                                        value: formatDateToDDMMYY(request.procurements.poValidTo),
                                     },
                                 ]
                                     .filter((item) => item.value)
@@ -691,6 +692,9 @@ const PreviewTheReq = () => {
                     <RequestLogs
                         createdAt={request.createdAt}
                         logData={request.approvals}
+                        // poUploadData = {request.poDocuments||""}
+                        // invoiceUploadData = {request.invoiceDocumets||""}
+
                     />
                 );
             default:
