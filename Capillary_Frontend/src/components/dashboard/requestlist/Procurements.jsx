@@ -483,7 +483,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                     value={formData.poValidFrom || ""}
                     onChange={handleInputChange}
                     min={getDateRange().min}
-                    max={getDateRange().max}
+              
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                   />
                 </div>
