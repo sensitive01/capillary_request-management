@@ -499,12 +499,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             focus:outline-none focus:border-transparent transition duration-300`}
                       >
                         <option value="">Select Payment Type</option>
-                        <option value="fullPayment">Full Payment</option>
-                        <option value="advancePayment">Advance Payment</option>
-                        <option value="deliveryPayment">
+                        <option value="Full Payment">Full Payment</option>
+                        <option value="Advance Payment">Advance Payment</option>
+                        <option value="Payment on Delivary">
                           Payment on Delivary
                         </option>
-                        <option value="partPayment">Part Payment</option>
+                        <option value="Part Payment">Part Payment</option>
                       </select>
                       {errors.paymentTerms?.[index]?.paymentType && (
                         <p className="text-red-500 text-xs mt-1">
