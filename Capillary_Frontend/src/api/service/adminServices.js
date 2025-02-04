@@ -106,7 +106,7 @@ export const deleteVendor = async (id) => {
 };
 export const getVendorData = async (id) => {
   try {
-    const response = await adminServices.get(`/vendors/get/${id}`);
+    const response = await adminServices.get(`/vendors/get-vendor-data/${id}`);
     return response;
   } catch (err) {
     return err;
@@ -698,7 +698,7 @@ export const addInvoiceDocument = async (empId,reqId,link) => {
 
 // ............................ENTITY SIDE..........................................................
 
-export const getAllEntityData = async () => {
+export const getAllEntityData = async (empId) => {
   try {
     const response = await adminServices.get(`/entity/get-all`);
     return response;

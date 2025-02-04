@@ -275,6 +275,9 @@ const EmployeeListTable = () => {
                       <span className="block text-sm text-gray-500">
                         {employee.company_email_id || "NA"}
                       </span>
+                      <span className="block text-sm text-gray-500">
+                        {employee.department || "NA"}
+                      </span>
                     </div>
                   </td>
 
@@ -310,9 +313,7 @@ const EmployeeListTable = () => {
                       <span className="block text-sm text-gray-500">
                         {employee.hod_email_id || "NA"}
                       </span>
-                      <span className="block text-sm text-gray-500">
-                        {employee.department || "NA"}
-                      </span>
+                      
                     </div>
                   </td>
 

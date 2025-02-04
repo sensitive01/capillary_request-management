@@ -164,7 +164,7 @@ const RequestStatistcsTable = () => {
                                             [
                                                 "Pending",
                                                 "Hold",
-                                                "Rejected",
+                                                "Reject",
                                             ].includes(
                                                 items.firstLevelApproval.status
                                             )
@@ -187,14 +187,12 @@ const RequestStatistcsTable = () => {
                                 setUsers(filteredData);
                             } else if (action === "My-Approvals") {
                                 const filteredData =
-                                    response.data.reqData.filter(
-                                        (item) =>
-                                           
-                                            item.approvals.some(
-                                                (app) =>
-                                                    app.departmentName ===
-                                                    department
-                                            )
+                                    response.data.reqData.filter((item) =>
+                                        item.approvals.some(
+                                            (app) =>
+                                                app.departmentName ===
+                                                department
+                                        )
                                     );
 
                                 setUsers(filteredData);
@@ -360,12 +358,7 @@ const RequestStatistcsTable = () => {
                                                 >
                                                     Amount
                                                 </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Requestor
-                                                </th>
+
                                                 <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -401,7 +394,22 @@ const RequestStatistcsTable = () => {
                                                         {index + 1}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {user.reqid}
+                                                        <div>
+                                                            <span className="block font-medium">
+                                                                {user.reqid}
+                                                            </span>
+                                                            <span className="block font-medium">
+                                                                {user.userName ||
+                                                                    "Employee"}
+                                                            </span>
+                                                            <span className="block">
+                                                                {
+                                                                    user
+                                                                        .commercials
+                                                                        ?.department
+                                                                }
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
@@ -450,21 +458,7 @@ const RequestStatistcsTable = () => {
                                                                 ?.selectedCurrency
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        <div>
-                                                            <span className="block font-medium">
-                                                                {user.requestor ||
-                                                                    "Employee"}
-                                                            </span>
-                                                            <span className="block">
-                                                                {
-                                                                    user
-                                                                        .commercials
-                                                                        .department
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </td>
+
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         {user.status ||
                                                             "Pending"}

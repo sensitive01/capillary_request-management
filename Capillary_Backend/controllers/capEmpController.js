@@ -139,8 +139,12 @@ const createNewReq = async (req, res) => {
     }
 
     const panelMemberEmail = (
-      await addPanelUsers.find({}, { company_email_id: 1, _id: 0 }).lean()
+      await addPanelUsers.find(
+        { role: { $ne: "admin" } }, // Exclude users with role 'admin'
+        { company_email_id: 1, _id: 0 }
+      ).lean()
     ).map((member) => member.company_email_id);
+    
 
     panelMemberEmail.push(commercials.hodEmail);
     console.log("panel members",panelMemberEmail)

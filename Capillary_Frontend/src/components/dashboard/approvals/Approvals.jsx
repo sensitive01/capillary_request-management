@@ -53,16 +53,17 @@ const Approvals = () => {
         } else {
           const response = await getApprovedReq(userId);
           if (response.status === 200) {
-            if (role === "HOD Department") {
-              const filteredUsers = response.data.reqData.filter(
-                (items) => items.firstLevelApproval.status === "Pending"
-              );
-              setFilteredUsers(filteredUsers);
-              setUsers(filteredUsers);
-            } else {
-              setUsers(response.data.reqData);
-              setFilteredUsers(response.data.reqData);
-            }
+            // if (role === "HOD Department") {
+            //   const filteredUsers = response.data.reqData.filter(
+            //     (items) => items.firstLevelApproval.status === "Pending"
+            //   );
+            //   setFilteredUsers(filteredUsers);
+            //   setUsers(filteredUsers);
+            // } else {
+
+            setUsers(response.data.reqData);
+            setFilteredUsers(response.data.reqData);
+            //   }
           }
         }
       } catch (error) {
@@ -307,12 +308,7 @@ const Approvals = () => {
                       >
                         Amount
                       </th>
-                      <th
-                        scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
-                      >
-                        Requestor
-                      </th>
+
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
@@ -355,7 +351,17 @@ const Approvals = () => {
                             {startIndex + index + 1}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            {user.reqid}
+                            <div>
+                              <span className="block font-medium">
+                                {user.reqid}
+                              </span>
+                              <span className="block font-medium">
+                                {user.userName || "Employee"}
+                              </span>
+                              <span className="block">
+                                {user.commercials?.department}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-4 py-4 text-sm text-gray-500">
                             {user.commercials?.businessUnit || "NA"}
@@ -386,37 +392,13 @@ const Approvals = () => {
                               user.supplies?.selectedCurrency
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
-                            <div>
-                              <span className="block font-medium">
-                                {user.userName || "Employee"}
-                              </span>
-                              <span className="block">
-                                {user.commercials?.department}
-                              </span>
-                            </div>
-                          </td>
+
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {user.status || "Pending"}
                           </td>
-                    
+
                           <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                            {(user.status === "Invoice-Pending"||user.status === "Approved") ? (
-                              <div className="w-full flex justify-center">
-                                <a
-                                  href={`/${user?.poDocument?.link}`}
-                                  className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
-                                >
-                                  <FileText className="h-4 w-4 mr-1" />
-                                  View PO
-                                </a>
-                              </div>
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                            {user.status === "Approved" ? (
+                            {(user.status === "Approved"||user.status==="Invoice-Pending") ? (
                               <div className="w-full flex justify-center">
                                 <button
                                   onClick={(e) => {
@@ -430,6 +412,22 @@ const Approvals = () => {
                                   <FileText className="h-4 w-4 mr-1" />
                                   Invoice
                                 </button>
+                              </div>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                            {
+                            user.status === "Approved" ? (
+                              <div className="w-full flex justify-center">
+                                <a
+                                  href={`${user?.poDocument?.link}`}
+                                  className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                >
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  View PO
+                                </a>
                               </div>
                             ) : (
                               "N/A"

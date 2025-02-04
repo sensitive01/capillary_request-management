@@ -80,6 +80,8 @@ exports.syncEmployeeData = async (req, res) => {
 
     const response = await axios(options);
     const employees = response.data.employee_data;
+    console.log("response",response)
+    console.log("Employees===>",employees)
 
     await Employee.updateMany(
       { employee_id: { $in: syncOffEmployee } },

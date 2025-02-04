@@ -8,16 +8,16 @@ import {
 } from "../../../api/service/adminServices";
 import { toast, ToastContainer } from "react-toastify";
 
-// Validation schema using Yup
+// Updated Validation schema
 const validationSchema = Yup.object({
   vendorId: Yup.string().required("Vendor ID is required"),
-  firstName: Yup.string().required("Full Name is required"),
-  phoneNumber: Yup.string().required("Phone Number is required"),
+  vendorName: Yup.string().required("Vendor Name is required"),
+  phone: Yup.string().required("Phone Number is required"),
   email: Yup.string()
     .email("Invalid email format")
     .required("Email is required"),
-  gstNumber: Yup.string().required("GST Number is required"),
-  streetAddress1: Yup.string().required("Address is required"),
+  gstin: Yup.string().required("GSTIN is required"),
+  billingAddress: Yup.string().required("Billing Address is required"),
 });
 
 const EditVendor = () => {
@@ -25,28 +25,32 @@ const EditVendor = () => {
   const { id } = useParams();
   const [formData, setFormData] = useState({
     vendorId: "",
-    firstName: "",
-    phoneNumber: "",
+    vendorName: "",
+    primarySubsidiary: "",
+    taxNumber: "",
+    gstin: "",
+    billingAddress: "",
+    shippingAddress: "",
+    phone: "",
     email: "",
-    gstNumber: "",
-    streetAddress1: "",
   });
 
-  // Fetch Vendor ID on component mount
+  // Fetch Vendor Data on component mount
   useEffect(() => {
     const fetchVendorData = async () => {
       try {
         const vendorData = await getVendorData(id);
+        console.log("response vendor",vendorData)
         console.log(vendorData);
         if (vendorData.status === 200) {
           setFormData(vendorData.data);
         }
       } catch (error) {
-        console.error("Failed to fetch Vendor ID:", error);
+        console.error("Failed to fetch Vendor Data:", error);
       }
     };
     fetchVendorData();
-  }, []);
+  }, [id]);
 
   const formik = useFormik({
     initialValues: formData,
@@ -55,18 +59,17 @@ const EditVendor = () => {
     onSubmit: async (values) => {
       try {
         console.log(values);
-        const respose = await updateVendorData(id, values);
-        console.log(respose);
-        if (respose.status === 200) {
-          toast.success(respose.data.message);
+        const response = await updateVendorData(id, values);
+        console.log(response);
+        if (response.status === 200) {
+          toast.success(response.data.message);
           setTimeout(() => {
             navigate("/vendor-list-table");
           }, 1500);
         }
-        
       } catch (error) {
-        console.error("Registration failed:", error);
-        alert("Registration failed. Please try again.");
+        console.error("Update failed:", error);
+        alert("Update failed. Please try again.");
       }
     },
   });
@@ -77,7 +80,7 @@ const EditVendor = () => {
       className="max-w-6xl bg-white mx-auto p-6 space-y-6"
     >
       <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        Vendor Registration
+        Edit Vendor
       </h2>
 
       <div className="p-4 border rounded-lg border-primary">
@@ -102,40 +105,51 @@ const EditVendor = () => {
       <div className="p-4 border rounded-lg border-primary">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="firstName">
-              Full Name <span className="text-red-500">*</span>
+            <label htmlFor="vendorName">
+              Vendor Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              name="firstName"
-              placeholder="Full Name"
-              value={formik.values.firstName}
+              name="vendorName"
+              placeholder="Vendor Name"
+              value={formik.values.vendorName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {formik.touched.firstName && formik.errors.firstName && (
+            {formik.touched.vendorName && formik.errors.vendorName && (
               <span className="text-red-500 text-sm">
-                {formik.errors.firstName}
+                {formik.errors.vendorName}
               </span>
             )}
           </div>
           <div>
-            <label htmlFor="phoneNumber">
+            <label htmlFor="primarySubsidiary">Primary Subsidiary</label>
+            <input
+              type="text"
+              name="primarySubsidiary"
+              placeholder="Primary Subsidiary"
+              value={formik.values.primarySubsidiary}
+              onChange={formik.handleChange}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label htmlFor="phone">
               Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
-              name="phoneNumber"
+              name="phone"
               placeholder="Phone Number"
-              value={formik.values.phoneNumber}
+              value={formik.values.phone}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {formik.touched.phoneNumber && formik.errors.phoneNumber && (
+            {formik.touched.phone && formik.errors.phone && (
               <span className="text-red-500 text-sm">
-                {formik.errors.phoneNumber}
+                {formik.errors.phone}
               </span>
             )}
           </div>
@@ -159,49 +173,70 @@ const EditVendor = () => {
             )}
           </div>
           <div>
-            <label htmlFor="gstNumber">
-              GST Number <span className="text-red-500">*</span>
+            <label htmlFor="gstin">
+              GSTIN <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              name="gstNumber"
-              placeholder="GST Number"
-              value={formik.values.gstNumber}
+              name="gstin"
+              placeholder="GSTIN"
+              value={formik.values.gstin}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {formik.touched.gstNumber && formik.errors.gstNumber && (
+            {formik.touched.gstin && formik.errors.gstin && (
               <span className="text-red-500 text-sm">
-                {formik.errors.gstNumber}
+                {formik.errors.gstin}
               </span>
             )}
           </div>
+          <div>
+            <label htmlFor="taxNumber">Tax Number</label>
+            <input
+              type="text"
+              name="taxNumber"
+              placeholder="Tax Number"
+              value={formik.values.taxNumber}
+              onChange={formik.handleChange}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+         
         </div>
       </div>
 
       <div>
         <h2 className="text-lg text-primary mb-2">Address</h2>
         <div className="p-4 border w-full rounded-lg border-primary">
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="streetAddress1">
-                Address <span className="text-red-500">*</span>
+              <label htmlFor="billingAddress">
+                Billing Address <span className="text-red-500">*</span>
               </label>
               <textarea
-                name="streetAddress1"
-                placeholder="Address"
-                value={formik.values.streetAddress1}
+                name="billingAddress"
+                placeholder="Billing Address"
+                value={formik.values.billingAddress}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {formik.touched.streetAddress1 &&
-                formik.errors.streetAddress1 && (
-                  <span className="text-red-500 text-sm">
-                    {formik.errors.streetAddress1}
-                  </span>
-                )}
+              {formik.touched.billingAddress && formik.errors.billingAddress && (
+                <span className="text-red-500 text-sm">
+                  {formik.errors.billingAddress}
+                </span>
+              )}
+            </div>
+            <div>
+              <label htmlFor="shippingAddress">Shipping Address</label>
+              <textarea
+                name="shippingAddress"
+                placeholder="Shipping Address"
+                value={formik.values.shippingAddress}
+                onChange={formik.handleChange}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
           </div>
         </div>
@@ -214,7 +249,7 @@ const EditVendor = () => {
           className="px-6 py-2 bg-primary text-white rounded"
           disabled={formik.isSubmitting || !formik.isValid}
         >
-          Register Vendor
+          Update Vendor
         </button>
       </div>
       <ToastContainer

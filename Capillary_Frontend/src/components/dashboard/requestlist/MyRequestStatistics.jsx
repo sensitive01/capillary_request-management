@@ -298,12 +298,7 @@ const MyRequestStatistics = () => {
                                                 >
                                                     Amount
                                                 </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Requestor
-                                                </th>
+
                                                 <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -339,7 +334,22 @@ const MyRequestStatistics = () => {
                                                         {index + 1}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {user.reqid}
+                                                        <div>
+                                                            <span className="block font-medium">
+                                                                {user.reqid}
+                                                            </span>
+                                                            <span className="block font-medium">
+                                                                {user.userName ||
+                                                                    "Employee"}
+                                                            </span>
+                                                            <span className="block">
+                                                                {
+                                                                    user
+                                                                        .commercials
+                                                                        ?.department
+                                                                }
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
@@ -388,21 +398,7 @@ const MyRequestStatistics = () => {
                                                                 ?.selectedCurrency
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        <div>
-                                                            <span className="block font-medium">
-                                                                {user.requestor ||
-                                                                    "Employee"}
-                                                            </span>
-                                                            <span className="block">
-                                                                {
-                                                                    user
-                                                                        .commercials
-                                                                        .department
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </td>
+
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         {user.status ||
                                                             "Pending"}

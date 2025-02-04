@@ -218,7 +218,7 @@ const VendorListTable = () => {
                   Vendor
                 </th>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Email
+                  Phone
                 </th>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Address
@@ -246,18 +246,18 @@ const VendorListTable = () => {
                         {person?.vendorId || person.ID}
                       </span>
                       <span className="block font-semibold text-gray-900">
-                        {person?.firstName || person.Name}
+                        {person?.vendorName || person.Name}
                       </span>
                       <span className="block font-sm text-gray-900">
-                        Tax ID: {person?.gstNumber || person["Tax Number"]}
+                        Tax ID: {person?.taxNumber || person["Tax Number"]}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {person?.email || person.Email}
+                    {person?.phone}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-[400px] break-words whitespace-normal">
-                    {person?.streetAddress1 || person["Shipping Address"]}
+                    {person?.shippingAddress || person["Shipping Address"]}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-4">

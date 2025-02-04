@@ -8,11 +8,13 @@ import { CommercialValidationSchema } from "./yupValidation/commercialValidation
 import businessUnits from "./dropDownData/businessUnit";
 
 const Commercials = ({ formData, setFormData, onNext }) => {
+    const empDepartment = localStorage.getItem("department");
+
     const [localFormData, setLocalFormData] = useState({
         entity: formData.entity || "",
         city: formData.city || "",
         site: formData.site || "",
-        department: formData.department || "",
+        department: formData.department || empDepartment || "",
         amount: formData.amount || "",
         entityId: formData.entityId || "",
 
@@ -24,7 +26,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         billTo: formData.billTo || "",
         shipTo: formData.shipTo || "",
         hod: formData.hod || "",
-        hodEmail: formData.company_email_id || "",
+        hodEmail: formData.hodEmail || "",
         businessUnit: formData.businessUnit || "",
         isCreditCardSelected: formData.isCreditCardSelected || false,
     });
@@ -32,8 +34,8 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     const [selectedEntityDetails, setSelectedEntityDetails] = useState(null);
     const [errors, setErrors] = useState({});
     const [department, setDepartment] = useState([]);
-    const [departmentSearch, setDepartmentSearch] = useState("");
-    const [isSearching, setIsSearching] = useState(false);
+    // const [departmentSearch, setDepartmentSearch] = useState("");
+    // const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
         const fetchEntity = async () => {
@@ -78,10 +80,31 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             return false;
         }
     };
+    useEffect(() => {
+        if (department.length > 0 && empDepartment) {
+            const matchingDept = department.find(
+                (dept) =>
+                    dept.department.toLowerCase() ===
+                    empDepartment.toLowerCase()
+            );
 
-    const filteredDepartments = department.filter((dept) =>
-        dept.department.toLowerCase().includes(departmentSearch.toLowerCase())
-    );
+            if (matchingDept) {
+                setLocalFormData((prev) => ({
+                    ...prev,
+                    department: empDepartment,
+                    hod: matchingDept.hod,
+                    hodEmail: matchingDept.hod_email_id,
+                }));
+
+                setFormData((prev) => ({
+                    ...prev,
+                    department: empDepartment,
+                    hod: matchingDept.hod,
+                    hodEmail: matchingDept.hod_email_id,
+                }));
+            }
+        }
+    }, [department, empDepartment]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -90,22 +113,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             ...localFormData,
             [name]: value,
         };
-
-        // Auto-populate HOD when department changes
-        if (name === "department") {
-            console.log(name, value);
-            const selectedDepartment = department.find(
-                (dept) => dept.department === value
-            );
-            console.log("selectedDepartment", selectedDepartment);
-            if (selectedDepartment) {
-                updatedFormData = {
-                    ...updatedFormData,
-                    hod: `${selectedDepartment.hod}`,
-                    hodEmail: selectedDepartment.hod_email_id,
-                };
-            }
-        }
 
         if (name === "paymentMode" && value === "creditcard") {
             updatedFormData.paymentTerms = [
@@ -344,21 +351,23 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                         <div className="relative">
                             <input
                                 type="text"
-                                value={departmentSearch}
-                                onChange={(e) => {
-                                    setDepartmentSearch(e.target.value);
-                                    setIsSearching(true);
-                                }}
-                                onFocus={() => setIsSearching(true)}
-                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                                placeholder="Search department..."
+                                value={formData.department || empDepartment}
+                                // value={departmentSearch}
+                                // onChange={(e) => {
+                                //     setDepartmentSearch(e.target.value);
+                                //     setIsSearching(true);
+                                // }}
+                                // onFocus={() => setIsSearching(true)}
+                                className="w-full px-4 py-3 border-2 bg-gray-100 border-gray-500 rounded-lg"
+                                placeholder=""
+                                readOnly
                             />
-                            <Search
+                            {/* <Search
                                 className="absolute right-3 top-3 text-gray-400"
                                 size={20}
-                            />
+                            /> */}
                         </div>
-                        {isSearching && departmentSearch && (
+                        {/* {isSearching && departmentSearch && (
                             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                 {filteredDepartments.map((dept) => (
                                     <div
@@ -386,7 +395,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                     </div>
                                 )}
                             </div>
-                        )}
+                        )} */}
                         {errors.department && (
                             <p className="text-red-500 text-xs mt-1">
                                 {errors.department}
@@ -396,14 +405,14 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            HOD <span className="text-red-500">*</span>
+                            Approver <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             name="hod"
                             value={localFormData.hod}
                             readOnly
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300 bg-gray-50"
+                            className="w-full px-4 py-3 border-2 border-gray-500 rounded-lg  bg-gray-100"
                             placeholder="HOD will be auto-populated"
                         />
                         {errors.hod && (
