@@ -13,6 +13,7 @@ import { FaFilePdf } from "react-icons/fa";
 import uploadFiles from "../../../utils/s3BucketConfig";
 
 const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
+    console.log("Comploances",formData)
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [deviations, setDeviations] = useState({});
@@ -137,12 +138,12 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
     const handleFileUpload = async (questionId, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
-                uploadFiles(file,"deviation")
+                uploadFiles(file,"compliances",formData?.reqId)
             );
             const responses = await Promise.all(uploadPromises);
             console.log(responses)
 
-            const fileUrls = responses.flatMap((response) => response[0]);
+            const fileUrls = responses.flatMap((response) => response.data.fileUrls[0]);
             const updatedAttachments = [
                 ...(deviations[questionId]?.attachments || []),
                 ...fileUrls,

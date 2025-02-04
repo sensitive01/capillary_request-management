@@ -117,8 +117,9 @@ const ChatComments = ({ reqId }) => {
                         selectedFile,
                         "chat"
                     );
-                    if (uploadResponse && uploadResponse[0]) {
-                        attachmentUrl = uploadResponse[0];
+                    console.log("uploadResponse",uploadResponse)
+                    if (uploadResponse && uploadResponse.data.fileUrls[0]) {
+                        attachmentUrl = uploadResponse.data.fileUrls[0];
                         attachmentType = selectedFile.type;
                         attachmentName = selectedFile.name;
                     } else {

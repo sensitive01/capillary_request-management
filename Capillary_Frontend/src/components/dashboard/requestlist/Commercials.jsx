@@ -9,6 +9,7 @@ import businessUnits from "./dropDownData/businessUnit";
 
 const Commercials = ({ formData, setFormData, onNext }) => {
   const [localFormData, setLocalFormData] = useState({
+   
     entity: formData.entity || "",
     city: formData.city || "",
     site: formData.site || "",
@@ -463,7 +464,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             focus:outline-none focus:border-transparent transition duration-300`}
                       >
                         <option value="">Select Payment Term</option>
-                        <option value="immediate">Immediate</option>
+                        <option value="Immediate">Immediate</option>
                         <option value=" 30 days credit period">
                           30 days credit period
                         </option>

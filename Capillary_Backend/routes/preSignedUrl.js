@@ -20,42 +20,46 @@ const s3 = new AWS.S3();
 s3Router.post("/upload", upload.array("files"), async (req, res) => {
   try {
     const files = req.files;
-    const folder = req.body.folder || "uploads";
-    console.log("Image upload", req.body);
-    const { fileType, reqId } = req.body;
+    const { fileType } = req.body;
     const date = new Date();
     let newReqId;
-    if (!reqId) {
+    const { reqId } = req.query;
+    
+    console.log("Received ReqId:", reqId);
+
+    // Generate new reqId if not provided
+    if (!reqId||reqId==="undefined") {
       const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
         date.getMonth() + 1
       ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
         Math.floor(Math.random() * 100) + 1
       }`;
       newReqId = reqid;
+      console.log("Using ReqId 1:", newReqId);
+
     } else {
+      console.log("Using ReqId: 2", newReqId);
       newReqId = reqId;
     }
-    console.log("newReqId",newReqId)
 
+
+    // Ensure files are provided
     if (!files || files.length === 0) {
       return res.status(400).json({ error: "No files provided for upload" });
     }
 
-    // const uploadPromises = files.map((file) => {
-    //   const s3Params = {
-    //     Bucket: process.env.S3_BUCKET_NAME,
-    //     Key: `${folder}/${newReqId}/${fileType}/${Date.now()}_${file.originalname}`,
-    //     Body: file.buffer,
-    //     ContentType: file.mimetype,
-    //   };
+    // Define the folder path in S3
+    const folder = `PO-Uploads/${newReqId}/${fileType}`;
+    console.log("Folder Path:", folder);
 
-    //   return s3.upload(s3Params).promise();
-    // });
-
+    // Upload files to S3
     const uploadPromises = files.map((file) => {
+      // Ensure each file name is unique (use timestamp for uniqueness)
+      const uniqueFileName = `${Date.now()}_${file.originalname}`;
+
       const s3Params = {
         Bucket: process.env.S3_BUCKET_NAME,
-        Key: `${folder}/${Date.now()}_${file.originalname}`,
+        Key: `${folder}/${uniqueFileName}`,
         Body: file.buffer,
         ContentType: file.mimetype,
       };
@@ -64,18 +68,45 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
     });
 
     const results = await Promise.all(uploadPromises);
-    const fileUrls = results.map((result) => result.Location);
 
+    // Generate pre-signed URLs for each file uploaded
+    const fileUrls = results.map((result) => {
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: result.Key,
+        Expires: 3600, // URL expires in 1 hour
+      };
+
+      // Generate pre-signed URL for the uploaded file
+      const signedUrl = s3.getSignedUrl("getObject", params);
+      return signedUrl;
+    });
+
+    // Respond with success and file URLs
     res.status(200).json({
       message: "Files uploaded successfully",
       fileUrls,
-      // newReqId
+      newReqId,  // Return the reqId used for this upload
     });
+
   } catch (error) {
     console.error("Error uploading files:", error);
     res.status(500).json({ error: "Failed to upload files" });
   }
 });
+
+
+// s3Router.get("/display/:key", async (req, res) => {
+//   const key = req.params.key;
+//   const params = { Bucket: process.env.S3_BUCKET_NAME, Key: key };
+//   s3.getObject(params, (err, data) => {
+//     if (err) {
+//       return res.status(500).json({ error: err.message });
+//     }
+//     res.set("Content-Type", data.ContentType);
+//     res.send(data.Body);
+//   });
+// });
 
 // s3Router.post("/delete-s3-image",s3Controller.deleteImageFromS3Bucket)
 

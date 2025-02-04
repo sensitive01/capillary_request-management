@@ -790,7 +790,7 @@ const PreviewTheReq = () => {
             const response2 = await addPODocument(
                 userId,
                 params.id,
-                response[0]
+                response.data.fileUrls[0]
             );
             console.log(response2);
             if (response2.status === 200) {
@@ -825,7 +825,7 @@ const PreviewTheReq = () => {
             const response2 = await addInvoiceDocument(
                 userId,
                 params.id,
-                response[0]
+                response.data.fileUrls[0]
             );
             console.log(response2);
             if (response2.status === 200) {
@@ -940,7 +940,7 @@ const PreviewTheReq = () => {
                 )}
 
                 {request.status === "PO-Pending" &&
-                    department === "PO Uploader" && (
+                    department === "HOF" && (
                         <div className="flex items-center gap-4">
                             {/* Preview Image */}
                             {selectedImage && (

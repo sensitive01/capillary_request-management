@@ -66,7 +66,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       setFormData((prevState) => ({
         ...prevState,
         quotationDate: today,
-        servicePeriod: "oneTime",
+        servicePeriod: "One Time",
       }));
     }
   }, [setFormData, formData.quotationDate]);
@@ -170,11 +170,14 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
       const uploadedUrls = await Promise.all(
         files.map(async (file) => {
         //   const data = await uploadCloudinary(file);
-        const data = await uploadFiles(file,fileType);
-        console.log("uploadedUrls",data[0])
+        const data = await uploadFiles(file,fileType,formData?.reqId);
+        console.log("data",data)
+        setFormData({...formData,
+            reqId:data.data.newReqId
+        })
 
 
-          return data[0];
+          return data.data.fileUrls[0];
         })
       );
 
