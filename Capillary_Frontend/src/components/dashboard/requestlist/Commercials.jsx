@@ -18,8 +18,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         amount: formData.amount || "",
         entityId: formData.entityId || "",
 
-        costCentre: formData.costCentre || "CT-ITDT-02",
-        paymentMode: formData.paymentMode || "",
+        // paymentMode: formData.paymentMode || "",
         paymentTerms: formData.paymentTerms || [
             { percentageTerm: 0, paymentTerm: "", paymentType: "" },
         ],
@@ -421,7 +420,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             </p>
                         )}
                     </div>
-
+{/* 
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Payment Mode <span className="text-red-500">*</span>
@@ -458,7 +457,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                 {errors.paymentMode}
                             </p>
                         )}
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="space-y-4">

@@ -5,7 +5,7 @@ const CommercialValidationSchema = Yup.object().shape({
   entity: Yup.string().required("Entity is required"),
   department: Yup.string().required("Department is required"),
   hod: Yup.string().required("Head of Department is required"),
-  paymentMode: Yup.string().required("Payment Mode is required"),
+//   paymentMode: Yup.string().required("Payment Mode is required"),
   billTo: Yup.string().required("Bill To address is required"),
   shipTo: Yup.string().required("Ship To address is required"),
 

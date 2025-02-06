@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const addPanelUsers = require("../models/addPanelUsers");
 const Employee = require("../models/empModel");
-const sendLoginEmail = require("../utils/sendEmail");
+const sendEmail = require("../utils/sendEmail");
 const { sendBulkEmails } = require("../utils/otherTestEmail");
 const CreateNewReq = require("../models/createNewReqSchema");
 
@@ -46,9 +46,25 @@ const verifyUser = async (req, res) => {
 
     console.log("Consolidated Employee Data:", consolidatedData);
 
-    const subject = "Login Notification from PO Request Portal";
-    const textContent = "";
-    const htmlContent = `
+    if (consolidatedData) {
+      const token = jwt.sign(
+        {
+          id: consolidatedData._id,
+          email: email,
+          role: consolidatedData.role,
+          department: consolidatedData.department,
+          capEmpId: consolidatedData.employee_id,
+        },
+        CAPILLARY_JWT_SECRET,
+        { expiresIn: "10h" }
+      );
+      console.log("Token", token);
+
+      // await sendEmail(consolidatedData.company_email_id, "login", { full_name });
+
+      const subject = "Login Notification from PO Request Portal";
+      const textContent = "";
+      const htmlContent = `
         <!DOCTYPE html>
         <html>
         <body>
@@ -69,21 +85,8 @@ const verifyUser = async (req, res) => {
         </html>
       `;
 
-    if (consolidatedData) {
-      const token = jwt.sign(
-        {
-          id: consolidatedData._id,
-          email: email,
-          role: consolidatedData.role,
-          department: consolidatedData.department,
-          capEmpId: consolidatedData.employee_id,
-        },
-        CAPILLARY_JWT_SECRET,
-        { expiresIn: "10h" }
-      );
-      console.log("Token", token);
+      await sendEmail(email, subject, textContent, htmlContent);
 
-      await sendLoginEmail(email, subject, textContent, htmlContent);
 
       return res.status(200).json({
         success: true,
@@ -139,20 +142,21 @@ const createNewReq = async (req, res) => {
     }
 
     const panelMemberEmail = (
-      await addPanelUsers.find(
-        { role: { $ne: "admin" } }, // Exclude users with role 'admin'
-        { company_email_id: 1, _id: 0 }
-      ).lean()
+      await addPanelUsers
+        .find(
+          { role: { $ne: "Admin" } }, // Exclude users with role 'admin'
+          { company_email_id: 1, _id: 0 }
+        )
+        .lean()
     ).map((member) => member.company_email_id);
-    
 
     panelMemberEmail.push(commercials.hodEmail);
-    console.log("panel members",panelMemberEmail)
+    console.log("panel members", panelMemberEmail);
 
     const newRequest = new CreateNewReq({
       reqid,
       userId: id,
-      userName:empData.full_name,
+      userName: empData.full_name,
       commercials,
       procurements,
       supplies,
@@ -169,7 +173,12 @@ const createNewReq = async (req, res) => {
 
     await newRequest.save();
     // const from =  `"Capillary Technology" ${process.env.EMAIL_ADDRESS}`
-    await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqid);
+    await sendBulkEmails(
+      panelMemberEmail,
+      empData.full_name,
+      empData.department,
+      reqid
+    );
 
     res.status(201).json({
       message: "Request created successfully",

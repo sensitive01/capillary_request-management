@@ -12,8 +12,17 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     const [vendors, setVendors] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    // const [errors, setErrors] = useState({});
+
     const [showResults, setShowResults] = useState(false);
     const searchRef = useRef(null);
+    const [errors, setErrors] = useState({
+        vendor: "",
+        servicePeriod: "",
+        poValidFrom: "",
+        poValidTo: "",
+        quotationDate: "",
+    });
 
     const [newVendor, setNewVendor] = useState({
         name: "",
@@ -38,7 +47,6 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
 
         fetchVendor();
     }, []);
-    
 
     useEffect(() => {
         if (
@@ -121,6 +129,52 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         return fileData.fileType === "Other"
             ? fileData.otherType
             : fileData.fileType;
+    };
+    const validateFields = () => {
+        let tempErrors = {};
+        let isValid = true;
+
+        // Vendor validation
+        if (!formData.vendor) {
+            tempErrors.vendor = "Vendor selection is required";
+            isValid = false;
+        }
+
+        // Service Period validation
+        if (!formData.servicePeriod) {
+            tempErrors.servicePeriod = "Service period is required";
+            isValid = false;
+        }
+
+        // Custom period validation
+        if (formData.servicePeriod === "custom") {
+            if (!formData.poValidFrom) {
+                tempErrors.poValidFrom = "Valid from date is required";
+                isValid = false;
+            }
+            if (!formData.poValidTo) {
+                tempErrors.poValidTo = "Valid to date is required";
+                isValid = false;
+            }
+            if (
+                formData.poValidFrom &&
+                formData.poValidTo &&
+                new Date(formData.poValidFrom) > new Date(formData.poValidTo)
+            ) {
+                tempErrors.poValidTo =
+                    "Valid to date must be after valid from date";
+                isValid = false;
+            }
+        }
+
+        // Quotation date validation
+        if (!formData.quotationDate) {
+            tempErrors.quotationDate = "Quotation date is required";
+            isValid = false;
+        }
+
+        setErrors(tempErrors);
+        return isValid;
     };
 
     const handleInputChange = (e) => {
@@ -457,6 +511,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
                         )}
                     </div>
                 )}
+                <ErrorMessage error={errors.vendor} />
             </div>
         );
     };
@@ -516,14 +571,17 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         );
     };
 
-    // Handle form submission
     const handleSubmit = () => {
-        console.log("formData for Procurements stage", formData);
-        if (!formData.vendor || !formData.servicePeriod) {
-            toast.error("Please select Required Fields");
-            return;
+        if (validateFields()) {
+            onNext();
+        } else {
+            toast.error("Please fill in all required fields correctly");
         }
-        onNext();
+    };
+
+    const ErrorMessage = ({ error }) => {
+        if (!error) return null;
+        return <p className="text-red-500 text-sm mt-1">{error}</p>;
     };
 
     const handleSearch = (value) => {
