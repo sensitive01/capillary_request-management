@@ -99,7 +99,7 @@ const emailTemplates = {
       </html>
     `,
   },
-  financeApprovalEmail :{
+  financeApprovalEmail: {
     subject: `Finance Approval Notification`,
     html: `
       <!DOCTYPE html>
@@ -122,8 +122,37 @@ const emailTemplates = {
         </body>
       </html>
     `,
-  }
+  },
+  nudgeNotification: {
+    subject: `Reminder: Request ID {{reqid}} Pending Action`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+          <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+            <div style="background-color: #ff9800; color: #ffffff; padding: 20px;">
+              <h1>Action Required: Pending Request</h1>
+            </div>
+            <div style="padding: 20px; color: #333;">
+              <p>Dear Team,</p>
+              <p>This is a gentle reminder that Request ID <strong>{{reqid}}</strong> is still pending from the user's side.</p>
+              <p>Please review the request and take the necessary action at the earliest.</p>
+              <p><strong>Requester:</strong> {{empName}} ({{empEmail}})</p>
+              <p><strong>Department:</strong> {{department}}</p>
   
+              <div style="text-align: center; margin-top: 20px;">
+                <a href="https://porequests.corp.capillarytech.com" style="background-color: #ff9800; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Review Request</a>
+              </div>
+  
+              <p style="margin-top: 20px; font-size: 12px; color: #777;">
+                This is an automated reminder. If action has already been taken, please ignore this email.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  },
 };
 
 module.exports = emailTemplates;

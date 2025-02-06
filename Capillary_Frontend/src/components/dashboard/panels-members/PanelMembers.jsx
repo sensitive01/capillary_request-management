@@ -178,14 +178,11 @@ const PanelMembers = () => {
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="Admin">Admin</option>
-              <option value="Vendor Management">Vendor Management</option>
               <option value="Business Finance">Business Finance</option>
+              <option value="Vendor Management">Vendor Management</option>
               <option value="Legal Team">Legal Team</option>
               <option value="Info Security">Info Security</option>
-              <option value="Payment">Payment</option>
-              <option value="PO Team">PO Team</option>
-              <option value="HOD Department">HOD Department</option>
-              <option value="HOF">HOF</option>
+              <option value="HOF">Head of Finance</option>
             </select>
           </div>
         </div>

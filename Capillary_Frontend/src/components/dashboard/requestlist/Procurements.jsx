@@ -34,11 +34,32 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     ]);
 
     useEffect(() => {
+        if (formData.vendor && formData.vendorName) {
+            const vendorDisplay = `${formData.vendor} - ${formData.vendorName}`;
+            setSearchTerm(vendorDisplay);
+        }
+    }, [formData.vendor, formData.vendorName]);
+
+    useEffect(() => {
         const fetchVendor = async () => {
             try {
                 const response = await fetchAllVendorData();
                 if (response.status === 200) {
                     setVendors(response.data);
+
+                    // If there's a selected vendor in formData, update the search term
+                    if (formData.vendor) {
+                        const selectedVendor = response.data.find(
+                            (v) =>
+                                v.vendorId === formData.vendor ||
+                                v.ID === formData.vendor
+                        );
+                        if (selectedVendor) {
+                            const vendorDisplay =
+                                getVendorDisplayName(selectedVendor);
+                            setSearchTerm(vendorDisplay);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching vendors:", error);
@@ -46,7 +67,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         };
 
         fetchVendor();
-    }, []);
+    }, [formData.vendor]);
 
     useEffect(() => {
         if (
@@ -203,19 +224,21 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     };
     const handleSelectVendor = (vendor) => {
         const vendorId = vendor.ID || vendor.vendorId;
-        setFormData((prevState) => ({
+        const vendorName = vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
+        
+        setFormData(prevState => ({
             ...prevState,
             vendor: vendorId,
-            vendorName:
-                vendor.firstName ||
-                vendor.Name ||
-                vendor.name ||
-                vendor.vendorName,
+            vendorName: vendorName,
             email: vendor.email,
-            isNewVendor: vendor.isNewVendor,
+            isNewVendor: vendor.isNewVendor
         }));
+        
         setSearchTerm(getVendorDisplayName(vendor));
         setShowResults(false);
+        
+        // Clear any vendor-related errors
+        setErrors(prev => ({ ...prev, vendor: "" }));
     };
 
     const getDateRange = () => {
@@ -258,8 +281,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         if (vendor.isNewVendor) {
             return `${vendor.firstName} (New Vendor)`;
         }
-        const displayName =
-            vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
+        const displayName = vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
         const id = vendor.vendorId || vendor.ID;
         return `${id} - ${displayName}`;
     };

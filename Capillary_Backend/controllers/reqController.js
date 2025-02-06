@@ -1192,7 +1192,7 @@ const sendNudgeNotification = async (req, res) => {
       to_email = empData.company_email_id;
     }
 
-    await sendEmail(to_email, "editRequest", {
+    await sendEmail(to_email, "nudgeNotification", {
       to_name,
       empId: userData.employee_id,
       empName: userData.full_name,
