@@ -1170,7 +1170,7 @@ const PreviewTheReq = () => {
                 )}
 
                 {request.status === "PO-Pending" && department === "HOF" && (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full">
                         {/* Preview Image */}
                         {selectedImage && (
                             <div className="h-10 w-10 rounded overflow-hidden">
@@ -1182,36 +1182,37 @@ const PreviewTheReq = () => {
                             </div>
                         )}
 
-                        {/* Upload Button */}
-                        <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-                            <Upload className="w-5 h-5 text-gray-500 mr-2" />
-                            <span className="text-sm text-gray-600">
-                                Upload Image
-                            </span>
-                            <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                        setSelectedImage(file);
-                                    }
-                                }}
-                            />
-                        </label>
+                        {/* Right-aligned upload section */}
+                        <div className="ml-auto flex items-center gap-4">
+                            {/* Upload Button */}
+                            <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+                                <Upload className="w-5 h-5 text-gray-500 mr-2" />
+                                <span className="text-sm text-gray-600">
+                                    Upload Image
+                                </span>
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            setSelectedImage(file);
+                                        }
+                                    }}
+                                />
+                            </label>
 
-                        {/* Upload PO Button with PDF icon */}
-                        <button
-                            onClick={handleUploadPo}
-                            disabled={!selectedImage || isUploading}
-                            className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <FileText className="w-5 h-5 mr-2" />
-                            {isUploading ? "Uploading..." : "Upload PO"}
-                        </button>
-
-                        {/* Release Button */}
+                            {/* Upload PO Button */}
+                            <button
+                                onClick={handleUploadPo}
+                                disabled={!selectedImage || isUploading}
+                                className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <FileText className="w-5 h-5 mr-2" />
+                                {isUploading ? "Uploading..." : "Upload PO"}
+                            </button>
+                        </div>
                     </div>
                 )}
 

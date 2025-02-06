@@ -6,7 +6,8 @@ const dbConnect = () => {
   console.log("Welcome to database")
   mongoose
     .connect(
-          `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.jczad.mongodb.net/${MONGO_DATABASE_NAME}`
+          // `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.jczad.mongodb.net/${MONGO_DATABASE_NAME}`
+          `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.5vetz.mongodb.net/${MONGO_DATABASE_NAME}`
       , {
       serverSelectionTimeoutMS: 30000, 
       socketTimeoutMS: 45000, 

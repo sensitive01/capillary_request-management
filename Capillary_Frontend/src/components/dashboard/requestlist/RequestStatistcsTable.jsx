@@ -373,6 +373,12 @@ const RequestStatistcsTable = () => {
                                                 </th>
                                                 <th
                                                     scope="col"
+                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider]"
+                                                >
+                                                    Invoice_Document
+                                                </th>
+                                                <th
+                                                    scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
                                                 >
                                                     Actions
@@ -463,9 +469,11 @@ const RequestStatistcsTable = () => {
                                                         {user.status ||
                                                             "Pending"}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
-                                                        "Approved" ? (
+                                                            "Approved" ||
+                                                        user.status ===
+                                                            "Invoice-Pending" ? (
                                                             <div className="w-full flex justify-center">
                                                                 <button
                                                                     onClick={(
@@ -476,11 +484,27 @@ const RequestStatistcsTable = () => {
                                                                             `/req-list-table/invoice/${user._id}`
                                                                         );
                                                                     }}
+                                                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full"
+                                                                >
+                                                                    <FileText className="h-4 w-4 mr-1" />
+                                                                    View Po
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            "N/A"
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                        {user.status ===
+                                                        "Approved" ? (
+                                                            <div className="w-full flex justify-center">
+                                                                <a
+                                                                    href={`${user?.poDocument?.link}`}
                                                                     className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
                                                                 >
                                                                     <FileText className="h-4 w-4 mr-1" />
                                                                     View PO
-                                                                </button>
+                                                                </a>
                                                             </div>
                                                         ) : (
                                                             "N/A"

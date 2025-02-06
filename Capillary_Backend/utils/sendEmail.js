@@ -1,17 +1,17 @@
 const nodemailer = require("nodemailer");
 const emailTemplates = require("./emailTemplate");
 
-const sendEmail = async (email, subject, textContent, htmlContent) => {
+// const sendEmail = async (email, subject, textContent, htmlContent) => {
+const sendEmail = async (email, templateType, customData={}) => {
   try {
-    console.log("process.env.EMAIL_ADDRESS", process.env.EMAIL_ADDRESS);
-    console.log("process.env.EMAIL_PASSWORD", process.env.EMAIL_PASSWORD);
-    // const template = emailTemplates[templateType];
+   console.log("email, templateType, customData",email, templateType, customData)
+    const template = emailTemplates[templateType];
 
-    // let { subject, html } = template;
+    let { subject, html } = template;
 
-    // Object.keys(customData).forEach((key) => {
-    //   html = html.replace(new RegExp(`{{${key}}}`, "g"), customData[key]);
-    // });
+    Object.keys(customData).forEach((key) => {
+      html = html.replace(new RegExp(`{{${key}}}`, "g"), customData[key]);
+    });
 
     const transporter = nodemailer.createTransport({
       service: "Gmail",
@@ -20,13 +20,18 @@ const sendEmail = async (email, subject, textContent, htmlContent) => {
         pass: process.env.EMAIL_PASSWORD,
       },
     });
+    console.log("email",email)
+
+    console.log("subject",subject)
+    console.log("customData",customData)
+
 
     const mailOptions = {
       from: `"Capillary Technology" ${process.env.EMAIL_ADDRESS}`,
       to: email,
       subject: subject,
 
-      html: htmlContent,
+      html: html,
     };
     console.log("Mail options", mailOptions);
 

@@ -4,7 +4,7 @@ const reqModel = require("../models/reqModel");
 // const { createNewReq } = require("./empController");
 const PDFDocument = require("pdfkit");
 const addPanelUsers = require("../models/addPanelUsers");
-const sendLoginEmail = require("../utils/sendEmail");
+const sendEmail = require("../utils/sendEmail");
 
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 const entityModel = require("../models/entityModel");
@@ -99,1138 +99,6 @@ const getAllChats = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error in fetching chats", error: err.message });
-  }
-};
-
-//     const { id } = req.params;
-//     console.log("Welcome to approve req by HOD", role, reqId, id);
-
-//     const hodData = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 }
-//     );
-
-//     if (!hodData) {
-//       return res.status(404).json({ message: "HOD not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1 }
-//     );
-//     console.log("Req data", reqData);
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-//     console.log("latest approval", latestApproval);
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Hold"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//       else if( latestApproval.departmentName === "HOD Department"){
-//         return res.status(400).json({
-//           message: `Request has already been  ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "HOD Department",
-//             status: status,
-//             approverName: hodData.name,
-//             approvalId: hodData.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "Business Finance",
-//           },
-//         },
-//       }
-//     );
-
-//     console.log("approvalUpdate", approvalUpdate);
-
-//     res
-//       .status(200)
-//       .json({ message: "Request approved successfully", approvalUpdate });
-//   } catch (err) {
-//     console.error("Error in approve the request by HOD", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveReqByBusiness = async (req, res) => {
-//   try {
-//     const { role, reqId, status } = req.body;
-//     const { id } = req.params;
-//     console.log("Welcome to approve req by business", role, reqId, id);
-
-//     const businessData = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 ,department:1}
-//     );
-//     console.log("Business data",businessData)
-
-//     if (!businessData) {
-//       return res.status(404).json({ message: "Business team not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1 }
-//     );
-//     console.log("Req data", reqData);
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Hold"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//       else if( latestApproval.nextDepartment !==businessData.department){
-//         console.log(latestApproval.departmentName !=businessData.department)
-//         return res.status(400).json({
-//           message: `Request has already been  ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "Business Team",
-//             status: status,
-//             approverName: businessData.name,
-//             approvalId: businessData.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "Vendor Management",
-//           },
-//         },
-//       }
-//     );
-
-//     console.log("approvalUpdate", approvalUpdate);
-
-//     res
-//       .status(200)
-//       .json({ message: "Request approved successfully", approvalUpdate });
-//   } catch (err) {
-//     console.error("Error in approve the request by business", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveReqByVendorManagement = async (req, res) => {
-//   try {
-//     const { role, reqId, status } = req.body;
-//     const { id } = req.params;
-
-//     const vendorManagementData = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 }
-//     );
-
-//     if (!vendorManagementData) {
-//       return res
-//         .status(404)
-//         .json({ message: "Vendor Management Data team not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1 }
-//     );
-//     console.log("Req data", reqData);
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Approved"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "Vendor Management",
-//             status: status,
-//             approverName: vendorManagementData.name,
-//             approvalId: vendorManagementData.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "Legal Team",
-//           },
-//         },
-//       }
-//     );
-
-//     res
-//       .status(200)
-//       .json({ message: "Request approved successfully", approvalUpdate });
-//   } catch (err) {
-//     console.error("Error in approve the request by Vendor management", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveReqByLegalTeam = async (req, res) => {
-//   try {
-//     const { role, reqId, status } = req.body;
-//     const { id } = req.params;
-
-//     const legalTeam = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 }
-//     );
-
-//     if (!legalTeam) {
-//       return res.status(404).json({ message: "Legal Team data not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1 }
-//     );
-//     console.log("Req data", reqData);
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Approved"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "Legal Team",
-//             status: status,
-//             approverName: legalTeam.name,
-//             approvalId: legalTeam.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "Info Security",
-//           },
-//         },
-//       }
-//     );
-
-//     res
-//       .status(200)
-//       .json({ message: "Request approved successfully", approvalUpdate });
-//   } catch (err) {
-//     console.error("Error in approve the request by legal team", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveReqByInfoSecurity = async (req, res) => {
-//   try {
-//     const { role, reqId, status } = req.body;
-//     const { id } = req.params;
-
-//     const infoSecurityData = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 }
-//     );
-
-//     if (!infoSecurityData) {
-//       return res.status(404).json({ message: "Info Security team not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1 }
-//     );
-//     console.log("Req data", reqData);
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Approved"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "Info Security",
-//             status: status,
-//             approverName: infoSecurityData.name,
-//             approvalId: infoSecurityData.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "PO Team",
-//           },
-//         },
-//       }
-//     );
-
-//     res
-//       .status(200)
-//       .json({ message: "Request approved successfully", approvalUpdate });
-//   } catch (err) {
-//     console.error("Error in approve the request by Info Security", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveReqByPoTeam = async (req, res) => {
-//   try {
-//     const { role, reqId, status } = req.body;
-//     const { id } = req.params;
-
-//     const poTeam = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 }
-//     );
-
-//     if (!poTeam) {
-//       return res.status(404).json({ message: "PO Team not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1 }
-//     );
-//     console.log("Req data", reqData);
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Approved"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "PO Team",
-//             status: status,
-//             approverName: poTeam.name,
-//             approvalId: poTeam.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "HOF",
-//           },
-//         },
-//       }
-//     );
-
-//     res
-//       .status(200)
-//       .json({ message: "Request approved successfully", approvalUpdate });
-//   } catch (err) {
-//     console.error("Error in approve the request by PO team", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveReqByHofTeam = async (req, res) => {
-//   try {
-//     const { role, reqId, status } = req.body;
-//     const { id } = req.params;
-
-//     const hofData = await empModel.findOne(
-//       { _id: id },
-//       { role: 1, name: 1, empId: 1 }
-//     );
-
-//     if (!hofData) {
-//       return res.status(404).json({ message: "HOF team member not found" });
-//     }
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { approvals: 1, status: 1 }
-//     );
-
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-
-//     if (latestApproval) {
-//       if (
-//         latestApproval.status === "Rejected" ||
-//         latestApproval.status === "Approved"
-//       ) {
-//         return res.status(400).json({
-//           message: `Request has already been ${latestApproval.status.toLowerCase()} by the ${
-//             latestApproval.departmentName
-//           }`,
-//         });
-//       }
-//     }
-
-//     const approvalUpdate = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: {
-//           approvals: {
-//             departmentName: "HOF",
-//             status: status,
-//             approverName: hofData.name,
-//             approvalId: hofData.empId,
-//             approvalDate: new Date(),
-//             remarks: "",
-//             nextDepartment: "Proceed the PO invoice",
-//           },
-//         },
-//         $set: {
-//           status: "Approved",
-//         },
-//       }
-//     );
-
-//     res.status(200).json({
-//       message: "Request approved successfully and PO is generated",
-//       approvalUpdate,
-//     });
-//   } catch (err) {
-//     console.error("Error in approving the request by HOF team", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// const approveRequest = async (req, res) => {
-//   try {
-//     console.log("Welcome to approbe req");
-//     const { reqId, status, remarks } = req.body;
-//     const { id } = req.params; // Approver's ID
-//     console.log("Status", status);
-
-//     // Validate request status
-//     const validStatuses = ["Approve", "Reject", "Hold"];
-//     if (!validStatuses.includes(status)) {
-//       return res.status(400).json({
-//         message: "Invalid status. Status must be Approved, Rejected, or Hold",
-//       });
-//     }
-
-//     let approverData;
-
-//     const panelUserData = await addPanelUsers
-//       .findOne(
-//         { _id: id },
-//         { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
-//       )
-//       .lean(); // Use lean here as well
-//     console.log("panelUserData", panelUserData);
-
-//     // Find the employee data
-//     const employeeData = await empModel
-//       .findOne(
-//         { _id: id },
-//         {
-//           _id: 1,
-//           full_name: 1,
-//           department: 1,
-//           company_email_id: 1,
-//           hod_email_id: 1,
-//           employee_id: 1,
-//         }
-//       )
-//       .lean(); // Use lean to get plain object
-//     console.log("employeeData", employeeData);
-
-//     if (panelUserData) {
-//       approverData = panelUserData;
-//     } else {
-//       // Determine role dynamically
-//       if (employeeData && !employeeData.role) {
-//         const isEmpHod = await empModel
-//           .findOne({ hod_email_id: employeeData.company_email_id })
-//           .lean();
-//         console.log("isEmpHod", isEmpHod);
-//         approverData = {
-//           ...employeeData, // Include existing employee data
-//           role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
-//         };
-//       }
-//     }
-
-//     const { department } = approverData;
-//     console.log("Approver department", department);
-
-//     // Fetch the request data
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       {
-//         approvals: 1,
-//         userId: 1,
-//         createdAt: 1,
-//         firstLevelApproval: 1,
-//         hasDeviations: 1,
-//         commercials: 1,
-//       }
-//     );
-//     console.log("----->", reqData);
-
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const { firstLevelApproval } = reqData;
-
-//     const approvals = reqData.approvals || [];
-//     console.log(firstLevelApproval);
-
-//     // Define the department workflow order
-//     const departmentOrder = [
-//       firstLevelApproval.hodDepartment,
-//       "Business Finance",
-//       "Vendor Management",
-//       "Legal Team",
-//       "Info Security",
-//       "HOF",
-//       "Proceed the PO invoice",
-//     ];
-
-//     // Validation 1: Check if HOD Department is the first approver
-//     if (
-//       approvals.length === 0 &&
-//       department !== firstLevelApproval.hodDepartment
-//     ) {
-//       return res.status(400).json({
-//         message: "HOD Department must approve the request first.",
-//       });
-//     }
-
-//     // Get the latest approval
-//     const latestApproval = approvals[approvals.length - 1];
-
-//     // Validation 2: Check if any department has already rejected or put the request on hold
-//     if (
-//       latestApproval &&
-//       ((latestApproval.status === "Reject" || latestApproval.status === "Hold")&&latestApproval.departmentName!==approverData.department)
-//     ) {
-//       return res.status(400).json({
-//         message: `Request is currently ${latestApproval.status.toLowerCase()} by ${
-//           latestApproval.departmentName
-//         }. No further actions can be taken.`,
-//       });
-//     }
-
-//     // Validation 3: Check if the department has already approved
-//     const departmentPreviousApproval = approvals.find(
-//       (approval) => approval.departmentName === department
-//     );
-
-//     // if (departmentPreviousApproval) {
-//     //   return res.status(400).json({
-//     //     message: `${department} has already processed this request with status: ${departmentPreviousApproval.status}`,
-//     //   });
-//     // }
-
-//     // Validation 4: Check if it's the department's turn in the workflow
-//     if (latestApproval && latestApproval.status==="Approve") {
-//       const currentDeptIndex = departmentOrder.indexOf(department);
-//       const lastApproveDeptIndex = departmentOrder.indexOf(
-//         latestApproval.departmentName
-//       );
-//       console.log("currentDeptIndex",currentDeptIndex)
-
-//       if (currentDeptIndex !== lastApproveDeptIndex + 1) {
-//         return res.status(400).json({
-//           message: `Invalid workflow order. Expected department is ${latestApproval.nextDepartment}`,
-//         });
-//       }
-//     }
-
-//     // Validation 5: Check if it matches the expected next department
-//     if (latestApproval && latestApproval.nextDepartment !== department && latestApproval.status==="Approve") {
-//       return res.status(400).json({
-//         message: `Request is not yet assigned to ${department}. Current assignment: ${latestApproval.nextDepartment}`,
-//       });
-//     }
-
-//     // Determine the next department
-//     const currentDeptIndex = departmentOrder.indexOf(department);
-//     const nextDepartment = departmentOrder[currentDeptIndex + 1] || null;
-
-//     // Create the approval record
-//     const approvalRecord = {
-//       departmentName: department,
-//       status: status,
-//       approverName: approverData.full_name,
-//       approvalId: approverData.employee_id,
-//       approvalDate: new Date(), // Current date and time
-//       remarks: remarks || "",
-//       nextDepartment: status === "Approved" ? nextDepartment : null,
-//       receivedOn:
-//         department === firstLevelApproval.hodDepartment
-//           ? reqData.createdAt
-//           : latestApproval.approvalDate,
-//     };
-
-//     // Update request status
-
-//     let updatedStatus = "Pending";
-
-//     if (status === "Hold" || status === "Reject") {
-//       updatedStatus = status;
-//     } else if (status === "Approved") {
-//       updatedStatus = "Pending";
-//     }
-//     console.log("updatedStatus", updatedStatus);
-
-//     const updateResult = await CreateNewReq.updateOne(
-//       {
-//         _id: reqId,
-//         // Additional conditions to prevent race conditions
-//         $or: [
-//           { approvals: { $size: 0 } }, // First approval
-//           { "approvals.nextDepartment": department }, // Next in workflow
-//         ],
-//       },
-//       {
-//         $push: { approvals: approvalRecord },
-//         $set: {
-//           status: updatedStatus,
-//           currentDepartment:
-//             status === "Approved" ? nextDepartment : department,
-//         },
-//       }
-//     );
-
-//     if (department === firstLevelApproval.hodDepartment) {
-//       if (status === "Approved") {
-//         console.log("Inaide work flow");
-//         firstLevelApproval.status = status;
-//         firstLevelApproval.approved = true;
-//       } else {
-//         console.log("Inaide work flow");
-//         firstLevelApproval.status = status;
-//         firstLevelApproval.approved = false;
-//         reqData.status = status;
-//       }
-//       await reqData.save();
-//     }
-
-//     if (updateResult.modifiedCount === 0) {
-//       return res.status(400).json({
-//         message: "Unable to update request. Please verify the workflow state.",
-//       });
-//     }
-//     if (department === "HOF" && status === "Approved") {
-//       await CreateNewReq.updateOne(
-//         { _id: reqId },
-//         {
-//           $set: {
-//             status: "PO-Pending",
-//             approvedOn: new Date(),
-//           },
-//         }
-//       );
-//       const entityMail = await entityModel.findOne(
-//         { _id: reqData.commercials.entityId },
-//         { poMailId: 1 }
-//       );
-
-//       // await sendIndividualEmail(
-//       //   "AUTHORITY",
-//       //   entityMail.poMailId,
-//       // );
-//     }
-
-//     if (
-//       department === "Vendor Management" &&
-//       reqData.hasDeviations === 0 &&
-//       status === "Approved"
-//     ) {
-//       console.log(
-//         "Auto approved ",
-//         department === "Vendor Management",
-//         reqData.hasDeviations === 0
-//       );
-
-//       const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
-//       const remarks = "Auto-approved: No violations in the legal compliances";
-
-//       for (let i = 0; i < autoApproveDepartments.length; i++) {
-//         const autoDepartment = autoApproveDepartments[i];
-//         const isLastDepartment = i === autoApproveDepartments.length - 1;
-
-//         const nextAutoDepartment = isLastDepartment
-//           ? null
-//           : autoApproveDepartments[i + 1];
-
-//         const autoApproverData = await addPanelUsers.findOne(
-//           { department: autoDepartment },
-//           { full_name: 1, employee_id: 1, company_email_id: 1 }
-//         );
-
-//         console.log("Inside auto-approval", autoApproverData);
-
-//         if (autoApproverData) {
-//           const autoApprovalRecord = {
-//             departmentName: autoDepartment,
-//             status: "Approved",
-//             approverName: autoApproverData.full_name,
-//             approvalId: autoApproverData.employee_id,
-//             approvalDate: new Date(),
-//             remarks: remarks,
-//             nextDepartment: nextAutoDepartment,
-//             receivedOn: new Date(),
-//           };
-
-//           await CreateNewReq.updateOne(
-//             { _id: reqId },
-//             {
-//               $push: { approvals: autoApprovalRecord },
-//               $set: {
-//                 currentStatus: "Approved",
-//                 currentDepartment: nextAutoDepartment || autoDepartment,
-//               },
-//             }
-//           );
-
-//           // Optionally, send approval email notifications
-//           // await sendIndividualEmail(
-//           //     "EMPLOYEE",
-//           //     autoApproverData.company_email_id,
-//           //     autoApproverData.full_name,
-//           //     autoDepartment,
-//           //     reqId,
-//           //     autoApprovalRecord
-//           // );
-//           // await sendIndividualEmail(
-//           //     "AUTHORITY",
-//           //     "porequests@capillarytech.com",
-//           //     autoApproverData.full_name,
-//           //     autoDepartment,
-//           //     reqId,
-//           //     autoApprovalRecord
-//           // );
-
-//           console.log(
-//             `Auto-approval completed for department: ${autoDepartment}`
-//           );
-//         } else {
-//           console.error(`No approver found for department: ${autoDepartment}`);
-//           break; // Stop the auto-approval process if approver data is missing
-//         }
-
-//         // After Info Security, the flow should move to HOF, but no approval happens at HOF
-//         if (autoDepartment === "Info Security") {
-//           console.log(
-//             "Info Security approved. Moving to HOF, but no auto-approval needed."
-//           );
-//           // Update to set the current department to HOF but no approval record is created for HOF
-//           await CreateNewReq.updateOne(
-//             { _id: reqId },
-//             {
-//               $set: {
-//                 currentDepartment: "HOF",
-//               },
-//             }
-//           );
-//           break; // No further auto-approval, just update to HOF
-//         }
-//       }
-//     } else {
-//       // await sendIndividualEmail(
-//       //   "EMPLOYEE",
-//       //   approverData.company_email_id,
-//       //   approverData.full_name,
-//       //   approverData.department,
-//       //   reqId,
-//       //   approvalRecord
-//       // );
-//       // await sendIndividualEmail(
-//       //   "AUTHORITY",
-//       //   "porequests@capillarytech.com",
-//       //   approverData.full_name,
-//       //   approverData.department,
-//       //   reqId,
-//       //   approvalRecord
-//       // );
-//     }
-
-//     // Send success response with detailed message
-//     const message =
-//       status === "Approved"
-//         ? `Request approved successfully by ${department}${
-//             nextDepartment ? `. Next department: ${nextDepartment}` : ""
-//           }`
-//         : `Request ${status.toLowerCase()} by ${department}. Workflow stopped.`;
-
-//     res.status(200).json({ message });
-//   } catch (err) {
-//     console.error("Error in approving request:", err);
-//     res.status(500).json({
-//       message: "Internal Server Error",
-//       error: process.env.NODE_ENV === "development" ? err.message : undefined,
-//     });
-//   }
-// };
-
-// const approveRequest = async (req, res) => {
-//   try {
-//     const { reqId, status, remarks } = req.body;
-//     const { id } = req.params; // Approver's ID
-//     console.log(status)
-
-//     // Validate request status
-//     const validStatuses = ["Approve", "Reject", "Hold"];
-//     if (!validStatuses.includes(status)) {
-//       return res.status(400).json({
-//         message: "Invalid status. Status must be Approve, Reject, or Hold",
-//       });
-//     }
-
-//     // Get approver data
-//     let approverData;
-//     const panelUserData = await addPanelUsers
-//       .findOne(
-//         { _id: id },
-//         { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
-//       )
-//       .lean();
-
-//     const employeeData = await empModel
-//       .findOne(
-//         { _id: id },
-//         {
-//           _id: 1,
-//           full_name: 1,
-//           department: 1,
-//           company_email_id: 1,
-//           hod_email_id: 1,
-//           employee_id: 1,
-//         }
-//       )
-//       .lean();
-
-//     if (panelUserData) {
-//       approverData = panelUserData;
-//     } else if (employeeData) {
-//       const isEmpHod = await empModel
-//         .findOne({ hod_email_id: employeeData.company_email_id })
-//         .lean();
-//       approverData = {
-//         ...employeeData,
-//         role: isEmpHod ? "HOD Department" : "Employee",
-//       };
-//     }
-
-//     const { department } = approverData;
-
-//     // Fetch the request data
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       {
-//         approvals: 1,
-//         userId: 1,
-//         createdAt: 1,
-//         firstLevelApproval: 1,
-//         hasDeviations: 1,
-//         commercials: 1,
-//         status: 1,
-//       }
-//     );
-
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const { firstLevelApproval } = reqData;
-//     const approvals = reqData.approvals || [];
-
-//     // Define workflow order
-//     const departmentOrder = [
-//       firstLevelApproval.hodDepartment,
-//       "Business Finance",
-//       "Vendor Management",
-//       "Legal Team",
-//       "Info Security",
-//       "HOF",
-//       "Proceed the PO invoice",
-//     ];
-
-//     // Get the latest approval
-//     const latestApproval = approvals[approvals.length - 1];
-
-//     // Check if department has already approved
-//     const departmentPreviousApproval = approvals.find(
-//       (approval) => approval.departmentName === department
-//     );
-
-//     // Special validations for HOD
-//     if (department === firstLevelApproval.hodDepartment) {
-//       // HOD can modify their decision at any time
-//       if (departmentPreviousApproval && status === departmentPreviousApproval.status) {
-//         return res.status(400).json({
-//           message: `Request is already ${status.toLowerCase()} by HOD Department`,
-//         });
-//       }
-//     } else {
-//       // Non-HOD department validations
-
-//       // Check if request is rejected or on hold by another department
-//       if (
-//         latestApproval &&
-//         (latestApproval.status === "Reject" || latestApproval.status === "Hold") &&
-//         latestApproval.departmentName !== department
-//       ) {
-//         return res.status(400).json({
-//           message: `Request is currently ${latestApproval.status.toLowerCase()} by ${latestApproval.departmentName}. No further actions can be taken.`,
-//         });
-//       }
-
-//       // Check if department has already processed
-//       if (departmentPreviousApproval) {
-//         return res.status(400).json({
-//           message: `${department} has already processed this request with status: ${departmentPreviousApproval.status}`,
-//         });
-//       }
-
-//       // Check workflow order
-//       if (latestApproval && latestApproval.status === "Approve") {
-//         const currentDeptIndex = departmentOrder.indexOf(department);
-//         const lastApproveDeptIndex = departmentOrder.indexOf(
-//           latestApproval.departmentName
-//         );
-
-//         if (currentDeptIndex !== lastApproveDeptIndex + 1) {
-//           return res.status(400).json({
-//             message: `Invalid workflow order. Expected department is ${departmentOrder[lastApproveDeptIndex + 1]}`,
-//           });
-//         }
-//       }
-//     }
-
-//     // Determine next department
-//     const currentDeptIndex = departmentOrder.indexOf(department);
-//     const nextDepartment = status === "Approve" ?
-//       departmentOrder[currentDeptIndex + 1] || null : null;
-
-//     // Create approval record
-//     const approvalRecord = {
-//       departmentName: department,
-//       status: status,
-//       approverName: approverData.full_name,
-//       approvalId: approverData.employee_id,
-//       approvalDate: new Date(),
-//       remarks: remarks || "",
-//       nextDepartment: nextDepartment,
-//       receivedOn: department === firstLevelApproval.hodDepartment ?
-//         reqData.createdAt : latestApproval?.approvalDate,
-//     };
-
-//     // Update request status
-//     let updatedStatus = status === "Approve" ? "Pending" : status;
-
-//     // Special case for HOD modifying previous decision
-//     const updateQuery = department === firstLevelApproval.hodDepartment ?
-//       { _id: reqId } :
-//       {
-//         _id: reqId,
-//         $or: [
-//           { approvals: { $size: 0 } },
-//           { "approvals.nextDepartment": department },
-//         ],
-//       };
-
-//     const updateOperation = department === firstLevelApproval.hodDepartment ?
-//       {
-//         $set: {
-//           status: updatedStatus,
-//           currentDepartment: nextDepartment || department,
-//           "firstLevelApproval.status": status,
-//           "firstLevelApproval.approved": status === "Approve",
-//         },
-//       } :
-//       {
-//         $push: { approvals: approvalRecord },
-//         $set: {
-//           status: updatedStatus,
-//           currentDepartment: nextDepartment || department,
-//         },
-//       };
-
-//     if (department === firstLevelApproval.hodDepartment && departmentPreviousApproval) {
-//       updateOperation.$set["approvals.$[elem]"] = approvalRecord;
-//       updateOperation.arrayFilters = [{ "elem.departmentName": department }];
-//     } else {
-//       updateOperation.$push = { approvals: approvalRecord };
-//     }
-
-//     const updateResult = await CreateNewReq.updateOne(updateQuery, updateOperation);
-
-//     if (updateResult.modifiedCount === 0) {
-//       return res.status(400).json({
-//         message: "Unable to update request. Please verify the workflow state.",
-//       });
-//     }
-
-//     // Handle auto-approvals for non-deviation cases
-//     if (
-//       department === "Vendor Management" &&
-//       reqData.hasDeviations === 0 &&
-//       status === "Approve"
-//     ) {
-//       await handleAutoApprovals(reqId, reqData);
-//     }
-
-//     // Handle HOF approval completion
-//     if (department === "HOF" && status === "Approve") {
-//       await CreateNewReq.updateOne(
-//         { _id: reqId },
-//         {
-//           $set: {
-//             status: "PO-Pending",
-//             approvedOn: new Date(),
-//           },
-//         }
-//       );
-//     }
-
-//     const message = status === "Approve"
-//       ? `Request approved successfully by ${department}${
-//           nextDepartment ? `. Next department: ${nextDepartment}` : ""
-//         }`
-//       : `Request ${status.toLowerCase()} by ${department}. Workflow stopped.`;
-
-//     res.status(200).json({ message });
-//   } catch (err) {
-//     console.error("Error in approving request:", err);
-//     res.status(500).json({
-//       message: "Internal Server Error",
-//       error: process.env.NODE_ENV === "development" ? err.message : undefined,
-//     });
-//   }
-// };
-
-// Helper function for auto-approvals
-const handleAutoApprovals = async (reqId, reqData) => {
-  const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
-  const remarks = "Auto-approved: No violations in the legal compliances";
-
-  for (const department of autoApproveDepartments) {
-    const approver = await addPanelUsers.findOne(
-      { department },
-      { full_name: 1, employee_id: 1 }
-    );
-
-    if (!approver) {
-      console.error(`No approver found for department: ${department}`);
-      break;
-    }
-
-    const nextDepartment =
-      department === "HOF"
-        ? null
-        : autoApproveDepartments[
-            autoApproveDepartments.indexOf(department) + 1
-          ];
-
-    const approvalRecord = {
-      departmentName: department,
-      status: "Approved",
-      approverName: approver.full_name,
-      approvalId: approver.employee_id,
-      approvalDate: new Date(),
-      remarks,
-      nextDepartment,
-      receivedOn: new Date(),
-    };
-
-    await CreateNewReq.updateOne(
-      { _id: reqId },
-      {
-        $push: { approvals: approvalRecord },
-        $set: {
-          currentDepartment: nextDepartment || department,
-        },
-      }
-    );
   }
 };
 
@@ -1448,11 +316,20 @@ const getStatisticData = async (req, res) => {
 
         pendingApprovals = pendingRequests.length;
 
-        const approvalsForEmployee2 = request.approvals.filter(
-          (app) =>
-            app.departmentName === consolidatedData.department &&
+        const approvalsForEmployee2 = request.approvals.filter((app) => {
+          console.log(
+            "vendoris",
+            app.departmentName,
+            consolidatedData.department,
             app.status === "Approved"
-        );
+          );
+
+          return (
+            app.departmentName == consolidatedData.department &&
+            app.status == "Approved"
+          );
+        });
+
         completedApprovals = approvalsForEmployee2.length;
       });
 
@@ -1850,47 +727,6 @@ const getApprovedReqData = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-// const isButtonSDisplay = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     console.log("button==>", id);
-
-//     // Fetch employee's department details
-//     const departmentData = await empModel.findOne(
-//       { _id: id },
-//       { empId: 1, department: 1 }
-//     );
-//     console.log(departmentData);
-//     if (!departmentData) {
-//       return res.status(404).json({ message: "Employee not found" });
-//     }
-
-//     // If the department is "HOD", return true
-//     if (departmentData.department === "Head of Department") {
-//       return res.status(200).json({ display: true });
-//     }
-
-//     // Check if the employee's department matches any nextDepartment in approvals
-//     const isDisplay = await CreateNewReq.exists({
-//       "approvals.nextDepartment": departmentData.department,
-//     });
-//     const isDisable = await CreateNewReq.exists({
-//       "approvals.department": departmentData.department,
-//     });
-
-//     console.log("isDisplay:", isDisplay);
-
-//     if (isDisplay && isDisable) {
-//       return res.status(200).json({ display: true, isDisable: true });
-//     } else {
-//       return res.status(200).json({ display: false, isDisable: false });
-//     }
-//   } catch (err) {
-//     console.log("Error in is display button", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
 
 const isButtonSDisplay = async (req, res) => {
   try {
@@ -2302,7 +1138,11 @@ const sendNudgeNotification = async (req, res) => {
 
     const nudgeData = await CreateNewReq.findOne(
       { _id: reqId },
-      { approvals: 1, firstLevelApproval: 1 }
+      { approvals: 1, firstLevelApproval: 1, userId: 1, reqid: 1 }
+    );
+    const userData = await empModel.findOne(
+      { _id: nudgeData.userId },
+      { full_name: 1, company_email_id: 1, employee_id: 1, department: 1 }
     );
     if (!nudgeData) {
       return res.status(404).json({ message: "Request not found" });
@@ -2352,12 +1192,13 @@ const sendNudgeNotification = async (req, res) => {
       to_email = empData.company_email_id;
     }
 
-    const message = `Hi ${to_name},\n\nA PO request is pending your review and approval. Please review and accept the request at your earliest convenience.\n\nThank you.`;
-
-    await sendEmail({
-      to: to_email,
-      subject: "PO Request Pending Approval",
-      text: message,
+    await sendEmail(to_email, "editRequest", {
+      to_name,
+      empId: userData.employee_id,
+      empName: userData.full_name,
+      reqid: nudgeData.reqid,
+      empEmail: userData.company_email_id,
+      department: userData.department,
     });
 
     return res
@@ -2368,430 +1209,6 @@ const sendNudgeNotification = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-// const releaseReqStatus = async (req, res) => {
-//   try {
-//     const { empId, reqId } = req.params;
-//     const { status, department, role } = req.body;
-//     console.log(status, department, role);
-
-//     // The departmentOrder is now defined starting with the dynamic department from frontend
-//     const departmentOrder = [
-//       department, // Dynamic department from frontend
-//       "Business Finance",
-//       "Vendor Management",
-//       "Legal Team",
-//       "Info Security",
-//       "HOF",
-//       "Proceed the PO invoice",
-//     ];
-
-//     // Get the current department index and calculate the next department
-//     const currentDeptIndex = departmentOrder.indexOf(department);
-//     console.log("currentDeptIndex",currentDeptIndex)
-//     let nextDepartment = departmentOrder[currentDeptIndex + 1] || null; // Default to null if no next department
-//     console.log(
-//       "current department:",
-//       department,
-//       "next department:",
-//       nextDepartment
-//     );
-
-//     // Fetch employee data from database
-//     const empData =
-//       (await empModel.findOne(
-//         { _id: empId },
-//         { full_name: 1, employee_id: 1, company_email_id: 1 }
-//       )) || (await addPanelUsers.findOne({ department: nextDepartment }));
-//       console.log("Epldatass",empData)
-
-//     // Fetch the request data
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       { status: 1, firstLevelApproval: 1, approvals: 1, createdAt: 1 }
-//     );
-
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-
-//     const approvals = reqData.approvals || [];
-//     const latestApproval = approvals[approvals.length - 1];
-//     console.log("Last level approval", latestApproval);
-
-//     const { firstLevelApproval } = reqData;
-
-//     // If the first level approval is not approved, update status and approval
-//     if (
-//       firstLevelApproval.hodDepartment === department &&
-//       firstLevelApproval.status !== "Approved"
-//     ) {
-//       reqData.status = "Pending";
-//       firstLevelApproval.status = "Approved";
-//       firstLevelApproval.approved = true;
-//       await reqData.save(); // Save the modified reqData object
-//     } else {
-//       console.log("Last level of approval", latestApproval);
-//       const departmentOrders = [
-//         "Business Finance",
-//         "Vendor Management",
-//         "Legal Team",
-//         "Info Security",
-//         "HOF",
-//         "Proceed the PO invoice",
-//       ];
-//       const currentDeptIndex = departmentOrders.indexOf(department);
-//       nextDepartment = departmentOrders[currentDeptIndex + 1] || null;
-//       console.log("Next department after else block:", nextDepartment);
-//     }
-
-//     const remarks = `Request status ${firstLevelApproval.status} from ${status} released`;
-
-//     const approvalRecord = {
-//       departmentName: department || latestApproval.departmentName,
-//       status: "Approved",
-//       approverName: empData.full_name,
-//       approvalId: empData.employee_id,
-//       approvalDate: new Date(),
-//       remarks: remarks || "",
-//       nextDepartment: nextDepartment,
-//       receivedOn:
-//         department === firstLevelApproval.hodDepartment
-//           ? reqData.createdAt
-//           : reqData.approvals[reqData.approvals.length - 1]?.approvalDate,
-//     };
-//     console.log("Approval Record", approvalRecord);
-
-//     // Push the approval record to the request
-//     const updateResult = await CreateNewReq.updateOne(
-//       {
-//         _id: reqId,
-//       },
-//       {
-//         $push: { approvals: approvalRecord },
-//         $set: { status: "Pending" },
-//       }
-//     );
-
-//     if (department === "Vendor Management" && reqData.hasDeviations === 0 && status==="Approved") {
-//       console.log(
-//         "Auto approved ",
-//         department === "Vendor Management",
-//         reqData.hasDeviations === 0
-//       );
-
-//       const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
-//       const remarks = "Auto-approved: No violations in the legal compliances";
-
-//       for (let i = 0; i < autoApproveDepartments.length; i++) {
-//         const autoDepartment = autoApproveDepartments[i];
-//         const isLastDepartment = i === autoApproveDepartments.length - 1;
-
-//         const nextAutoDepartment = isLastDepartment
-//           ? null
-//           : autoApproveDepartments[i + 1];
-
-//         const autoApproverData = await addPanelUsers.findOne(
-//           { department: autoDepartment },
-//           { full_name: 1, employee_id: 1, company_email_id: 1 }
-//         );
-
-//         console.log("Inside auto-approval", autoApproverData);
-
-//         if (autoApproverData) {
-//           const autoApprovalRecord = {
-//             departmentName: autoDepartment,
-//             status: "Approved",
-//             approverName: autoApproverData.full_name,
-//             approvalId: autoApproverData.employee_id,
-//             approvalDate: new Date(),
-//             remarks: remarks,
-//             nextDepartment: nextAutoDepartment,
-//             receivedOn: new Date(),
-//           };
-
-//           await CreateNewReq.updateOne(
-//             { _id: reqId },
-//             {
-//               $push: { approvals: autoApprovalRecord },
-//               $set: {
-//                 currentStatus: "Approved",
-//                 currentDepartment: nextAutoDepartment || autoDepartment,
-//               },
-//             }
-//           );
-
-//           // Optionally, send approval email notifications
-//           // await sendIndividualEmail(
-//           //     "EMPLOYEE",
-//           //     autoApproverData.company_email_id,
-//           //     autoApproverData.full_name,
-//           //     autoDepartment,
-//           //     reqId,
-//           //     autoApprovalRecord
-//           // );
-//           // await sendIndividualEmail(
-//           //     "AUTHORITY",
-//           //     "porequests@capillarytech.com",
-//           //     autoApproverData.full_name,
-//           //     autoDepartment,
-//           //     reqId,
-//           //     autoApprovalRecord
-//           // );
-
-//           console.log(
-//             `Auto-approval completed for department: ${autoDepartment}`
-//           );
-//         } else {
-//           console.error(`No approver found for department: ${autoDepartment}`);
-//           break; // Stop the auto-approval process if approver data is missing
-//         }
-
-//         // After Info Security, the flow should move to HOF, but no approval happens at HOF
-//         if (autoDepartment === "Info Security") {
-//           console.log(
-//             "Info Security approved. Moving to HOF, but no auto-approval needed."
-//           );
-//           // Update to set the current department to HOF but no approval record is created for HOF
-//           await CreateNewReq.updateOne(
-//             { _id: reqId },
-//             {
-//               $set: {
-//                 currentDepartment: "HOF",
-//               },
-//             }
-//           );
-//           break; // No further auto-approval, just update to HOF
-//         }
-//       }
-//     }
-
-//     if (updateResult.modifiedCount > 0) {
-//       return res
-//         .status(200)
-//         .json({ message: "Request status updated successfully" });
-//     } else {
-//       return res
-//         .status(400)
-//         .json({ message: "Failed to update request status" });
-//     }
-//   } catch (err) {
-//     console.error("Error in releaseReqStatus:", err);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
-// const releaseReqStatus = async (req, res) => {
-//   try {
-//     const { empId, reqId } = req.params;
-//     const { status, department, role } = req.body;
-//     console.log(status, department, role);
-
-//     // Fetch employee data from the database
-//     const empData =
-//       (await empModel.findOne(
-//         { _id: empId },
-//         { full_name: 1, employee_id: 1, company_email_id: 1 }
-//       )) || (await addPanelUsers.findOne({ department: department }));
-
-//     console.log("Employee Data:", empData);
-
-//     const reqData = await CreateNewReq.findOne(
-//       { _id: reqId },
-//       {
-//         status: 1,
-//         firstLevelApproval: 1,
-//         approvals: 1,
-//         createdAt: 1,
-//         hasDeviations: 1,
-//       }
-//     );
-
-//     if (!reqData) {
-//       return res.status(404).json({ message: "Request not found" });
-//     }
-//     const approvals = reqData.approvals || [];
-//     const latestApproval = approvals[approvals.length - 1];
-//     let departmentOrders;
-//     if (approvals.length <= 0) {
-//       departmentOrders = [
-//         empData.department,
-//         "Business Finance",
-//         "Vendor Management",
-//         "Legal Team",
-//         "Info Security",
-//         "HOF",
-//         "Proceed the PO invoice",
-//       ];
-//     } else {
-//       departmentOrders = [
-//         "Business Finance",
-//         "Vendor Management",
-//         "Legal Team",
-//         "Info Security",
-//         "HOF",
-//         "Proceed the PO invoice",
-//       ];
-//     }
-
-//     const currentDeptIndex = departmentOrders.indexOf(department);
-//     let nextDepartment = departmentOrders[currentDeptIndex + 1] || null;
-
-//     console.log(
-//       "Current Department:",
-//       department,
-//       "Next Department:",
-//       nextDepartment
-//     );
-
-//     // Fetch request data
-
-//     if (
-//       reqData.firstLevelApproval.hodDepartment === department &&
-//       reqData.firstLevelApproval.status !== "Approve"
-//     ) {
-//       reqData.status = "Pending";
-//       reqData.firstLevelApproval.status = "Approve";
-//       reqData.firstLevelApproval.approved = true;
-//       await reqData.save();
-//     }
-
-//     const remarks = `Request status ${reqData.firstLevelApproval.status} from ${status} released`;
-
-//     const approvalRecord = {
-//       departmentName: department,
-//       status: "Approve",
-//       approverName: empData.full_name,
-//       approvalId: empData.employee_id,
-//       approvalDate: new Date(),
-//       remarks: remarks,
-//       nextDepartment: nextDepartment,
-//       receivedOn: approvals.length
-//         ? latestApproval.approvalDate
-//         : reqData.createdAt,
-//     };
-
-//     console.log("Approval Record:", approvalRecord);
-
-//     const updateResult = await CreateNewReq.updateOne(
-//       { _id: reqId },
-//       {
-//         $push: { approvals: approvalRecord },
-//         $set: { status: "Pending" },
-//       }
-//     );
-
-//     if (
-//       department === "Vendor Management" &&
-//       reqData.hasDeviations === 0 &&
-//       status === "Pending"
-//     ) {
-//       console.log(
-//         "Auto approved ",
-//         department === "Vendor Management",
-//         reqData.hasDeviations === 0
-//       );
-
-//       const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
-//       const remarks = "Auto-approved: No violations in the legal compliances";
-
-//       for (let i = 0; i < autoApproveDepartments.length; i++) {
-//         const autoDepartment = autoApproveDepartments[i];
-//         const isLastDepartment = i === autoApproveDepartments.length - 1;
-
-//         const nextAutoDepartment = isLastDepartment
-//           ? null
-//           : autoApproveDepartments[i + 1];
-
-//         const autoApproverData = await addPanelUsers.findOne(
-//           { department: autoDepartment },
-//           { full_name: 1, employee_id: 1, company_email_id: 1 }
-//         );
-
-//         console.log("Inside auto-approval", autoApproverData);
-
-//         if (autoApproverData) {
-//           const autoApprovalRecord = {
-//             departmentName: autoDepartment,
-//             status: "Approve",
-//             approverName: autoApproverData.full_name,
-//             approvalId: autoApproverData.employee_id,
-//             approvalDate: new Date(),
-//             remarks: remarks,
-//             nextDepartment: nextAutoDepartment,
-//             receivedOn: new Date(),
-//           };
-
-//           await CreateNewReq.updateOne(
-//             { _id: reqId },
-//             {
-//               $push: { approvals: autoApprovalRecord },
-//               $set: {
-//                 currentStatus: "Approve",
-//                 currentDepartment: nextAutoDepartment || autoDepartment,
-//               },
-//             }
-//           );
-
-//           // Optionally, send approval email notifications
-//           // await sendIndividualEmail(
-//           //     "EMPLOYEE",
-//           //     autoApproverData.company_email_id,
-//           //     autoApproverData.full_name,
-//           //     autoDepartment,
-//           //     reqId,
-//           //     autoApprovalRecord
-//           // );
-//           // await sendIndividualEmail(
-//           //     "AUTHORITY",
-//           //     "porequests@capillarytech.com",
-//           //     autoApproverData.full_name,
-//           //     autoDepartment,
-//           //     reqId,
-//           //     autoApprovalRecord
-//           // );
-
-//           console.log(
-//             `Auto-approval completed for department: ${autoDepartment}`
-//           );
-//         } else {
-//           console.error(`No approver found for department: ${autoDepartment}`);
-//           break; // Stop the auto-approval process if approver data is missing
-//         }
-
-//         // After Info Security, the flow should move to HOF, but no approval happens at HOF
-//         if (autoDepartment === "Info Security") {
-//           console.log(
-//             "Info Security approved. Moving to HOF, but no auto-approval needed."
-//           );
-//           // Update to set the current department to HOF but no approval record is created for HOF
-//           await CreateNewReq.updateOne(
-//             { _id: reqId },
-//             {
-//               $set: {
-//                 currentDepartment: "HOF",
-//               },
-//             }
-//           );
-//           break; // No further auto-approval, just update to HOF
-//         }
-//       }
-//     }
-
-//     if (updateResult.modifiedCount > 0) {
-//       return res
-//         .status(200)
-//         .json({ message: "Request status updated successfully" });
-//     } else {
-//       return res
-//         .status(400)
-//         .json({ message: "Failed to update request status" });
-//     }
-//   } catch (err) {
-//     console.error("Error in releaseReqStatus:", err);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
 
 const getReports = async (req, res) => {
   try {
@@ -2954,24 +1371,14 @@ const editSendRequestMail = async (req, res) => {
       company_email_id,
     } = empData;
 
-    const subject = `Edit Request for Employee - ${employee_id}-${full_name}: ${reqData.reqid}`;
-    const textContent = `
-      Dear ${hod},
-
-      This is to inform you that employee with ID ${empId} ${full_name} has requested an edit for the request with ID ${reqData.reqid}. 
-
-      Please review the request at your earliest convenience.
-
-      Best regards,
-      ${full_name}
-      ${company_email_id}
-    
-    
-    `;
-
-    const htmlContent = "";
-
-    await sendLoginEmail(hod_email_id, subject, textContent, htmlContent);
+    await sendLoginEmail(hod_email_id, "editRequest", {
+      employee_id,
+      full_name,
+      reqid: reqData.reqid,
+      hod,
+      company_email_id,
+      department,
+    });
 
     res.status(200).send("Edit request email sent successfully");
   } catch (err) {
@@ -3063,6 +1470,7 @@ const uploadInvoiceDocuments = async (req, res) => {
     console.log("Welcome to upload documets");
     const { reqId, empId } = req.params;
     const { link } = req.body;
+    console.log(link,reqId, empId )
 
     // Fetch employee data
     const empData =
@@ -3074,6 +1482,8 @@ const uploadInvoiceDocuments = async (req, res) => {
           department: 1,
         }
       )) || (await addPanelUsers.findOne({ _id: empId }));
+      console.log(empData )
+
 
     if (!empData) {
       return res.status(404).json({ message: "Employee not found" });
@@ -3088,7 +1498,7 @@ const uploadInvoiceDocuments = async (req, res) => {
         uploadedOn: new Date(), // Current date
         receivedConfirmation: null, // Initially null
       },
-      poLink: link,
+      invoiceLink: link,
     };
 
     // Update the request with PO document details
@@ -3096,7 +1506,7 @@ const uploadInvoiceDocuments = async (req, res) => {
       reqId,
       {
         $set: {
-          invoiceDocument: invoiceDocument,
+          invoiceDocumets: invoiceDocument,
           status: "Approved",
         },
       },
@@ -3190,14 +1600,16 @@ const approveRequest = async (req, res) => {
         firstLevelApproval: 1,
         hasDeviations: 1,
         commercials: 1,
-        procurements:1
+        procurements: 1,
+        reqid:1
       }
     );
     console.log("----->", reqData);
     const requestorData = await empModel.findOne(
       { _id: reqData.userId },
-      { company_email_id: 1 }
+      { company_email_id: 1 ,full_name:1,department:1}
     );
+    const theReqId = reqData.reqid
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
@@ -3344,18 +1756,21 @@ const approveRequest = async (req, res) => {
         message: "Unable to update request. Please verify the workflow state.",
       });
     }
-    console.log("reqData.procurements.isNewVendor",reqData.procurements.isNewVendor)
+    console.log(
+      "reqData.procurements.isNewVendor",
+      reqData.procurements.isNewVendor
+    );
 
     if (
       department === "Business Finance" &&
       !reqData.procurements.isNewVendor
     ) {
-      console.log("Am inside")
+      console.log("Am inside");
       if (reqData.hasDeviations === 1) {
         const autoApproveDepartments = ["Vendor Management", "Legal Team"];
-        const remarks = "Auto-approved: No violations in the legal compliances";
+        const remarks = "Auto-approved";
 
-        for (let i = 0; i < autoApproveDepartments.length; i++) {
+        for (let i = 0; i < autoApproveDepartments.length - 1; i++) {
           const autoDepartment = autoApproveDepartments[i];
           const isLastDepartment = i === autoApproveDepartments.length - 1;
 
@@ -3393,23 +1808,22 @@ const approveRequest = async (req, res) => {
               }
             );
 
-            // Optionally, send approval email notifications
-            // await sendIndividualEmail(
-            //   "EMPLOYEE",
-            //   requestorData.company_email_id,
-            //   requestorData.full_name,
-            //   requestorData.department,
-            //   reqId,
-            //   autoApprovalRecord
-            // );
-            // await sendIndividualEmail(
-            //   "AUTHORITY",
-            //   autoApproverData.company_email_id,
-            //   autoApproverData.full_name,
-            //   autoApproverData.department,
-            //   reqId,
-            //   autoApprovalRecord
-            // );
+            await sendIndividualEmail(
+              "EMPLOYEE",
+              requestorData.company_email_id,
+              requestorData.full_name,
+              requestorData.department,
+              theReqId,
+              autoApprovalRecord
+            );
+            await sendIndividualEmail(
+              "AUTHORITY",
+              autoApproverData.company_email_id,
+              autoApproverData.full_name,
+              autoApproverData.department,
+              theReqId,
+              autoApprovalRecord
+            );
 
             console.log(
               `Auto-approval completed for department: ${autoDepartment}`
@@ -3428,7 +1842,7 @@ const approveRequest = async (req, res) => {
           "Info Security",
           "HOF",
         ];
-        const remarks = "Auto-approved: No violations in the legal compliances";
+        const remarks = "Auto-approved";
 
         for (let i = 0; i < autoApproveDepartments.length; i++) {
           const autoDepartment = autoApproveDepartments[i];
@@ -3469,22 +1883,22 @@ const approveRequest = async (req, res) => {
             );
 
             // Optionally, send approval email notifications
-            // await sendIndividualEmail(
-            //   "EMPLOYEE",
-            //   requestorData.company_email_id,
-            //   requestorData.full_name,
-            //   requestorData.department,
-            //   reqId,
-            //   autoApprovalRecord
-            // );
-            // await sendIndividualEmail(
-            //   "AUTHORITY",
-            //   autoApproverData.company_email_id,
-            //   autoApproverData.full_name,
-            //   autoApproverData.department,
-            //   reqId,
-            //   autoApprovalRecord
-            // );
+            await sendIndividualEmail(
+              "EMPLOYEE",
+              requestorData.company_email_id,
+              requestorData.full_name,
+              requestorData.department,
+              theReqId,
+              autoApprovalRecord
+            );
+            await sendIndividualEmail(
+              "AUTHORITY",
+              autoApproverData.company_email_id,
+              autoApproverData.full_name,
+              autoApproverData.department,
+              theReqId,
+              autoApprovalRecord
+            );
 
             console.log(
               `Auto-approval completed for department: ${autoDepartment}`
@@ -3530,12 +1944,11 @@ const approveRequest = async (req, res) => {
         { _id: reqData.commercials.entityId },
         { poMailId: 1 }
       );
-      const message = `${reqData._id} has been approved by Head of Finance awaiting for the  PO-Upload.`;
-      // await sendEmail({
-      //   to: entityMail.poMailId,
-      //   subject: "PO Upload Pending",
-      //   text: message,
-      // });
+      console.log("entityMail",entityMail)
+      const {poMailId} = entityMail
+      await sendEmail(poMailId, "financeApprovalEmail", {
+        theReqId,
+      });
     }
 
     if (
@@ -3550,7 +1963,7 @@ const approveRequest = async (req, res) => {
       );
 
       const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
-      const remarks = "Auto-approved: No violations in the legal compliances";
+      const remarks = "Auto-approved: No violations in the legal compliance";
 
       for (let i = 0; i < autoApproveDepartments.length; i++) {
         const autoDepartment = autoApproveDepartments[i];
@@ -3591,22 +2004,22 @@ const approveRequest = async (req, res) => {
           );
 
           // Optionally, send approval email notifications
-          // await sendIndividualEmail(
-          //   "EMPLOYEE",
-          //   requestorData.company_email_id,
-          //   requestorData.full_name,
-          //   requestorData.department,
-          //   reqId,
-          //   autoApprovalRecord
-          // );
-          // await sendIndividualEmail(
-          //   "AUTHORITY",
-          //   autoApproverData.company_email_id,
-          //   autoApproverData.full_name,
-          //   autoApproverData.department,
-          //   reqId,
-          //   autoApprovalRecord
-          // );
+          await sendIndividualEmail(
+            "EMPLOYEE",
+            requestorData.company_email_id,
+            requestorData.full_name,
+            requestorData.department,
+            theReqId,
+            autoApprovalRecord
+          );
+          await sendIndividualEmail(
+            "AUTHORITY",
+            autoApproverData.company_email_id,
+            autoApproverData.full_name,
+            autoApproverData.department,
+            theReqId,
+            autoApprovalRecord
+          );
 
           console.log(
             `Auto-approval completed for department: ${autoDepartment}`
@@ -3639,25 +2052,25 @@ const approveRequest = async (req, res) => {
         requestorData.company_email_id,
         requestorData.full_name,
         requestorData.department,
-        reqId,
+        theReqId,
         approvalRecord
       );
-      await sendIndividualEmail(
-        "AUTHORITY",
-        approverData.company_email_id,
-        approverData.full_name,
-        approverData.department,
-        reqId,
-        approvalRecord
-      );
+      if (status === "Approved") {
+        await sendIndividualEmail(
+          "AUTHORITY",
+          approverData.company_email_id,
+          approverData.full_name,
+          approverData.department,
+          theReqId,
+          approvalRecord
+        );
+      }
     }
 
     // Send success response with detailed message
     const message =
       status === "Approved"
-        ? `Request approved successfully by ${department}${
-            nextDepartment ? `. Next department: ${nextDepartment}` : ""
-          }`
+        ? `Request approved successfully by ${department}`
         : `Request ${status.toLowerCase()} by ${department}. Workflow stopped.`;
 
     res.status(200).json({ message });
@@ -3696,6 +2109,7 @@ const releaseReqStatus = async (req, res) => {
         procurements: 1,
       }
     );
+    const theReqId = reqData.reqid
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
@@ -3770,18 +2184,22 @@ const releaseReqStatus = async (req, res) => {
         $set: { status: "Pending" },
       }
     );
-    console.log("reqData.procurements.isNewVendor",reqData.procurements.isNewVendor)
+    console.log(
+      "reqData.procurements.isNewVendor",
+      reqData.procurements.isNewVendor
+    );
 
     if (
       department === "Business Finance" &&
       !reqData.procurements.isNewVendor
     ) {
-      console.log("Hai")
+      console.log("Hai");
       if (reqData.hasDeviations === 1) {
+        console.log("After Business finance vendr");
         const autoApproveDepartments = ["Vendor Management", "Legal Team"];
-        const remarks = "Auto-approved: No violations in the legal compliances";
+        const remarks = "Auto-approved";
 
-        for (let i = 0; i < autoApproveDepartments.length; i++) {
+        for (let i = 0; i < autoApproveDepartments.length - 1; i++) {
           const autoDepartment = autoApproveDepartments[i];
           const isLastDepartment = i === autoApproveDepartments.length - 1;
 
@@ -3825,7 +2243,7 @@ const releaseReqStatus = async (req, res) => {
               requestorData.company_email_id,
               requestorData.full_name,
               requestorData.department,
-              reqId,
+              theReqId,
               autoApprovalRecord
             );
             await sendIndividualEmail(
@@ -3833,7 +2251,7 @@ const releaseReqStatus = async (req, res) => {
               autoApproverData.company_email_id,
               autoApproverData.full_name,
               autoApproverData.department,
-              reqId,
+              theReqId,
               autoApprovalRecord
             );
 
@@ -3848,13 +2266,14 @@ const releaseReqStatus = async (req, res) => {
           }
         }
       } else {
+        console.log("No deviation aftre bf");
         const autoApproveDepartments = [
           "Vendor Management",
           "Legal Team",
           "Info Security",
           "HOF",
         ];
-        const remarks = "Auto-approved: No violations in the legal compliances";
+        const remarks = "Auto-approved";
 
         for (let i = 0; i < autoApproveDepartments.length; i++) {
           const autoDepartment = autoApproveDepartments[i];
@@ -3900,7 +2319,7 @@ const releaseReqStatus = async (req, res) => {
               requestorData.company_email_id,
               requestorData.full_name,
               requestorData.department,
-              reqId,
+              theReqId,
               autoApprovalRecord
             );
             await sendIndividualEmail(
@@ -3908,7 +2327,7 @@ const releaseReqStatus = async (req, res) => {
               autoApproverData.company_email_id,
               autoApproverData.full_name,
               autoApproverData.department,
-              reqId,
+              theReqId,
               autoApprovalRecord
             );
 
@@ -3954,7 +2373,7 @@ const releaseReqStatus = async (req, res) => {
       );
 
       const autoApproveDepartments = ["Legal Team", "Info Security", "HOF"];
-      const remarks = "Auto-approved: No violations in the legal compliances";
+      const remarks = "Auto-approved";
 
       for (let i = 0; i < autoApproveDepartments.length; i++) {
         const autoDepartment = autoApproveDepartments[i];
@@ -4000,7 +2419,7 @@ const releaseReqStatus = async (req, res) => {
             requestorData.company_email_id,
             requestorData.full_name,
             requestorData.department,
-            reqId,
+            theReqId,
             autoApprovalRecord
           );
           await sendIndividualEmail(
@@ -4008,7 +2427,7 @@ const releaseReqStatus = async (req, res) => {
             autoApproverData.company_email_id,
             autoApproverData.full_name,
             autoApproverData.department,
-            reqId,
+            theReqId,
             autoApprovalRecord
           );
 

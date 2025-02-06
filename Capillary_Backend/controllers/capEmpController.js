@@ -60,33 +60,32 @@ const verifyUser = async (req, res) => {
       );
       console.log("Token", token);
 
-      // await sendEmail(consolidatedData.company_email_id, "login", { full_name });
+      await sendEmail(email, "login", { full_name });
 
-      const subject = "Login Notification from PO Request Portal";
-      const textContent = "";
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <body>
-          <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
-            <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-              <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
-                <h1>Capillary Technologies - PO Request Portal</h1>
-              </div>
-              <div style="padding: 20px; color: #333;">
-                <p>Hi <strong>${full_name}</strong>,</p>
-                <p>You have successfully logged in to PO Request Portal!</p>
-                <p>If you did not perform this action, please sign out immediately and notify us.</p>
-                <p>Thank you,<br>Capillary Finance</p>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
+      // const subject = "Login Notification from PO Request Portal";
+      // const textContent = "";
+      // const htmlContent = `
+      //   <!DOCTYPE html>
+      //   <html>
+      //   <body>
+      //     <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+      //       <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+      //         <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
+      //           <h1>Capillary Technologies - PO Request Portal</h1>
+      //         </div>
+      //         <div style="padding: 20px; color: #333;">
+      //           <p>Hi <strong>${full_name}</strong>,</p>
+      //           <p>You have successfully logged in to PO Request Portal!</p>
+      //           <p>If you did not perform this action, please sign out immediately and notify us.</p>
+      //           <p>Thank you,<br>Capillary Finance</p>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   </body>
+      //   </html>
+      // `;
 
-      await sendEmail(email, subject, textContent, htmlContent);
-
+      // await sendEmail(email, subject, textContent, htmlContent);
 
       return res.status(200).json({
         success: true,
@@ -113,45 +112,28 @@ const verifyUser = async (req, res) => {
 const createNewReq = async (req, res) => {
   try {
     const { id } = req.params;
-    const { complinces, commercials, procurements, supplies, hasDeviations } =
-      req.body;
+    const { complinces, commercials, procurements, supplies, hasDeviations } = req.body;
+    const { vendorName, email, isNewVendor } = procurements;
 
     if (!complinces || !commercials) {
-      return res
-        .status(400)
-        .json({ message: "Missing required compliance or commercial data." });
+      return res.status(400).json({ message: "Missing required compliance or commercial data." });
     }
 
     const date = new Date();
-    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
-      Math.floor(Math.random() * 100) + 1
-    }`;
+    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${Math.floor(Math.random() * 100) + 1}`;
 
-    let empData =
-      (await Employee.findOne(
-        { _id: id },
-        { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
-      ).lean()) || (await addPanelUsers.findOne({ _id: id }).lean());
-
+    let empData = await Employee.findOne({ _id: id }, { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }).lean();
     if (!empData) {
-      return res.status(404).json({
-        message: "Employee not found. Please provide a valid employee ID.",
-      });
+      empData = await addPanelUsers.findOne({ _id: id }).lean();
     }
 
-    const panelMemberEmail = (
-      await addPanelUsers
-        .find(
-          { role: { $ne: "Admin" } }, // Exclude users with role 'admin'
-          { company_email_id: 1, _id: 0 }
-        )
-        .lean()
-    ).map((member) => member.company_email_id);
+    if (!empData) {
+      return res.status(404).json({ message: "Employee not found. Please provide a valid employee ID." });
+    }
 
+    const panelMemberEmail = (await addPanelUsers.find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 }).lean())
+      .map((member) => member.company_email_id);
     panelMemberEmail.push(commercials.hodEmail);
-    console.log("panel members", panelMemberEmail);
 
     const newRequest = new CreateNewReq({
       reqid,
@@ -172,13 +154,21 @@ const createNewReq = async (req, res) => {
     });
 
     await newRequest.save();
-    // const from =  `"Capillary Technology" ${process.env.EMAIL_ADDRESS}`
-    await sendBulkEmails(
-      panelMemberEmail,
-      empData.full_name,
-      empData.department,
-      reqid
-    );
+
+    await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqid);
+
+    if (isNewVendor) {
+      await sendEmail(email, "vendorOnboarding", { vendorName });
+
+      const vendorManagementEmails = await addPanelUsers.find(
+        { $or: [{ department: "Vendor Management" }, { role: "Vendor Management" }] },
+        { company_email_id: 1 }
+      ).lean();
+
+      await Promise.all(vendorManagementEmails.map(({ company_email_id }) =>
+        sendEmail(company_email_id, "newVendorOnBoard", { vendorName, email,reqid })
+      ));
+    }
 
     res.status(201).json({
       message: "Request created successfully",
@@ -187,11 +177,10 @@ const createNewReq = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating request:", error);
-    res
-      .status(500)
-      .json({ message: "Error creating request", error: error.message });
+    res.status(500).json({ message: "Error creating request", error: error.message });
   }
 };
+
 
 module.exports = {
   verifyUser,

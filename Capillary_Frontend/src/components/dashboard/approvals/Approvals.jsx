@@ -398,7 +398,8 @@ const Approvals = () => {
                           </td>
 
                           <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                            {(user.status === "Approved"||user.status==="Invoice-Pending") ? (
+                            {user.status === "Approved" ||
+                            user.status === "Invoice-Pending" ? (
                               <div className="w-full flex justify-center">
                                 <button
                                   onClick={(e) => {
@@ -410,7 +411,7 @@ const Approvals = () => {
                                   className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
                                 >
                                   <FileText className="h-4 w-4 mr-1" />
-                                  Invoice
+                                  View Po
                                 </button>
                               </div>
                             ) : (
@@ -418,21 +419,31 @@ const Approvals = () => {
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                            {
-                            user.status === "Approved" ? (
+                            {user.status === "Approved" ? (
                               <div className="w-full flex justify-center">
-                                <a
-                                  href={`${user?.poDocument?.link}`}
-                                  className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
-                                >
-                                  <FileText className="h-4 w-4 mr-1" />
-                                  View PO
-                                </a>
+                                {user?.invoiceDocumets[0]?.invoiceLink?.startsWith(
+                                  "http"
+                                ) ? (
+                                  <a
+                                    href={user?.invoiceDocumets[0]?.invoiceLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                  >
+                                    <FileText className="h-4 w-4 mr-1" />
+                                    Invoice
+                                  </a>
+                                ) : (
+                                  <span className="text-red-500">
+                                    Invalid Link
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               "N/A"
                             )}
                           </td>
+
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div className="flex justify-center items-center space-x-2">
                               <button
