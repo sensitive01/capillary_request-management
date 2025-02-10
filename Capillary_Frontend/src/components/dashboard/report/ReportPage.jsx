@@ -28,14 +28,21 @@ const ReportPage = () => {
   // Format currency with proper symbol
   const formatCurrency = (amount, currency) => {
     if (!amount || !currency) return '0';
-    
+
     const formatters = {
-      USD: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
-      GBP: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }),
-      JPY: new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' })
+        USD: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
+        EUR: new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }),
+        GBP: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }),
+        INR: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }),
+        AED: new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }),
+        IDR: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }),
+        MYR: new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }),
+        SGD: new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD' }),
+        PHP: new Intl.NumberFormat('fil-PH', { style: 'currency', currency: 'PHP' })
     };
+
     return formatters[currency]?.format(amount) || amount;
-  };
+};
 
   // Calculate total budget across all currencies
   const calculateTotalBudget = (budgetByCurrency) => {

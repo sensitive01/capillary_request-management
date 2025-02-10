@@ -147,11 +147,13 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             (entity) => entity.entityName === selectedEntityId
         );
         console.log("Matching Entities:", matchingEntities);
+        
 
         if (matchingEntities.length > 0) {
             const selectedEntity = matchingEntities[0];
             console.log("Selected Entity:", selectedEntity);
             setSelectedEntityDetails(selectedEntity);
+            const formattedAddress = `${selectedEntity.addressLine}\n\nTax ID: ${selectedEntity.taxId || 'N/A'}\nTax Type: ${selectedEntity.type || 'N/A'}`;
 
             const updatedFormData = {
                 ...localFormData,
@@ -159,8 +161,8 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                 entityId: selectedEntity._id,
                 city: selectedEntity ? selectedEntity.city : "",
                 site: selectedEntity ? selectedEntity.area : "",
-                billTo: selectedEntity ? selectedEntity.addressLine : "",
-                shipTo: selectedEntity ? selectedEntity.addressLine : "",
+                billTo: selectedEntity ? formattedAddress : "",
+                shipTo: selectedEntity ? formattedAddress : "",
             };
             console.log("updatedFormData", updatedFormData);
 
@@ -692,6 +694,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     </div>
                 </div>
 
+
                 <div className="grid grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -703,7 +706,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             onChange={handleInputChange}
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                             placeholder="Enter Bill To"
-                            rows="4"
+                            rows="6"
                         ></textarea>
                     </div>
 
@@ -717,7 +720,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             onChange={handleInputChange}
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                             placeholder="Enter Ship To"
-                            rows="4"
+                            rows="6"
                         ></textarea>
                     </div>
                 </div>

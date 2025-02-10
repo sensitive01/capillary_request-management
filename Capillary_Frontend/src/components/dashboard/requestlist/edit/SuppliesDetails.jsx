@@ -14,13 +14,17 @@ const SuppliesDetails = ({
   const [selectedCurrency, setSelectedCurrency] = useState("INR");
 
   const currencies = [
-    { code: "USD", symbol: "$" },
-    { code: "EUR", symbol: "€" },
-    { code: "GBP", symbol: "£" },
-    { code: "JPY", symbol: "¥" },
-    { code: "CAD", symbol: "C$" },   
-    { code: "INR", symbol: "₹" },
-  ];
+    { code: "USD", symbol: "$", locale: "en-US" },
+    { code: "EUR", symbol: "€", locale: "de-DE" },
+    { code: "GBP", symbol: "£", locale: "en-GB" },
+    { code: "INR", symbol: "₹", locale: "en-IN" },
+    { code: "AED", symbol: "د.إ", locale: "ar-AE" },
+    { code: "IDR", symbol: "Rp", locale: "id-ID" },
+    { code: "MYR", symbol: "RM", locale: "ms-MY" },
+    { code: "SGD", symbol: "S$", locale: "en-SG" },
+    { code: "PHP", symbol: "₱", locale: "fil-PH" },
+];
+
 
   const formatCurrency = (value) => {
     const currency = currencies.find(c => c.code === selectedCurrency);

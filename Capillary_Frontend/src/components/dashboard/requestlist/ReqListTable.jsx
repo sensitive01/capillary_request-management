@@ -24,9 +24,12 @@ const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
     { code: "EUR", symbol: "€", locale: "de-DE" },
     { code: "GBP", symbol: "£", locale: "en-GB" },
-    { code: "JPY", symbol: "¥", locale: "ja-JP" },
-    { code: "CAD", symbol: "C$", locale: "en-CA" },
     { code: "INR", symbol: "₹", locale: "en-IN" },
+    { code: "AED", symbol: "د.إ", locale: "ar-AE" },
+    { code: "IDR", symbol: "Rp", locale: "id-ID" },
+    { code: "MYR", symbol: "RM", locale: "ms-MY" },
+    { code: "SGD", symbol: "S$", locale: "en-SG" },
+    { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
 const ReqListTable = () => {
