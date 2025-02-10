@@ -9,6 +9,7 @@ import businessUnits from "./dropDownData/businessUnit";
 
 const Commercials = ({ formData, setFormData, onNext }) => {
     const empDepartment = localStorage.getItem("department");
+    const empId = localStorage.getItem("userId")
 
     const [localFormData, setLocalFormData] = useState({
         entity: formData.entity || "",
@@ -39,7 +40,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     useEffect(() => {
         const fetchEntity = async () => {
             try {
-                const response = await getAllEntityData();
+                const response = await getAllEntityData(empId);
                 console.log(response);
                 if (response.status === 200) {
                     setEntities(response.data.entities);

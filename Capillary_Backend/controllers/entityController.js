@@ -18,29 +18,34 @@ exports.createEntity = async (req, res) => {
 // Read all entities
 exports.getAllEntities = async (req, res) => {
   try {
+    const {empId} = req.params
+    console.log("empId-->",empId)
     const entities = await Entity.find();
 
-    const uniqueDepartments = await Employee.aggregate([
-      {
-        $group: {
-          _id: "$department", 
-          hod: { $first: "$hod" }, 
-          hod_email_id: { $first: "$hod_email_id" }
-        },
-      },
-      {
-        $project: {
-          _id: 0, 
-          department: "$_id", 
-          hod: 1, 
-          hod_email_id: 1, 
-        },
-      },
-    ]);
+    // const uniqueDepartments = await Employee.aggregate([
+    //   {
+    //     $group: {
+    //       _id: "$department", 
+    //       hod: { $first: "$hod" }, 
+    //       hod_email_id: { $first: "$hod_email_id" }
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 0, 
+    //       department: "$_id", 
+    //       hod: 1, 
+    //       hod_email_id: 1, 
+    //     },
+    //   },
+    // ]);
     
+    const departmentHod = await Employee.find({_id:empId},{hod:1,  hod_email_id:1,department:1})
+    console.log("departmentHod",departmentHod)
+    // console.log("Unique Departments", uniqueDepartments);
+    // res.status(200).json({ entities: entities, department: uniqueDepartments });
+    res.status(200).json({ entities: entities, department: departmentHod });
 
-    console.log("Unique Departments", uniqueDepartments);
-    res.status(200).json({ entities: entities, department: uniqueDepartments });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

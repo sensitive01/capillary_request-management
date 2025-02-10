@@ -700,7 +700,7 @@ export const addInvoiceDocument = async (empId,reqId,link) => {
 
 export const getAllEntityData = async (empId) => {
   try {
-    const response = await adminServices.get(`/entity/get-all`);
+    const response = await adminServices.get(`/entity/get-all/${empId}`);
     return response;
   } catch (err) {
     return err;

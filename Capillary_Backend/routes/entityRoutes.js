@@ -13,7 +13,7 @@ const router = express.Router();
 
 
 router.post('/create', createEntity); 
-router.get('/get-all', getAllEntities); 
+router.get('/get-all/:empId', getAllEntities); 
 router.get('/get/:id', getEntityById);
 router.put('/update/:id', updateEntity);
 router.delete('/delete/:id', deleteEntity); 
