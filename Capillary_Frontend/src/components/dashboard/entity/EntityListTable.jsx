@@ -9,6 +9,8 @@ import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
 
 const EntityListTable = () => {
+  const empId = localStorage.getItem("userId")
+
   const navigate = useNavigate();
 
   // State management
@@ -26,7 +28,7 @@ const EntityListTable = () => {
   // Fetch data
   useEffect(() => {
     const fetchAllEntity = async () => {
-      const response = await getAllEntityData();
+      const response = await getAllEntityData(empId);
       console.log(response);
       if (response.status === 200) {
         setEntity(response.data.entities);
