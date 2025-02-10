@@ -1,5 +1,7 @@
 const Entity = require("../models/entityModel");
 const Employee = require("../models/empModel");
+const addPanelUser = require("../models/addPanelUsers")
+
 
 // Create a new entity
 exports.createEntity = async (req, res) => {
@@ -21,6 +23,7 @@ exports.getAllEntities = async (req, res) => {
     const {empId} = req.params
     console.log("empId-->",empId)
     const entities = await Entity.find();
+    const empData = await addPanelUser.findOne({_id:empId},{employee_id:1})
 
     // const uniqueDepartments = await Employee.aggregate([
     //   {
@@ -40,7 +43,7 @@ exports.getAllEntities = async (req, res) => {
     //   },
     // ]);
     
-    const departmentHod = await Employee.find({_id:empId},{hod:1,  hod_email_id:1,department:1})
+    const departmentHod = await Employee.find({employee_id:empData.employee_id},{hod:1,  hod_email_id:1,department:1})
     console.log("departmentHod",departmentHod)
     // console.log("Unique Departments", uniqueDepartments);
     // res.status(200).json({ entities: entities, department: uniqueDepartments });
