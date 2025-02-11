@@ -55,7 +55,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                         Array.isArray(response.data.department) &&
                         isDropDown
                     ) {
-               
                         const filtered = response.data.department.filter(
                             (dept) => {
                                 return (
@@ -68,7 +67,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             }
                         );
 
-          
                         const deptMap = new Map();
                         filtered.forEach((dept) => {
                             const key = dept.department;
@@ -76,11 +74,14 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                 deptMap.set(key, {
                                     department: dept.department,
                                     approvers: filtered
-                                        .filter(d => d.department === dept.department)
-                                        .map(d => ({
+                                        .filter(
+                                            (d) =>
+                                                d.department === dept.department
+                                        )
+                                        .map((d) => ({
                                             hod: d.hod,
-                                            hodEmail: d.hod_email_id
-                                        }))
+                                            hodEmail: d.hod_email_id,
+                                        })),
                                 });
                             }
                         });
@@ -107,6 +108,17 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                 hod: selectedDept.hod,
                                 hodEmail: selectedDept.hod_email_id,
                             }));
+                        } else {
+                            setLocalFormData((prev) => ({
+                                ...prev,
+                                hod: department.hod,
+                                hodEmail: department.hod_email_id,
+                            }));
+                            setFormData((prev) => ({
+                                ...prev,
+                                hod: department.hod,
+                                hodEmail: department.hod_email_id,
+                            }));
                         }
                     }
                 }
@@ -123,20 +135,32 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
     const handleBusinessUnitChange = (e) => {
         const { name, value } = e.target;
+        if (isDropDown) {
+            const updatedFormData = {
+                ...localFormData,
+                [name]: value,
+                department: "",
+                hod: "",
+                hodEmail: "",
+            };
 
-        const updatedFormData = {
-            ...localFormData,
-            [name]: value,
-            department: "",
-            hod: "",
-            hodEmail: "",
-        };
+            setLocalFormData(updatedFormData);
+            setFormData(updatedFormData);
+            setSearchTerm("");
+            setSelectedDepartment(null);
+            setApprovers([]);
+        } else {
+            const updatedFormData = {
+                ...localFormData,
+                [name]: value,
+            };
 
-        setLocalFormData(updatedFormData);
-        setFormData(updatedFormData);
-        setSearchTerm("");
-        setSelectedDepartment(null);
-        setApprovers([]);
+            setLocalFormData(updatedFormData);
+            setFormData(updatedFormData);
+            setSearchTerm("");
+            setSelectedDepartment(null);
+            setApprovers([]);
+        }
 
         if (errors[name]) {
             setErrors((prev) => {
@@ -150,7 +174,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     const handleDepartmentChange = (selectedDept) => {
         setSelectedDepartment(selectedDept);
         setApprovers(selectedDept.approvers);
-        
+
         const updatedFormData = {
             ...localFormData,
             department: selectedDept.department,
@@ -166,7 +190,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
     const handleApproverChange = (e) => {
         const selectedApprover = approvers.find(
-            approver => approver.hod === e.target.value
+            (approver) => approver.hod === e.target.value
         );
 
         if (selectedApprover) {
@@ -178,9 +202,17 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
             setLocalFormData(updatedFormData);
             setFormData(updatedFormData);
+        } else {
+            const updatedFormData = {
+                ...localFormData,
+                hod: department.hod,
+                hodEmail: department.hodEmail,
+            };
+
+            setLocalFormData(updatedFormData);
+            setFormData(updatedFormData);
         }
     };
-
 
     const validateForm = async () => {
         try {
@@ -479,14 +511,11 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     placeholder="HOD will be auto-populated"
                 />
                 {errors.hod && (
-                    <p className="text-red-500 text-xs mt-1">
-                        {errors.hod}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
                 )}
             </div>
         );
     };
-
 
     return (
         <div className="w-full mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
