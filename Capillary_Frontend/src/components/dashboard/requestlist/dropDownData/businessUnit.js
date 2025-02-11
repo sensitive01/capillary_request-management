@@ -1,5 +1,6 @@
 const businessUnits = [
-    { value: "", label: "Select Business Unit" },
+    { value: "Asia", label: "ASIA" },
+
     { value: "Central", label: "CENTRAL" },
     { value: "Dubai", label: "DUBAI" },
     { value: "India", label: "INDIA" },

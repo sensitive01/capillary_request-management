@@ -111,6 +111,9 @@ const TopBar = () => {
               ))}
             </ul>
           )}
+          <div className="p-4 text-center cursor-pointer font-bold text-black">
+            View All
+          </div>
         </div>
       )}
     </div>

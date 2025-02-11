@@ -39,6 +39,17 @@ import EditPanelmembers from "./components/dashboard/panels-members/EditPanelmem
 import SessionTimeout from "./components/session/SessionTimeOut";
 import ReportPage from "./components/dashboard/report/ReportPage";
 import MyRequestStatistics from "./components/dashboard/requestlist/MyRequestStatistics";
+import Settings from "./components/dashboard/settings/Settings";
+import GoogleSSO from "./components/dashboard/settings/integrations/GoogleSSO.JSX";
+import SmtpPage from "./components/dashboard/settings/integrations/SmtpPage";
+import DarwinBoxPage from "./components/dashboard/settings/integrations/DarwinBoxPage";
+import NetSuit from "./components/dashboard/settings/integrations/NetSuit";
+import ApprovalFlowPage from "./components/dashboard/settings/business-settings/ApprovalFlowPage";
+import CurrencyPage from "./components/dashboard/settings/business-settings/CurrencyPage";
+import PaymentTermsPage from "./components/dashboard/settings/business-settings/PaymentTermsPage";
+import PaymentType from "./components/dashboard/settings/business-settings/PaymentType";
+import SystemLogs from "./components/dashboard/settings/logs/SystemLogs";
+import ApproverType from "./components/dashboard/settings/business-settings/ApproverType";
 
 
 function App() {
@@ -98,6 +109,23 @@ function App() {
           <Route path="/admin/domain" element={<AllowDomainList/>} />
           <Route path="/admin/domain-table" element={<DomainListTable/>} />
           <Route path="/genarate-report-page" element={<ReportPage/>} />
+
+          <Route path="/settings" element={<Settings/>} />
+          <Route path="/settings/google-sso" element={<GoogleSSO/>} />
+          <Route path="/settings/smtp" element={<SmtpPage/>} />
+          <Route path="/settings/darwin-box" element={<DarwinBoxPage/>} />
+          <Route path="/settings/netsuit" element={<NetSuit/>} />
+          <Route path="/settings/approval-flow" element={<ApprovalFlowPage/>} />
+          <Route path="/settings/approver-type" element={<ApproverType/>} />
+
+          <Route path="/settings/currency" element={<CurrencyPage/>} />
+          <Route path="/settings/payment-terms" element={<PaymentTermsPage/>} />
+          <Route path="/settings/payment-type" element={<PaymentType/>} />
+          <Route path="/settings/system-logs" element={<SystemLogs/>} />
+
+
+
+
 
 
         </Route>

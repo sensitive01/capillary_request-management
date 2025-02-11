@@ -3,6 +3,7 @@ const empIdGenFunction = require("../utils/empIdGenFunction");
 const CreateNewReq = require("../models/createNewReqSchema");
 const sendLoginEmail = require("../utils/sendEmail");
 const { sendBulkEmails } = require("../utils/otherTestEmail");
+const xlsx = require("xlsx");
 const axios = require("axios");
 const {
   DARWINBOX_BASE_URL,
@@ -13,6 +14,8 @@ const {
 } = require("../config/variables");
 
 const addPanelUsers = require("../models/addPanelUsers");
+const Approver = require("../models/approverSchema");
+const DarwinBox = require("../models/isDarwinEnabled");
 
 exports.generateEmpId = async (req, res) => {
   try {
@@ -80,8 +83,8 @@ exports.syncEmployeeData = async (req, res) => {
 
     const response = await axios(options);
     const employees = response.data.employee_data;
-    console.log("response",response)
-    console.log("Employees===>",employees)
+    console.log("response", response);
+    console.log("Employees===>", employees);
 
     await Employee.updateMany(
       { employee_id: { $in: syncOffEmployee } },
@@ -672,5 +675,135 @@ exports.addNewPanelsMembers = async (req, res) => {
       message: "Error adding/updating employee",
       error: err.message,
     });
+  }
+};
+
+exports.getAllApprovalDatas = async (req, res) => {
+  try {
+    console.log("Welcome to get all approval datas");
+
+    const approvalData = await Approver.find().sort({ createdAt: -1 });
+
+    console.log("ApprovalData", approvalData);
+    res.status(200).json({ success: true, approvalData });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.uploadApproverExcel = async (req, res) => {
+  try {
+    console.log("Uploading XL", req.file);
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const workbook = xlsx.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    const isValidData = data.every(
+      (row) =>
+        row.businessUnit &&
+        row.departments &&
+        row.approverName &&
+        row.approverId&&
+        row.approverEmail
+    );
+
+    if (!isValidData) {
+      return res.status(400).json({
+        message:
+          "Invalid Excel format. Required columns: businessUnit, departments, approverName, approverId",
+      });
+    }
+
+    const processedData = {};
+    data.forEach(({ businessUnit, departments, approverName, approverId,approverEmail }) => {
+      if (!processedData[businessUnit]) {
+        processedData[businessUnit] = { departments: {} };
+      }
+
+      if (!processedData[businessUnit].departments[departments]) {
+        processedData[businessUnit].departments[departments] = [];
+      }
+
+      processedData[businessUnit].departments[departments].push({
+        approverId,
+        approverName,
+        approverEmail
+      });
+    });
+
+    const approverDocs = Object.keys(processedData).map((businessUnit) => ({
+      businessUnit,
+      departments: Object.keys(processedData[businessUnit].departments).map(
+        (dept) => ({
+          name: dept,
+          approvers: processedData[businessUnit].departments[dept],
+        })
+      ),
+      uploadedAt: new Date(),
+      status: "active",
+    }));
+
+    await Approver.insertMany(approverDocs);
+
+    res.status(200).json({
+      message: "Excel file processed successfully",
+      data: approverDocs,
+    });
+  } catch (error) {
+    console.error("Error processing Excel file:", error);
+    res
+      .status(500)
+      .json({ message: "Error processing Excel file", error: error.message });
+  }
+};
+
+
+exports.checkDarwinStatus = async (req, res) => {
+  try {
+    let darwinData = await DarwinBox.findOne();
+
+    // If no status exists, create initial status
+    if (!darwinData) {
+      darwinData = new DarwinBox({ isDarwinEnabled: false });
+      await darwinData.save();
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      status: darwinData.isDarwinEnabled 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.updateDarwinStatus = async (req, res) => {
+  try {
+    let darwinData = await DarwinBox.findOne();
+
+    // If no status exists, create initial status
+    if (!darwinData) {
+      darwinData = new DarwinBox({ isDarwinEnabled: true });
+    } else {
+      // Toggle the status
+      darwinData.isDarwinEnabled = !darwinData.isDarwinEnabled;
+    }
+
+    await darwinData.save();
+
+    res.status(200).json({ 
+      success: true, 
+      enabled: darwinData.isDarwinEnabled 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

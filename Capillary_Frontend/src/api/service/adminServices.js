@@ -1,50 +1,49 @@
 import { adminServices } from "../axiosInstance/adminService";
 
-
-
 export const verifyUser = async (email) => {
   try {
-    const response = await adminServices.post(`/employees/verify-person`, { email:email });
+    const response = await adminServices.post(`/employees/verify-person`, {
+      email: email,
+    });
     return response;
   } catch (err) {
     return err;
   }
 };
 
-export const fetchDateFilterStatistics = async (empId,role,from,to) => {
+export const fetchDateFilterStatistics = async (empId, role, from, to) => {
   try {
-    const response = await adminServices.post(`/request/filter-by-date/${empId}/${role}`, { from,to });
+    const response = await adminServices.post(
+      `/request/filter-by-date/${empId}/${role}`,
+      { from, to }
+    );
     return response;
   } catch (err) {
     return err;
   }
 };
 
-
-
-
-
-export const getStatisticData = async (empId,role) => {
+export const getStatisticData = async (empId, role) => {
   try {
-    const response = await adminServices.get(`/request/get-statistic-data/${empId}/${role}`);
+    const response = await adminServices.get(
+      `/request/get-statistic-data/${empId}/${role}`
+    );
     return response;
   } catch (err) {
     return err;
   }
 };
 
-
-
-export const sendReqEditMail = async (empId,reqId) => {
+export const sendReqEditMail = async (empId, reqId) => {
   try {
-    const response = await adminServices.post(`/request/send-edit-request-mail/${empId}/${reqId}`);
+    const response = await adminServices.post(
+      `/request/send-edit-request-mail/${empId}/${reqId}`
+    );
     return response;
   } catch (err) {
     return err;
   }
 };
-
-
 
 // ............................VENDOR SIDE..........................................................
 
@@ -149,7 +148,9 @@ export const generateEmployeeUniqueId = async () => {
 
 export const getSyncEmployeeTable = async (syncOffEmployee) => {
   try {
-    const response = await adminServices.post(`/employees/sync-emp-data`,{syncOffEmployee});
+    const response = await adminServices.post(`/employees/sync-emp-data`, {
+      syncOffEmployee,
+    });
     return response;
   } catch (err) {
     return err;
@@ -179,7 +180,9 @@ export const deleteEmployee = async (id) => {
 
 export const deletePanelEmployee = async (id) => {
   try {
-    const response = await adminServices.delete(`/employees/panel-delete/${id}`);
+    const response = await adminServices.delete(
+      `/employees/panel-delete/${id}`
+    );
     return response;
   } catch (err) {
     return err;
@@ -194,7 +197,6 @@ export const getEmployeeList = async () => {
     return err;
   }
 };
-
 
 export const getPanelMenberData = async () => {
   try {
@@ -226,18 +228,16 @@ export const getEmployeeData = async (id) => {
   }
 };
 
-
 export const getIndividualEmployee = async (id) => {
   try {
-    const response = await adminServices.get(`/employees/get-panel-members/${id}`);
+    const response = await adminServices.get(
+      `/employees/get-panel-members/${id}`
+    );
     return response;
   } catch (err) {
     return err;
   }
 };
-
-
-
 
 export const updateEmployeeData = async (id, formData) => {
   try {
@@ -317,12 +317,9 @@ export const deleteQuestion = async (userId) => {
   }
 };
 
-
 export const fetchAllQuestions = async () => {
   try {
-    const response = await adminServices.get(
-      `/questions/get-all-question`
-    );
+    const response = await adminServices.get(`/questions/get-all-question`);
     return response;
   } catch (err) {
     return err;
@@ -362,10 +359,11 @@ export const verifyToken = async (crediantial) => {
   }
 };
 
-
 export const sendReminder = async (reqId) => {
   try {
-    const response = await adminServices.post(`/request/send-reminder/${reqId}`);
+    const response = await adminServices.post(
+      `/request/send-reminder/${reqId}`
+    );
     return response;
   } catch (err) {
     return err;
@@ -446,9 +444,8 @@ export const fetchIndividualReq = async (id) => {
     return err;
   }
 };
-export const dispalyIsApproved = async (userId,reqId) => {
+export const dispalyIsApproved = async (userId, reqId) => {
   try {
-  
     const response = await adminServices.get(
       `/request/is-approved/${userId}/${reqId}`
     );
@@ -456,24 +453,18 @@ export const dispalyIsApproved = async (userId,reqId) => {
   } catch (err) {
     return err;
   }
-}
+};
 
 export const deleteFileFromAwsS3 = async (url) => {
   try {
-
-  
-    const response = await adminServices.post(
-      `/upload-s3/delete-s3-image`,{url}
-    );
+    const response = await adminServices.post(`/upload-s3/delete-s3-image`, {
+      url,
+    });
     return response;
   } catch (err) {
     return err;
   }
-}
-
-
-
-
+};
 
 export const deleteReq = async (id) => {
   try {
@@ -504,7 +495,7 @@ export const getAdminReqListEmployee = async () => {
 
 export const hodApproveRequest = async (userId, role, reqId, status) => {
   try {
-    console.log("request/accept-request-hod")
+    console.log("request/accept-request-hod");
     const response = await adminServices.post(
       `/request/accept-request-hod/${userId}`,
       { role, reqId, status }
@@ -627,13 +618,16 @@ export const getApprovedReq = async (userId) => {
 // api/service/adminServices.js
 export const downloadInvoicePdf = async (id) => {
   try {
-    const response = await adminServices.get(`/request/invoice/download/${id}`, {
-      responseType: "blob",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/pdf",
-      },
-    });
+    const response = await adminServices.get(
+      `/request/invoice/download/${id}`,
+      {
+        responseType: "blob",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/pdf",
+        },
+      }
+    );
 
     const blob = new Blob([response.data], { type: "application/pdf" });
     const url = window.URL.createObjectURL(blob);
@@ -652,10 +646,18 @@ export const downloadInvoicePdf = async (id) => {
   }
 };
 
-
-export const releseReqStatus = async (status,department,userId,reqId,role) => {
+export const releseReqStatus = async (
+  status,
+  department,
+  userId,
+  reqId,
+  role
+) => {
   try {
-    const response = await adminServices.put(`/request/relese-status/${userId}/${reqId}`,{status,department,role});
+    const response = await adminServices.put(
+      `/request/relese-status/${userId}/${reqId}`,
+      { status, department, role }
+    );
     return response;
   } catch (err) {
     return err;
@@ -671,28 +673,29 @@ export const getReqReports = async () => {
   }
 };
 
-
-export const addPODocument = async (empId,reqId,link) => {
+export const addPODocument = async (empId, reqId, link) => {
   try {
-    const response = await adminServices.put(`/request/upload-po-documents/${empId}/${reqId}`,{link});
+    const response = await adminServices.put(
+      `/request/upload-po-documents/${empId}/${reqId}`,
+      { link }
+    );
     return response;
   } catch (err) {
     return err;
   }
 };
 
-
-
-export const addInvoiceDocument = async (empId,reqId,link) => {
+export const addInvoiceDocument = async (empId, reqId, link) => {
   try {
-    const response = await adminServices.put(`/request/upload-invoice-documents/${empId}/${reqId}`,{link});
+    const response = await adminServices.put(
+      `/request/upload-invoice-documents/${empId}/${reqId}`,
+      { link }
+    );
     return response;
   } catch (err) {
     return err;
   }
 };
-
-
 
 // ............................REQUEST SIDE..........................................................
 
@@ -773,15 +776,57 @@ export const fetcAllChats = async (id) => {
   }
 };
 
-
 export const addNewUser = async (formData) => {
   try {
-    const response = await adminServices.post(
-      `/employees/add-new-panels`,
-      {formData}
-    );
+    const response = await adminServices.post(`/employees/add-new-panels`, {
+      formData,
+    });
     return response;
   } catch (err) {
     return err;
   }
 };
+
+export const getAllApprovalData = async () => {
+  try {
+    const response = await adminServices.get(`/employees/get-approval-datas`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const uploadCSVFile = async (formData) => {
+  try {
+    const response = await adminServices.post('/employees/upload-csv-file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const checkDarwinStatus = async () => {
+  try {
+    const response = await adminServices.get('/employees/darwin-status');
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+export const updateDarwinStatus = async () => {
+  try {
+    const response = await adminServices.put('/employees/update-darwin-status');
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+

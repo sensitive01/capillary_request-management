@@ -1,5 +1,3 @@
-/* eslint-disable react/prop-types */
-/* eslint-disable no-unused-vars */
 import { PlusCircle, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAllEntityData } from "../../../api/service/adminServices";
@@ -9,7 +7,11 @@ import businessUnits from "./dropDownData/businessUnit";
 
 const Commercials = ({ formData, setFormData, onNext }) => {
     const empDepartment = localStorage.getItem("department");
-    const empId = localStorage.getItem("userId")
+    const empId = localStorage.getItem("userId");
+    const [isDropDown, setIsDropDown] = useState(false);
+    const [approvers, setApprovers] = useState([]);
+    const [filteredApprovers, setFilteredApprovers] = useState([]);
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
 
     const [localFormData, setLocalFormData] = useState({
         entity: formData.entity || "",
@@ -18,8 +20,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         department: formData.department || empDepartment || "",
         amount: formData.amount || "",
         entityId: formData.entityId || "",
-
-        // paymentMode: formData.paymentMode || "",
         paymentTerms: formData.paymentTerms || [
             { percentageTerm: 0, paymentTerm: "", paymentType: "" },
         ],
@@ -30,32 +30,160 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         businessUnit: formData.businessUnit || "",
         isCreditCardSelected: formData.isCreditCardSelected || false,
     });
+
     const [entities, setEntities] = useState([]);
     const [selectedEntityDetails, setSelectedEntityDetails] = useState(null);
     const [errors, setErrors] = useState({});
     const [department, setDepartment] = useState([]);
-    // const [departmentSearch, setDepartmentSearch] = useState("");
-    // const [isSearching, setIsSearching] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [filteredDepartments, setFilteredDepartments] = useState([]);
+    const [availableDepartments, setAvailableDepartments] = useState([]);
+    const [uniqueDepartments, setUniqueDepartments] = useState(new Map());
 
     useEffect(() => {
         const fetchEntity = async () => {
             try {
                 const response = await getAllEntityData(empId);
-                console.log(response);
                 if (response.status === 200) {
                     setEntities(response.data.entities);
-                    setDepartment(response.data.department);
+                    setDepartment(response.data.department || []);
+                    setIsDropDown(response.data.isDropDown);
+
+                    if (
+                        localFormData.businessUnit &&
+                        Array.isArray(response.data.department) &&
+                        isDropDown
+                    ) {
+               
+                        const filtered = response.data.department.filter(
+                            (dept) => {
+                                return (
+                                    dept.businessUnit?.toLowerCase() ===
+                                        localFormData.businessUnit.toLowerCase() &&
+                                    dept.department
+                                        ?.toLowerCase()
+                                        .includes(empDepartment.toLowerCase())
+                                );
+                            }
+                        );
+
+          
+                        const deptMap = new Map();
+                        filtered.forEach((dept) => {
+                            const key = dept.department;
+                            if (!deptMap.has(key)) {
+                                deptMap.set(key, {
+                                    department: dept.department,
+                                    approvers: filtered
+                                        .filter(d => d.department === dept.department)
+                                        .map(d => ({
+                                            hod: d.hod,
+                                            hodEmail: d.hod_email_id
+                                        }))
+                                });
+                            }
+                        });
+
+                        setUniqueDepartments(deptMap);
+                        setAvailableDepartments(Array.from(deptMap.values()));
+                        setFilteredDepartments(Array.from(deptMap.values()));
+                    }
+
+                    // Set initial department and HOD if available
+                    if (!isDropDown && localFormData.department) {
+                        const selectedDept = response.data.department.find(
+                            (dept) =>
+                                dept.department === localFormData.department
+                        );
+                        if (selectedDept) {
+                            setLocalFormData((prev) => ({
+                                ...prev,
+                                hod: selectedDept.hod,
+                                hodEmail: selectedDept.hod_email_id,
+                            }));
+                            setFormData((prev) => ({
+                                ...prev,
+                                hod: selectedDept.hod,
+                                hodEmail: selectedDept.hod_email_id,
+                            }));
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching entities:", error);
+                setDepartment([]);
+                setFilteredDepartments([]);
+                setAvailableDepartments([]);
+                setUniqueDepartments(new Map());
             }
         };
         fetchEntity();
-    }, []);
+    }, [empId, localFormData.businessUnit]);
+
+    const handleBusinessUnitChange = (e) => {
+        const { name, value } = e.target;
+
+        const updatedFormData = {
+            ...localFormData,
+            [name]: value,
+            department: "",
+            hod: "",
+            hodEmail: "",
+        };
+
+        setLocalFormData(updatedFormData);
+        setFormData(updatedFormData);
+        setSearchTerm("");
+        setSelectedDepartment(null);
+        setApprovers([]);
+
+        if (errors[name]) {
+            setErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
+    };
+
+    const handleDepartmentChange = (selectedDept) => {
+        setSelectedDepartment(selectedDept);
+        setApprovers(selectedDept.approvers);
+        
+        const updatedFormData = {
+            ...localFormData,
+            department: selectedDept.department,
+            hod: "", // Reset HOD when department changes
+            hodEmail: "", // Reset HOD email when department changes
+        };
+
+        setLocalFormData(updatedFormData);
+        setFormData(updatedFormData);
+        setSearchTerm(selectedDept.department);
+        setIsSearchFocused(false);
+    };
+
+    const handleApproverChange = (e) => {
+        const selectedApprover = approvers.find(
+            approver => approver.hod === e.target.value
+        );
+
+        if (selectedApprover) {
+            const updatedFormData = {
+                ...localFormData,
+                hod: selectedApprover.hod,
+                hodEmail: selectedApprover.hodEmail,
+            };
+
+            setLocalFormData(updatedFormData);
+            setFormData(updatedFormData);
+        }
+    };
+
 
     const validateForm = async () => {
         try {
-            // Validate the entire form
             await CommercialValidationSchema.validate(localFormData, {
                 abortEarly: false,
             });
@@ -63,15 +191,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             return true;
         } catch (yupError) {
             if (yupError.inner) {
-                // Transform Yup errors into a more manageable format
                 const formErrors = yupError.inner.reduce((acc, error) => {
                     acc[error.path] = error.message;
                     return acc;
                 }, {});
 
                 setErrors(formErrors);
-
-                // Show toast for first error
                 const firstErrorKey = Object.keys(formErrors)[0];
                 if (firstErrorKey) {
                     toast.error(formErrors[firstErrorKey]);
@@ -80,31 +205,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             return false;
         }
     };
-    useEffect(() => {
-        if (department.length > 0 && empDepartment) {
-            const matchingDept = department.find(
-                (dept) =>
-                    dept.department.toLowerCase() ===
-                    empDepartment.toLowerCase()
-            );
-
-            if (matchingDept) {
-                setLocalFormData((prev) => ({
-                    ...prev,
-                    department: empDepartment,
-                    hod: matchingDept.hod,
-                    hodEmail: matchingDept.hod_email_id,
-                }));
-
-                setFormData((prev) => ({
-                    ...prev,
-                    department: empDepartment,
-                    hod: matchingDept.hod,
-                    hodEmail: matchingDept.hod_email_id,
-                }));
-            }
-        }
-    }, [department, empDepartment]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -141,19 +241,18 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
     const handleEntityChange = (e) => {
         const selectedEntityId = e.target.value;
-        console.log("Selected Entity ID:", selectedEntityId);
-
         const matchingEntities = entities.filter(
             (entity) => entity.entityName === selectedEntityId
         );
-        console.log("Matching Entities:", matchingEntities);
-        
 
         if (matchingEntities.length > 0) {
             const selectedEntity = matchingEntities[0];
-            console.log("Selected Entity:", selectedEntity);
             setSelectedEntityDetails(selectedEntity);
-            const formattedAddress = `${selectedEntity.addressLine}\n\nTax ID: ${selectedEntity.taxId || 'N/A'}\nTax Type: ${selectedEntity.type || 'N/A'}`;
+            const formattedAddress = `${
+                selectedEntity.addressLine
+            }\n\nTax ID: ${selectedEntity.taxId || "N/A"}\nTax Type: ${
+                selectedEntity.type || "N/A"
+            }`;
 
             const updatedFormData = {
                 ...localFormData,
@@ -164,7 +263,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                 billTo: selectedEntity ? formattedAddress : "",
                 shipTo: selectedEntity ? formattedAddress : "",
             };
-            console.log("updatedFormData", updatedFormData);
 
             setLocalFormData(updatedFormData);
             setFormData(updatedFormData);
@@ -176,14 +274,11 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     return newErrors;
                 });
             }
-        } else {
-            console.log("No matching entities found");
         }
     };
 
     const handlePaymentTermChange = (e, index) => {
         const { name, value } = e.target;
-        console.log("name", name, "value", value);
         const updatedPaymentTerms = [...localFormData.paymentTerms];
         updatedPaymentTerms[index] = {
             ...updatedPaymentTerms[index],
@@ -197,6 +292,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
         setLocalFormData(updatedFormData);
         setFormData(updatedFormData);
+
         if (errors.paymentTerms?.[index]?.[name]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -213,7 +309,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             ...localFormData,
             paymentTerms: [
                 ...localFormData.paymentTerms,
-                { percentageTerm: "", paymentTerm: "", paymentMode: "" },
+                { percentageTerm: "", paymentTerm: "", paymentType: "" },
             ],
         };
 
@@ -242,9 +338,159 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         }
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest(".relative")) {
+                setIsSearchFocused(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+    const renderDepartmentField = () => {
+        if (isDropDown) {
+            return (
+                <div className="relative">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Cost Center <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                const filtered = availableDepartments.filter(
+                                    (dept) =>
+                                        dept.department
+                                            .toLowerCase()
+                                            .includes(
+                                                e.target.value.toLowerCase()
+                                            )
+                                );
+                                setFilteredDepartments(filtered);
+                            }}
+                            onFocus={() => setIsSearchFocused(true)}
+                            placeholder="Search department..."
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                        />
+                        <Search
+                            className="absolute right-3 top-3.5 text-gray-400"
+                            size={20}
+                        />
+                    </div>
+
+                    {isSearchFocused && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {filteredDepartments.length > 0 ? (
+                                filteredDepartments.map((dept) => (
+                                    <div
+                                        key={dept.department}
+                                        className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex flex-col border-b border-gray-100"
+                                        onClick={() =>
+                                            handleDepartmentChange(dept)
+                                        }
+                                    >
+                                        <span className="font-medium">
+                                            {dept.department}
+                                        </span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="px-4 py-3 text-gray-500">
+                                    No departments found
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {errors.department && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.department}
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="relative">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Cost Center<span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    value={formData.department || empDepartment}
+                    className="w-full px-4 py-3 border-2 bg-gray-100 border-gray-500 rounded-lg"
+                    placeholder=""
+                    readOnly
+                />
+                {errors.department && (
+                    <p className="text-red-500 text-xs mt-1">
+                        {errors.department}
+                    </p>
+                )}
+            </div>
+        );
+    };
+
+    const renderApproverField = () => {
+        if (isDropDown) {
+            return (
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Approver <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                        value={localFormData.hod}
+                        onChange={handleApproverChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                        disabled={!selectedDepartment}
+                    >
+                        <option value="">Select Approver</option>
+                        {approvers.map((approver, index) => (
+                            <option key={index} value={approver.hod}>
+                                {approver.hod}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.hod && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.hod}
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Approver <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    name="hod"
+                    value={localFormData.hod}
+                    readOnly
+                    className="w-full px-4 py-3 border-2 border-gray-500 rounded-lg bg-gray-100"
+                    placeholder="HOD will be auto-populated"
+                />
+                {errors.hod && (
+                    <p className="text-red-500 text-xs mt-1">
+                        {errors.hod}
+                    </p>
+                )}
+            </div>
+        );
+    };
+
+
     return (
-        <div className="w-full mx-auto bg-white  shadow-2xl rounded-2xl overflow-hidden ">
-            <div className="bg-gradient-to-r  from-primary to-primary p-6">
+        <div className="w-full mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-primary to-primary p-6">
                 <h2 className="text-3xl font-extrabold text-white text-center">
                     Commercial Details
                 </h2>
@@ -258,18 +504,18 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             <span className="text-red-500">*</span>
                         </label>
                         <select
-                            onChange={handleInputChange}
+                            onChange={handleBusinessUnitChange}
                             value={localFormData.businessUnit}
                             name="businessUnit"
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                         >
+                            <option value="">Select Business Unit</option>
                             {businessUnits.map((unit) => (
                                 <option key={unit.value} value={unit.value}>
                                     {unit.label}
                                 </option>
                             ))}
                         </select>
-
                         {errors.businessUnit && (
                             <p className="text-red-500 text-xs mt-1">
                                 {errors.businessUnit}
@@ -288,7 +534,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                         >
                             <option value="">Select Entity</option>
-
                             {[
                                 ...new Set(
                                     entities.map((entity) => entity.entityName)
@@ -345,122 +590,9 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-6">
-                    <div className="relative">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Department <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={formData.department || empDepartment}
-                                // value={departmentSearch}
-                                // onChange={(e) => {
-                                //     setDepartmentSearch(e.target.value);
-                                //     setIsSearching(true);
-                                // }}
-                                // onFocus={() => setIsSearching(true)}
-                                className="w-full px-4 py-3 border-2 bg-gray-100 border-gray-500 rounded-lg"
-                                placeholder=""
-                                readOnly
-                            />
-                            {/* <Search
-                                className="absolute right-3 top-3 text-gray-400"
-                                size={20}
-                            /> */}
-                        </div>
-                        {/* {isSearching && departmentSearch && (
-                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {filteredDepartments.map((dept) => (
-                                    <div
-                                        key={dept._id}
-                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                        onClick={() => {
-                                            handleInputChange({
-                                                target: {
-                                                    name: "department",
-                                                    value: dept.department,
-                                                },
-                                            });
-                                            setDepartmentSearch(
-                                                dept.department
-                                            );
-                                            setIsSearching(false);
-                                        }}
-                                    >
-                                        {dept.department}
-                                    </div>
-                                ))}
-                                {filteredDepartments.length === 0 && (
-                                    <div className="px-4 py-2 text-gray-500">
-                                        No departments found
-                                    </div>
-                                )}
-                            </div>
-                        )} */}
-                        {errors.department && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.department}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Approver <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="hod"
-                            value={localFormData.hod}
-                            readOnly
-                            className="w-full px-4 py-3 border-2 border-gray-500 rounded-lg  bg-gray-100"
-                            placeholder="HOD will be auto-populated"
-                        />
-                        {errors.hod && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.hod}
-                            </p>
-                        )}
-                    </div>
-{/* 
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Payment Mode <span className="text-red-500">*</span>
-                        </label>
-                        <div className="mt-1">
-                            <div className="grid grid-cols-2 gap-4">
-                                {["Bank Transfer", "Credit Card"].map(
-                                    (type) => (
-                                        <label
-                                            key={type}
-                                            className="inline-flex items-center"
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="paymentMode"
-                                                value={type}
-                                                checked={
-                                                    localFormData.paymentMode ===
-                                                    type
-                                                }
-                                                onChange={handleInputChange}
-                                                className="form-radio h-5 w-5 text-primary transition duration-300 focus:ring-2 focus:ring-primary"
-                                            />
-                                            <span className="ml-2 text-gray-700">
-                                                {type}
-                                            </span>
-                                        </label>
-                                    )
-                                )}
-                            </div>
-                        </div>
-                        {errors.paymentMode && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.paymentMode}
-                            </p>
-                        )}
-                    </div> */}
+                <div className="grid grid-cols-3 gap-6">
+                    {renderDepartmentField()}
+                    {renderApproverField()}
                 </div>
 
                 <div className="space-y-4">
@@ -478,7 +610,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                         Percentage Term{" "}
                                         <span className="text-red-500">*</span>
                                     </th>
-
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Payment Term{" "}
                                         <span className="text-red-500">*</span>
@@ -514,12 +645,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                                         localFormData.isCreditCardSelected
                                                     }
                                                     className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-            ${
-                localFormData.isCreditCardSelected
-                    ? "bg-gray-100 cursor-not-allowed"
-                    : "focus:ring-2 focus:ring-primary"
-            }
-            focus:outline-none focus:border-transparent transition duration-300`}
+                                            ${
+                                                localFormData.isCreditCardSelected
+                                                    ? "bg-gray-100 cursor-not-allowed"
+                                                    : "focus:ring-2 focus:ring-primary"
+                                            }
+                                            focus:outline-none focus:border-transparent transition duration-300`}
                                                     placeholder="Enter Percentage Term"
                                                     style={{
                                                         appearance: "none",
@@ -555,12 +686,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                                         localFormData.isCreditCardSelected
                                                     }
                                                     className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-            ${
-                localFormData.isCreditCardSelected
-                    ? "bg-gray-100 cursor-not-allowed"
-                    : "focus:ring-2 focus:ring-primary"
-            }
-            focus:outline-none focus:border-transparent transition duration-300`}
+                                            ${
+                                                localFormData.isCreditCardSelected
+                                                    ? "bg-gray-100 cursor-not-allowed"
+                                                    : "focus:ring-2 focus:ring-primary"
+                                            }
+                                            focus:outline-none focus:border-transparent transition duration-300`}
                                                 >
                                                     <option value="">
                                                         Select Payment Term
@@ -568,10 +699,10 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                                     <option value="Immediate">
                                                         Immediate
                                                     </option>
-                                                    <option value=" 30 days credit period">
+                                                    <option value="30 days credit period">
                                                         30 days credit period
                                                     </option>
-                                                    <option value=" 45 days credit period">
+                                                    <option value="45 days credit period">
                                                         45 days credit period
                                                     </option>
                                                     <option value="60 days credit period">
@@ -607,12 +738,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                                         localFormData.isCreditCardSelected
                                                     }
                                                     className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-            ${
-                localFormData.isCreditCardSelected
-                    ? "bg-gray-100 cursor-not-allowed"
-                    : "focus:ring-2 focus:ring-primary"
-            }
-            focus:outline-none focus:border-transparent transition duration-300`}
+                                            ${
+                                                localFormData.isCreditCardSelected
+                                                    ? "bg-gray-100 cursor-not-allowed"
+                                                    : "focus:ring-2 focus:ring-primary"
+                                            }
+                                            focus:outline-none focus:border-transparent transition duration-300`}
                                                 >
                                                     <option value="">
                                                         Select Payment Type
@@ -656,11 +787,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                                             index === 0
                                                         }
                                                         className={`flex items-center px-4 py-2 rounded-lg transition duration-300 
-        ${
-            localFormData.isCreditCardSelected || index === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-red-500 text-white hover:bg-red-700"
-        }`}
+                                                ${
+                                                    localFormData.isCreditCardSelected ||
+                                                    index === 0
+                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                        : "bg-red-500 text-white hover:bg-red-700"
+                                                }`}
                                                     >
                                                         <Trash2
                                                             size={16}
@@ -685,7 +817,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                 localFormData.isCreditCardSelected
                                     ? "bg-gray-300 text-black"
                                     : "bg-primary text-white"
-                            } flex items-center px-4 py-2   rounded-lg hover:bg-primary-dark transition duration-300 `}
+                            } flex items-center px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300`}
                             disabled={localFormData.isCreditCardSelected}
                         >
                             <PlusCircle size={16} className="mr-2" />
@@ -693,7 +825,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                         </button>
                     </div>
                 </div>
-
 
                 <div className="grid grid-cols-2 gap-6">
                     <div>
@@ -708,6 +839,11 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             placeholder="Enter Bill To"
                             rows="6"
                         ></textarea>
+                        {errors.billTo && (
+                            <p className="text-red-500 text-xs mt-1">
+                                {errors.billTo}
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -722,6 +858,11 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             placeholder="Enter Ship To"
                             rows="6"
                         ></textarea>
+                        {errors.shipTo && (
+                            <p className="text-red-500 text-xs mt-1">
+                                {errors.shipTo}
+                            </p>
+                        )}
                     </div>
                 </div>
 

@@ -10,6 +10,7 @@ import {
   LogOut,
   CheckCircle,
   Flag,
+  Settings,
 } from "lucide-react";
 import TopBar from "./TopBar";
 import { ToastContainer } from "react-toastify";
@@ -60,11 +61,12 @@ const SidebarLayout = () => {
       { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
       { icon: Users, title: "Employees", path: "/employee-list-table" },
       { icon: Users, title: "Users", path: "/panel-members-table" },
-      { icon: Flag, title: "Reports", path: "/genarate-report-page" },
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
-      { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
+      { icon: Flag, title: "Reports", path: "/genarate-report-page" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
-      { icon: LogOut, title: "Logout", path: "/logout" },
+      { icon: Settings , title: "Settings", path: "/settings" },
+      { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
+
     ],
     Employee: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },

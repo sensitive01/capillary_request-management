@@ -1,7 +1,8 @@
 const Entity = require("../models/entityModel");
 const Employee = require("../models/empModel");
-const addPanelUser = require("../models/addPanelUsers")
-
+const addPanelUser = require("../models/addPanelUsers");
+const Approver = require("../models/approverSchema");
+const darwinBox = require("../models/isDarwinEnabled");
 
 // Create a new entity
 exports.createEntity = async (req, res) => {
@@ -18,43 +19,137 @@ exports.createEntity = async (req, res) => {
 };
 
 // Read all entities
+// exports.getAllEntities = async (req, res) => {
+//   try {
+//     const { empId } = req.params;
+//     console.log("empId-->", empId);
+//     const darwinStatus = await darwinBox.findOne();
+//     const entities = await Entity.find();
+//     const empData =
+//       (await addPanelUser.findOne(
+//         { _id: empId },
+//         { employee_id: 1, department: 1 }
+//       )) ||
+//       (await Employee.findOne(
+//         { _id: empId },
+//         { employee_id: 1, department: 1 }
+//       ));
+
+//     const manualData = await Approver.find();
+//     console.log("Manual Data", manualData);
+//     console.log("darwinStatus", darwinStatus);
+//     const { isDarwinEnabled } = darwinStatus;
+//     let departmentHod;
+
+//     if (!isDarwinEnabled) {
+//       departmentHod = await Employee.find(
+//         { employee_id: empData.employee_id },
+//         { hod: 1, hod_email_id: 1, department: 1 }
+//       );
+//     } else {
+//       console.log("empData.department", empData.department);
+
+//       // Construct regex to match department format in Approver collection
+//       const departmentRegex = new RegExp(`.*${empData.department}.*`, "i");
+
+//       const approverDocs = await Approver.find(
+//         {
+//           "departments.name": departmentRegex, // Match department name even if it has a prefix
+//         },
+//         { "departments.$": 1 }
+//       );
+
+//       console.log("Approver Docs", approverDocs);
+
+//       // Extract matching department HOD details
+//       departmentHod = approverDocs.flatMap((approver) =>
+//         approver.departments.map((dept) => ({
+//           department: dept.name,
+//           hod: dept.approvers.map((appr) => appr.approverName), // Assuming approver is the HOD
+//           hod_email_id: dept.approvers.map((appr) => appr.approverId), // Placeholder for email, update as needed
+//         }))
+//       );
+//     }
+
+//     console.log("departmentHod", departmentHod);
+//     // res.status(200).json({ entities: entities, department: uniqueDepartments });
+//     res.status(200).json({ entities: entities, department: departmentHod });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 exports.getAllEntities = async (req, res) => {
   try {
-    const {empId} = req.params
-    console.log("empId-->",empId)
+    const { empId } = req.params;
+    console.log("empId-->", empId);
+
+    const darwinStatus = await darwinBox.findOne();
     const entities = await Entity.find();
-    const empData = await addPanelUser.findOne({_id:empId},{employee_id:1})
 
-    // const uniqueDepartments = await Employee.aggregate([
-    //   {
-    //     $group: {
-    //       _id: "$department", 
-    //       hod: { $first: "$hod" }, 
-    //       hod_email_id: { $first: "$hod_email_id" }
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       _id: 0, 
-    //       department: "$_id", 
-    //       hod: 1, 
-    //       hod_email_id: 1, 
-    //     },
-    //   },
-    // ]);
-    
-    const departmentHod = await Employee.find({employee_id:empData.employee_id},{hod:1,  hod_email_id:1,department:1})
-    console.log("departmentHod",departmentHod)
-    // console.log("Unique Departments", uniqueDepartments);
-    // res.status(200).json({ entities: entities, department: uniqueDepartments });
-    res.status(200).json({ entities: entities, department: departmentHod });
+    const empData =
+      (await addPanelUser.findOne(
+        { _id: empId },
+        { employee_id: 1, department: 1 }
+      )) ||
+      (await Employee.findOne(
+        { _id: empId },
+        { employee_id: 1, department: 1 }
+      ));
 
+    const { isDarwinEnabled } = darwinStatus;
+    let departmentHod =[];
+    let isDropDown;
+
+    if (!isDarwinEnabled) {
+      departmentHod = await Employee.find(
+        { employee_id: empData.employee_id },
+        { hod: 1, hod_email_id: 1, department: 1 }
+      );
+      isDropDown = false;
+    } else {
+      console.log("empData.department", empData.department);
+
+
+
+      const departmentData = await Approver.find({},
+        { departments: 1,businessUnit: 1 } 
+      );
+
+      console.log("Approver Department Data:", departmentData);
+
+      departmentHod = [];
+
+      if (departmentData.length > 0) {
+        departmentData.forEach((doc) => {
+          console.log("DOC",doc)
+          doc.departments.forEach((matchedDepartment) => {
+            departmentHod.push(
+              ...matchedDepartment.approvers.map((item) => ({
+                businessUnit:doc.businessUnit,
+                department: matchedDepartment.name,
+                hod: item.approverName,
+                hod_email_id: item.approverEmail,
+                approverId: item.approverId,
+              }))
+            );
+          });
+        });
+      }
+
+      isDropDown = true;
+    }
+
+    console.log("departmentHod", departmentHod);
+
+    res
+      .status(200)
+      .json({ entities: entities, department: departmentHod, isDropDown });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Read a single entity by ID
 exports.getEntityById = async (req, res) => {
   try {
     const entity = await Entity.findOne({ _id: req.params.id });
