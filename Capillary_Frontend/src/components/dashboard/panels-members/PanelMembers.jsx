@@ -177,6 +177,7 @@ const PanelMembers = () => {
               onChange={handleInputChange}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             >
+              <option value="">Select role</option>
               <option value="Admin">Admin</option>
               <option value="Business Finance">Business Finance</option>
               <option value="Vendor Management">Vendor Management</option>

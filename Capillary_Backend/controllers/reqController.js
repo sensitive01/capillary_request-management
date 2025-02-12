@@ -703,17 +703,20 @@ const getApprovedReqData = async (req, res) => {
     }
     let reqData;
 
-    console.log(
-      "inside firstLevelApproval.hodDepartment",
-      consolidatedData.role
-    );
-    if (consolidatedData.role === "HOD Department") {
-      reqData = await CreateNewReq.find({
-        "firstLevelApproval.hodDepartment": consolidatedData.department,
-      })
-        .sort({ createdAt: -1 })
-        .exec();
-    } else {
+    // if (consolidatedData.role === "HOD Department") {
+    //   reqData = await CreateNewReq.find({
+    //     "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+    //   })
+    //     .sort({ createdAt: -1 })
+    //     .exec();
+    // }
+
+    reqData = await CreateNewReq.find({
+      "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+    })
+      .sort({ createdAt: -1 })
+      .exec();
+    if (!reqData) {
       console.log("else");
       reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
     }
@@ -1287,9 +1290,10 @@ const isApproved = async (req, res) => {
     if (
       reqData &&
       reqData.firstLevelApproval &&
-      empData.department === reqData.firstLevelApproval.hodDepartment
+      empData.company_email_id === reqData.firstLevelApproval.hodEmail &&
+      reqData.firstLevelApproval.approved === true
     ) {
-      console.log("IF");
+      console.log("IF ckhec");
       if (reqData.firstLevelApproval.status === "Approved") {
         disable = true;
       }
@@ -1311,6 +1315,7 @@ const isApproved = async (req, res) => {
         !lastApprovedDepartment &&
         lastApprovedDepartment?.nextDepartment !== empData?.department &&
         lastApprovedDepartment?.status !== "Approved"
+        && empData.company_email_id !== reqData.firstLevelApproval.hodEmail
       ) {
         disable = true;
       }
@@ -1470,7 +1475,7 @@ const uploadInvoiceDocuments = async (req, res) => {
     console.log("Welcome to upload documets");
     const { reqId, empId } = req.params;
     const { link } = req.body;
-    console.log(link,reqId, empId )
+    console.log(link, reqId, empId);
 
     // Fetch employee data
     const empData =
@@ -1482,8 +1487,7 @@ const uploadInvoiceDocuments = async (req, res) => {
           department: 1,
         }
       )) || (await addPanelUsers.findOne({ _id: empId }));
-      console.log(empData )
-
+    console.log(empData);
 
     if (!empData) {
       return res.status(404).json({ message: "Employee not found" });
@@ -1601,15 +1605,15 @@ const approveRequest = async (req, res) => {
         hasDeviations: 1,
         commercials: 1,
         procurements: 1,
-        reqid:1
+        reqid: 1,
       }
     );
     console.log("----->", reqData);
     const requestorData = await empModel.findOne(
       { _id: reqData.userId },
-      { company_email_id: 1 ,full_name:1,department:1}
+      { company_email_id: 1, full_name: 1, department: 1 }
     );
-    const theReqId = reqData.reqid
+    const theReqId = reqData.reqid;
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
@@ -1944,8 +1948,8 @@ const approveRequest = async (req, res) => {
         { _id: reqData.commercials.entityId },
         { poMailId: 1 }
       );
-      console.log("entityMail",entityMail)
-      const {poMailId} = entityMail
+      console.log("entityMail", entityMail);
+      const { poMailId } = entityMail;
       await sendEmail(poMailId, "financeApprovalEmail", {
         theReqId,
       });
@@ -2109,7 +2113,7 @@ const releaseReqStatus = async (req, res) => {
         procurements: 1,
       }
     );
-    const theReqId = reqData.reqid
+    const theReqId = reqData.reqid;
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
