@@ -26,7 +26,6 @@ const currencies = [
   { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-
 const Approvals = () => {
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
@@ -52,23 +51,10 @@ const Approvals = () => {
       setIsLoading(true);
 
       try {
-        if (role === "Admin") {
-          // Handle admin case
-        } else {
-          const response = await getApprovedReq(userId);
-          if (response.status === 200) {
-            // if (role === "HOD Department") {
-            //   const filteredUsers = response.data.reqData.filter(
-            //     (items) => items.firstLevelApproval.status === "Pending"
-            //   );
-            //   setFilteredUsers(filteredUsers);
-            //   setUsers(filteredUsers);
-            // } else {
-
-            setUsers(response.data.reqData);
-            setFilteredUsers(response.data.reqData);
-            //   }
-          }
+        const response = await getApprovedReq(userId);
+        if (response.status === 200) {
+          setUsers(response.data.reqData);
+          setFilteredUsers(response.data.reqData);
         }
       } catch (error) {
         console.error("Error fetching requests:", error);

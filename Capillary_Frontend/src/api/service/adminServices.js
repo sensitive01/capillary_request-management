@@ -493,12 +493,12 @@ export const getAdminReqListEmployee = async () => {
   }
 };
 
-export const hodApproveRequest = async (userId, role, reqId, status) => {
+export const hodApproveRequest = async (userId, role, reqId, status,email) => {
   try {
     console.log("request/accept-request-hod");
     const response = await adminServices.post(
       `/request/accept-request-hod/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status,email }
     );
     return response;
   } catch (err) {
@@ -510,12 +510,13 @@ export const businessFinanceApproveRequest = async (
   userId,
   role,
   reqId,
-  status
+  status,
+  email
 ) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-business/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status,email }
     );
     return response;
   } catch (err) {
@@ -527,12 +528,13 @@ export const vendorManagementApproveRequest = async (
   userId,
   role,
   reqId,
-  status
+  status,
+  email
 ) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-vendor/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status,email }
     );
     return response;
   } catch (err) {
@@ -540,11 +542,11 @@ export const vendorManagementApproveRequest = async (
   }
 };
 
-export const legalTeamApproveRequest = async (userId, role, reqId, status) => {
+export const legalTeamApproveRequest = async (userId, role, reqId, status,email) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-legal/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status,email }
     );
     return response;
   } catch (err) {
@@ -556,12 +558,13 @@ export const infoSecurityApproveRequest = async (
   userId,
   role,
   reqId,
-  status
+  status,email
+
 ) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-info-security/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status ,email}
     );
     return response;
   } catch (err) {
@@ -569,11 +572,11 @@ export const infoSecurityApproveRequest = async (
   }
 };
 
-export const poTeamApproveRequest = async (userId, role, reqId, status) => {
+export const poTeamApproveRequest = async (userId, role, reqId, status,email) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-po-team/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status,email }
     );
     return response;
   } catch (err) {
@@ -581,11 +584,11 @@ export const poTeamApproveRequest = async (userId, role, reqId, status) => {
   }
 };
 
-export const hofApproveRequest = async (userId, role, reqId, status) => {
+export const hofApproveRequest = async (userId, role, reqId, status,email) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-hof-team/${userId}`,
-      { role, reqId, status }
+      { role, reqId, status,email }
     );
     return response;
   } catch (err) {
@@ -651,12 +654,14 @@ export const releseReqStatus = async (
   department,
   userId,
   reqId,
-  role
+  role,
+  email
+
 ) => {
   try {
     const response = await adminServices.put(
       `/request/relese-status/${userId}/${reqId}`,
-      { status, department, role }
+      { status, department, role,email }
     );
     return response;
   } catch (err) {

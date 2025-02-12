@@ -81,7 +81,7 @@ const PanelMembers = () => {
       if (response.status === 201) {
         toast.success("Employee added successfully");
         setTimeout(() => {
-          navigate("/employee-list-table");
+          navigate("/panel-members-table");
         }, 1500);
       }
     } catch (error) {

@@ -5,7 +5,7 @@ const Employee = require("../models/empModel");
 const sendEmail = require("../utils/sendEmail");
 const { sendBulkEmails } = require("../utils/otherTestEmail");
 const CreateNewReq = require("../models/createNewReqSchema");
-
+const Approver = require("../models/approverSchema")
 const { CAPILLARY_JWT_SECRET } = require("../config/variables");
 console.log(CAPILLARY_JWT_SECRET);
 
@@ -13,6 +13,7 @@ const verifyUser = async (req, res) => {
   try {
     console.log(req.body);
     const { email } = req.body;
+    
     let consolidatedData;
 
     const panelUserData = await addPanelUsers
@@ -28,7 +29,7 @@ const verifyUser = async (req, res) => {
       { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
     ).lean();
 
-    const isEmpHod = await Employee.findOne({ hod_email_id: email }).lean();
+    const isEmpHod = (await Approver.findOne({ approverEmail: email }).lean())||(await Employee.findOne({ hod_email_id: email }).lean());
     console.log("isEmpHod", isEmpHod);
 
     if (panelUserData) {
@@ -61,31 +62,6 @@ const verifyUser = async (req, res) => {
       console.log("Token", token);
 
       await sendEmail(email, "login", { full_name });
-
-      // const subject = "Login Notification from PO Request Portal";
-      // const textContent = "";
-      // const htmlContent = `
-      //   <!DOCTYPE html>
-      //   <html>
-      //   <body>
-      //     <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
-      //       <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-      //         <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
-      //           <h1>Capillary Technologies - PO Request Portal</h1>
-      //         </div>
-      //         <div style="padding: 20px; color: #333;">
-      //           <p>Hi <strong>${full_name}</strong>,</p>
-      //           <p>You have successfully logged in to PO Request Portal!</p>
-      //           <p>If you did not perform this action, please sign out immediately and notify us.</p>
-      //           <p>Thank you,<br>Capillary Finance</p>
-      //         </div>
-      //       </div>
-      //     </div>
-      //   </body>
-      //   </html>
-      // `;
-
-      // await sendEmail(email, subject, textContent, htmlContent);
 
       return res.status(200).json({
         success: true,
@@ -134,6 +110,7 @@ const createNewReq = async (req, res) => {
     const panelMemberEmail = (await addPanelUsers.find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 }).lean())
       .map((member) => member.company_email_id);
     panelMemberEmail.push(commercials.hodEmail);
+    console.log("panelMemberEmail",panelMemberEmail)
 
     const newRequest = new CreateNewReq({
       reqid,

@@ -58,15 +58,16 @@ const SidebarLayout = () => {
     Admin: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
+      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+
       { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
       { icon: Users, title: "Employees", path: "/employee-list-table" },
       { icon: Users, title: "Users", path: "/panel-members-table" },
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
       { icon: Flag, title: "Reports", path: "/genarate-report-page" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
-      { icon: Settings , title: "Settings", path: "/settings" },
+      { icon: Settings, title: "Settings", path: "/settings" },
       { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
-
     ],
     Employee: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },

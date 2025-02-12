@@ -48,6 +48,8 @@ const PreviewTheReq = () => {
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
     const department = localStorage.getItem("department");
+    const email = localStorage.getItem("email")
+    console.log(email)
     const [showDialog, setShowDialog] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -730,12 +732,13 @@ const PreviewTheReq = () => {
                 userId,
                 role,
                 params.id,
-                status
+                status,
+                email
             );
             if (response.status === 200) {
                 toast.success(response.data.message);
                 setTimeout(() => {
-                    navigate("/req-list-table");
+                    navigate("/approval-request-list");
                 }, 1500);
             } else if (response.status === 400) {
                 console.log("response", response.response);
@@ -757,11 +760,15 @@ const PreviewTheReq = () => {
                 department,
                 userId,
                 request._id,
-                role
+                role,
+                email
             );
             console.log("response", response);
             if (response.status === 200) {
                 toast.success(response.data.message);
+                setTimeout(() => {
+                    navigate("/approval-request-list");
+                }, 1500);
             } else {
                 toast.error("Something went wrong");
             }
