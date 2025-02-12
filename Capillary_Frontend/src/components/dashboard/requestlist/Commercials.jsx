@@ -12,6 +12,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     const [approvers, setApprovers] = useState([]);
     const [filteredApprovers, setFilteredApprovers] = useState([]);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
+    const [availableBusinessUnits, setAvailableBusinessUnits] = useState([]);
 
     const [localFormData, setLocalFormData] = useState({
         entity: formData.entity || "",
@@ -50,21 +51,44 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     setDepartment(response.data.department || []);
                     setIsDropDown(response.data.isDropDown);
 
+                    // Handle business units based on isDropDown
+                    if (
+                        response.data.isDropDown &&
+                        Array.isArray(response.data.department)
+                    ) {
+                        // Create a Set to store unique business units
+                        const uniqueBusinessUnitsSet = new Set();
+
+                        // Add all business units to the Set
+                        response.data.department.forEach((dept) => {
+                            if (dept.businessUnit) {
+                                uniqueBusinessUnitsSet.add(dept.businessUnit);
+                            }
+                        });
+
+                        // Convert Set to array of objects
+                        const uniqueBusinessUnits = Array.from(
+                            uniqueBusinessUnitsSet
+                        ).map((unit) => ({
+                            value: unit,
+                            label: unit,
+                        }));
+
+                        setAvailableBusinessUnits(uniqueBusinessUnits);
+                    } else {
+                        // Use the static business units from the import
+                        setAvailableBusinessUnits(businessUnits);
+                    }
+
                     if (
                         localFormData.businessUnit &&
                         Array.isArray(response.data.department) &&
                         isDropDown
                     ) {
                         const filtered = response.data.department.filter(
-                            (dept) => {
-                                return (
-                                    dept.businessUnit?.toLowerCase() ===
-                                        localFormData.businessUnit.toLowerCase() &&
-                                    dept.department
-                                        ?.toLowerCase()
-                                        .includes(empDepartment.toLowerCase())
-                                );
-                            }
+                            (dept) =>
+                                dept.businessUnit?.toLowerCase() ===
+                                localFormData.businessUnit.toLowerCase()
                         );
 
                         const deptMap = new Map();
@@ -73,6 +97,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             if (!deptMap.has(key)) {
                                 deptMap.set(key, {
                                     department: dept.department,
+                                    businessUnit: dept.businessUnit,
                                     approvers: filtered
                                         .filter(
                                             (d) =>
@@ -91,7 +116,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                         setFilteredDepartments(Array.from(deptMap.values()));
                     }
 
-                    // Set initial department and HOD if available
                     if (!isDropDown && localFormData.department) {
                         const selectedDept = response.data.department.find(
                             (dept) =>
@@ -108,17 +132,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                 hod: selectedDept.hod,
                                 hodEmail: selectedDept.hod_email_id,
                             }));
-                        } else {
-                            setLocalFormData((prev) => ({
-                                ...prev,
-                                hod: department.hod,
-                                hodEmail: department.hod_email_id,
-                            }));
-                            setFormData((prev) => ({
-                                ...prev,
-                                hod: department.hod,
-                                hodEmail: department.hod_email_id,
-                            }));
                         }
                     }
                 }
@@ -128,6 +141,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                 setFilteredDepartments([]);
                 setAvailableDepartments([]);
                 setUniqueDepartments(new Map());
+                setAvailableBusinessUnits(isDropDown ? [] : businessUnits);
             }
         };
         fetchEntity();
@@ -178,8 +192,8 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         const updatedFormData = {
             ...localFormData,
             department: selectedDept.department,
-            hod: "", // Reset HOD when department changes
-            hodEmail: "", // Reset HOD email when department changes
+            hod: "",
+            hodEmail: "",
         };
 
         setLocalFormData(updatedFormData);
@@ -198,15 +212,6 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                 ...localFormData,
                 hod: selectedApprover.hod,
                 hodEmail: selectedApprover.hodEmail,
-            };
-
-            setLocalFormData(updatedFormData);
-            setFormData(updatedFormData);
-        } else {
-            const updatedFormData = {
-                ...localFormData,
-                hod: department.hod,
-                hodEmail: department.hodEmail,
             };
 
             setLocalFormData(updatedFormData);
@@ -382,6 +387,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
     const renderDepartmentField = () => {
         if (isDropDown) {
             return (
@@ -428,6 +434,9 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                     >
                                         <span className="font-medium">
                                             {dept.department}
+                                        </span>
+                                        <span className="text-sm text-gray-500">
+                                            {dept.businessUnit}
                                         </span>
                                     </div>
                                 ))
@@ -516,6 +525,31 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             </div>
         );
     };
+    const renderBusinessUnitField = () => (
+        <div>
+            <label className="block text-sm font-semibold text-primary mb-2">
+                Business Unit <span className="text-red-500">*</span>
+            </label>
+            <select
+                onChange={handleBusinessUnitChange}
+                value={localFormData.businessUnit}
+                name="businessUnit"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+            >
+                <option value="">Select Business Unit</option>
+                {availableBusinessUnits.map((unit) => (
+                    <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                    </option>
+                ))}
+            </select>
+            {errors.businessUnit && (
+                <p className="text-red-500 text-xs mt-1">
+                    {errors.businessUnit}
+                </p>
+            )}
+        </div>
+    );
 
     return (
         <div className="w-full mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
@@ -527,7 +561,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
             <div className="p-8 space-y-6">
                 <div className="grid grid-cols-4 gap-6">
-                    <div>
+                    {/* <div>
                         <label className="block text-sm font-semibold text-primary mb-2">
                             Business Unit{" "}
                             <span className="text-red-500">*</span>
@@ -550,7 +584,8 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                 {errors.businessUnit}
                             </p>
                         )}
-                    </div>
+                    </div> */}
+                    {renderBusinessUnitField()}
 
                     <div>
                         <label className="block text-sm font-semibold text-primary mb-2">
