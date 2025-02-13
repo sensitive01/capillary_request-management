@@ -7,7 +7,7 @@ const reqController = require("../controllers/reqController")
 
 
 
-router.get('/get-statistic-data/:empId/:role', reqController.getStatisticData); 
+router.get('/get-statistic-data/:empId/:role/:email', reqController.getStatisticData); 
 router.get('/get-new-notification/:id', reqController.getNewNotifications); 
 router.get('/get-approved-req/:id', reqController.getApprovedReqData); 
 router.get('/is-display-button/:id', reqController.isButtonSDisplay); 

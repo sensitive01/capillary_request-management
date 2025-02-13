@@ -23,10 +23,10 @@ export const fetchDateFilterStatistics = async (empId, role, from, to) => {
   }
 };
 
-export const getStatisticData = async (empId, role) => {
+export const getStatisticData = async (empId, role,email) => {
   try {
     const response = await adminServices.get(
-      `/request/get-statistic-data/${empId}/${role}`
+      `/request/get-statistic-data/${empId}/${role}/${email}`
     );
     return response;
   } catch (err) {

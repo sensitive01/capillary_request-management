@@ -63,7 +63,7 @@ exports.createEmployee = async (req, res) => {
 exports.syncEmployeeData = async (req, res) => {
   try {
     const { syncOffEmployee } = req.body;
-    console.log("syncOffEmployee", syncOffEmployee);
+    // console.log("syncOffEmployee", syncOffEmployee);
     const options = {
       method: "POST",
       url: `${DARWINBOX_BASE_URL}`,
@@ -83,8 +83,8 @@ exports.syncEmployeeData = async (req, res) => {
 
     const response = await axios(options);
     const employees = response.data.employee_data;
-    console.log("response", response);
-    console.log("Employees===>", employees);
+    // console.log("response", response);
+    // console.log("Employees===>", employees);
 
     await Employee.updateMany(
       { employee_id: { $in: syncOffEmployee } },

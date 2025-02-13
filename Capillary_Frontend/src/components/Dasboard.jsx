@@ -35,8 +35,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
-  const empId = localStorage.getItem("userId");
+  const empId = localStorage.getItem("capEmpId");
   const department = localStorage.getItem("department");
+  const email= localStorage.getItem("email") 
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     fromDate: "",
@@ -64,7 +65,7 @@ const Dashboard = () => {
       setIsLoading(true);
 
       try {
-        const response = await getStatisticData(empId, role);
+        const response = await getStatisticData(empId, role,email);
         if (response.status === 200) {
           setDashboardStats(response.data);
         }

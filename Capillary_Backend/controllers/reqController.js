@@ -5,6 +5,7 @@ const reqModel = require("../models/reqModel");
 const PDFDocument = require("pdfkit");
 const addPanelUsers = require("../models/addPanelUsers");
 const sendEmail = require("../utils/sendEmail");
+const Approver = require("../models/approverSchema");
 
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 const entityModel = require("../models/entityModel");
@@ -190,13 +191,13 @@ const getNewNotifications = async (req, res) => {
 
 const getStatisticData = async (req, res) => {
   try {
-    const { empId, role } = req.params;
+    const { empId, role, email } = req.params;
 
     let consolidatedData;
 
     const panelUserData = await addPanelUsers
       .findOne(
-        { _id: empId },
+        { employee_id: empId },
         { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
       )
       .lean();
@@ -206,7 +207,7 @@ const getStatisticData = async (req, res) => {
     } else {
       const employeeData = await empModel
         .findOne(
-          { _id: empId },
+          { employee_id: empId },
           {
             _id: 1,
             full_name: 1,
@@ -217,11 +218,15 @@ const getStatisticData = async (req, res) => {
         )
         .lean();
 
-      const isEmpHod = await empModel
-        .findOne({
-          hod_email_id: employeeData?.company_email_id,
-        })
-        .lean();
+      const isEmpHod =
+        (await Approver.findOne({
+          "departments.approvers.approverEmail": email,
+        }).lean()) ||
+        (await empModel
+          .findOne({
+            hod_email_id: employeeData?.company_email_id,
+          })
+          .lean());
 
       if (employeeData && !employeeData.role) {
         consolidatedData = {
@@ -367,7 +372,7 @@ const getStatisticData = async (req, res) => {
       });
 
       const hodApprovals = await CreateNewReq.find(
-        { "firstLevelApproval.hodDepartment": consolidatedData.department },
+        { "firstLevelApproval.hodEmail": email },
         { firstLevelApproval: 1 }
       ).lean();
       totalApprovals = hodApprovals.length;
@@ -381,7 +386,7 @@ const getStatisticData = async (req, res) => {
       });
 
       const completedApprovalsData = await CreateNewReq.find({
-        "firstLevelApproval.hodDepartment": consolidatedData.department,
+        "firstLevelApproval.hodEmail": email,
         status: "Approved",
       }).lean();
 
@@ -391,7 +396,7 @@ const getStatisticData = async (req, res) => {
         if (
           req.supplies?.totalValue &&
           req.supplies?.selectedCurrency &&
-          req.firstLevelApproval?.hodDepartment === consolidatedData.department
+          req.firstLevelApproval?.hodEmail === email
         ) {
           const { selectedCurrency, totalValue } = req.supplies;
           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
@@ -706,8 +711,6 @@ const calculateBudget = (reqData, department = null) => {
 //     }
 //     let reqData;
 
-
-
 //     reqData = await CreateNewReq.find({
 //       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
 //     })
@@ -728,7 +731,6 @@ const calculateBudget = (reqData, department = null) => {
 //     res.status(500).json({ message: "Internal Server Error" });
 //   }
 // };
-
 
 const getApprovedReqData = async (req, res) => {
   try {
@@ -775,7 +777,9 @@ const getApprovedReqData = async (req, res) => {
     }
 
     if (!consolidatedData || !consolidatedData.company_email_id) {
-      return res.status(404).json({ message: "User not found or invalid data" });
+      return res
+        .status(404)
+        .json({ message: "User not found or invalid data" });
     }
 
     let reqData = await CreateNewReq.find({
@@ -786,7 +790,8 @@ const getApprovedReqData = async (req, res) => {
 
     console.log("reqData", reqData);
 
-    if (reqData.length === 0) {  // Corrected condition
+    if (reqData.length === 0) {
+      // Corrected condition
       console.log("Fetching all requests as no matching records found.");
       reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
     }
@@ -800,15 +805,6 @@ const getApprovedReqData = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-
-
-
-
-
-
-
 
 const isButtonSDisplay = async (req, res) => {
   try {
@@ -2182,7 +2178,7 @@ const approveRequest = async (req, res) => {
 const releaseReqStatus = async (req, res) => {
   try {
     const { empId, reqId } = req.params;
-    const { status, department, role ,email} = req.body;
+    const { status, department, role, email } = req.body;
     console.log(status, department, role);
 
     // Fetch employee data from the database

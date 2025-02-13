@@ -45,6 +45,8 @@ const HomePage = () => {
         localStorage.setItem("user", JSON.stringify({ ...user }));
         localStorage.setItem("department", response?.data?.data?.department);
         localStorage.setItem("empAccessToken", response?.data?.token);
+        localStorage.setItem("capEmpId", response?.data?.data?.employee_id);
+
 
         navigate("/dashboard");
       } else if (response.status === 401) {

@@ -5,7 +5,7 @@ const Employee = require("../models/empModel");
 const sendEmail = require("../utils/sendEmail");
 const { sendBulkEmails } = require("../utils/otherTestEmail");
 const CreateNewReq = require("../models/createNewReqSchema");
-const Approver = require("../models/approverSchema")
+const Approver = require("../models/approverSchema");
 const { CAPILLARY_JWT_SECRET } = require("../config/variables");
 console.log(CAPILLARY_JWT_SECRET);
 
@@ -13,23 +13,28 @@ const verifyUser = async (req, res) => {
   try {
     console.log(req.body);
     const { email } = req.body;
-    
+    console.log("Email", email);
+
     let consolidatedData;
 
     const panelUserData = await addPanelUsers
       .findOne(
         { company_email_id: email },
-        { _id: 1, full_name: 1, department: 1, role: 1 }
+        { _id: 1, full_name: 1, department: 1, role: 1,employee_id:1 }
       )
       .lean();
     console.log("panelUserData", panelUserData);
 
     const employeeData = await Employee.findOne(
       { company_email_id: email },
-      { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
+      { _id: 1, full_name: 1, department: 1, hod_email_id: 1,employee_id:1 }
     ).lean();
+    console.log("employeeData", employeeData);
 
-    const isEmpHod = (await Approver.findOne({ approverEmail: email }).lean())||(await Employee.findOne({ hod_email_id: email }).lean());
+    const isEmpHod =
+      (await Approver.findOne({
+        "departments.approvers.approverEmail": email,
+      }).lean()) || (await Employee.findOne({ hod_email_id: email }).lean());
     console.log("isEmpHod", isEmpHod);
 
     if (panelUserData) {
@@ -45,8 +50,6 @@ const verifyUser = async (req, res) => {
 
     const full_name = consolidatedData?.full_name || "Unknown User";
 
-    console.log("Consolidated Employee Data:", consolidatedData);
-
     if (consolidatedData) {
       const token = jwt.sign(
         {
@@ -59,7 +62,6 @@ const verifyUser = async (req, res) => {
         CAPILLARY_JWT_SECRET,
         { expiresIn: "10h" }
       );
-      console.log("Token", token);
 
       await sendEmail(email, "login", { full_name });
 
@@ -88,29 +90,46 @@ const verifyUser = async (req, res) => {
 const createNewReq = async (req, res) => {
   try {
     const { id } = req.params;
-    const { complinces, commercials, procurements, supplies, hasDeviations } = req.body;
+    const { complinces, commercials, procurements, supplies, hasDeviations } =
+      req.body;
     const { vendorName, email, isNewVendor } = procurements;
 
     if (!complinces || !commercials) {
-      return res.status(400).json({ message: "Missing required compliance or commercial data." });
+      return res
+        .status(400)
+        .json({ message: "Missing required compliance or commercial data." });
     }
 
     const date = new Date();
-    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${Math.floor(Math.random() * 100) + 1}`;
+    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
+      Math.floor(Math.random() * 100) + 1
+    }`;
 
-    let empData = await Employee.findOne({ _id: id }, { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }).lean();
+    let empData = await Employee.findOne(
+      { _id: id },
+      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+    ).lean();
     if (!empData) {
       empData = await addPanelUsers.findOne({ _id: id }).lean();
     }
 
     if (!empData) {
-      return res.status(404).json({ message: "Employee not found. Please provide a valid employee ID." });
+      return res
+        .status(404)
+        .json({
+          message: "Employee not found. Please provide a valid employee ID.",
+        });
     }
 
-    const panelMemberEmail = (await addPanelUsers.find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 }).lean())
-      .map((member) => member.company_email_id);
+    const panelMemberEmail = (
+      await addPanelUsers
+        .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
+        .lean()
+    ).map((member) => member.company_email_id);
     panelMemberEmail.push(commercials.hodEmail);
-    console.log("panelMemberEmail",panelMemberEmail)
+    console.log("panelMemberEmail", panelMemberEmail);
 
     const newRequest = new CreateNewReq({
       reqid,
@@ -132,19 +151,37 @@ const createNewReq = async (req, res) => {
 
     await newRequest.save();
 
-    await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqid);
+    await sendBulkEmails(
+      panelMemberEmail,
+      empData.full_name,
+      empData.department,
+      reqid
+    );
 
     if (isNewVendor) {
       await sendEmail(email, "vendorOnboarding", { vendorName });
 
-      const vendorManagementEmails = await addPanelUsers.find(
-        { $or: [{ department: "Vendor Management" }, { role: "Vendor Management" }] },
-        { company_email_id: 1 }
-      ).lean();
+      const vendorManagementEmails = await addPanelUsers
+        .find(
+          {
+            $or: [
+              { department: "Vendor Management" },
+              { role: "Vendor Management" },
+            ],
+          },
+          { company_email_id: 1 }
+        )
+        .lean();
 
-      await Promise.all(vendorManagementEmails.map(({ company_email_id }) =>
-        sendEmail(company_email_id, "newVendorOnBoard", { vendorName, email,reqid })
-      ));
+      await Promise.all(
+        vendorManagementEmails.map(({ company_email_id }) =>
+          sendEmail(company_email_id, "newVendorOnBoard", {
+            vendorName,
+            email,
+            reqid,
+          })
+        )
+      );
     }
 
     res.status(201).json({
@@ -154,10 +191,11 @@ const createNewReq = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating request:", error);
-    res.status(500).json({ message: "Error creating request", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error creating request", error: error.message });
   }
 };
-
 
 module.exports = {
   verifyUser,
