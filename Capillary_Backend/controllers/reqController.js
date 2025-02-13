@@ -1338,15 +1338,15 @@ const getReports = async (req, res) => {
 
 const isApproved = async (req, res) => {
   try {
-    console.log("is approve");
+    console.log("is approve", req.params);
     const { userId, reqId } = req.params;
 
     // Fetch employee data
     const empData =
       (await empModel.findOne(
-        { _id: userId },
+        { employee_id: userId },
         { full_name: 1, employee_id: 1, company_email_id: 1, department: 1 }
-      )) || (await addPanelUsers.findOne({ _id: userId }));
+      )) || (await addPanelUsers.findOne({ employee_id: userId }));
 
     if (!empData) {
       return res
@@ -1422,11 +1422,14 @@ const editSendRequestMail = async (req, res) => {
     const { empId, reqId } = req.params;
     console.log("Welcome sending the edit request mail", empId);
 
-    const reqData = await CreateNewReq.findOne({ _id: reqId }, { reqid: 1 });
+    const reqData = await CreateNewReq.findOne(
+      { _id: reqId },
+      { reqid: 1, firstLevelApproval: 1 }
+    );
 
     const empData =
       (await empModel.findOne(
-        { _id: empId },
+        { employee_id: empId },
         {
           full_name: 1,
           employee_id: 1,
@@ -1445,18 +1448,20 @@ const editSendRequestMail = async (req, res) => {
     const {
       full_name,
       hod_email_id,
-      hod,
       employee_id,
       department,
       company_email_id,
     } = empData;
 
-    await sendLoginEmail(hod_email_id, "editRequest", {
-      employee_id,
-      full_name,
+    const { hodEmail, hodName } = reqData.firstLevelApproval;
+
+    await sendEmail(hodEmail, "editRequest", {
+      empId: employee_id,
+      empName: full_name,
+      empEmail: company_email_id,
       reqid: reqData.reqid,
-      hod,
-      company_email_id,
+      to_name: hodName,
+
       department,
     });
 
@@ -1611,10 +1616,10 @@ const uploadInvoiceDocuments = async (req, res) => {
 
 const approveRequest = async (req, res) => {
   try {
-    console.log("Welcome to approbe req");
+    console.log("Welcome to approbe req", req.body);
     const { reqId, status, remarks, email } = req.body;
     const { id } = req.params; // Approver's ID
-    console.log("Status", status);
+    console.log("Status", status, id);
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
       {
@@ -1642,7 +1647,7 @@ const approveRequest = async (req, res) => {
 
     const panelUserData = await addPanelUsers
       .findOne(
-        { _id: id },
+        { employee_id: id },
         { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
       )
       .lean(); // Use lean here as well
@@ -1651,7 +1656,7 @@ const approveRequest = async (req, res) => {
     // Find the employee data
     const employeeData = await empModel
       .findOne(
-        { _id: id },
+        { employee_id: id },
         {
           _id: 1,
           full_name: 1,
@@ -1667,12 +1672,7 @@ const approveRequest = async (req, res) => {
     if (panelUserData) {
       approverData = panelUserData;
     } else {
-      // Determine role dynamically
       if (employeeData && !employeeData.role) {
-        // const isEmpHod = await empModel
-        //   .findOne({ hod_email_id: employeeData.company_email_id })
-        //   .lean();
-
         const isEmpHod = firstLevelApproval.hodEmail === email;
 
         console.log("isEmpHod", isEmpHod);
@@ -1688,9 +1688,8 @@ const approveRequest = async (req, res) => {
 
     // Fetch the request data
 
-    console.log("----->", reqData);
     const requestorData = await empModel.findOne(
-      { _id: reqData.userId },
+      { employee_id: reqData.userId },
       { company_email_id: 1, full_name: 1, department: 1 }
     );
     const theReqId = reqData.reqid;
@@ -1744,20 +1743,6 @@ const approveRequest = async (req, res) => {
       return res.status(400).json({
         message: `${department} has already processed this request with status: ${departmentPreviousApproval.status}`,
       });
-    }
-
-    // Validation 4: Check if it's the department's turn in the workflow
-    if (latestApproval) {
-      const currentDeptIndex = departmentOrder.indexOf(department);
-      const lastApproveDeptIndex = departmentOrder.indexOf(
-        latestApproval.departmentName
-      );
-
-      // if (currentDeptIndex !== lastApproveDeptIndex + 1) {
-      //   return res.status(400).json({
-      //     message: `Invalid workflow order. Expected department is ${latestApproval.nextDepartment}`,
-      //   });
-      // }
     }
 
     // Validation 5: Check if it matches the expected next department
@@ -1848,14 +1833,11 @@ const approveRequest = async (req, res) => {
         message: "Unable to update request. Please verify the workflow state.",
       });
     }
-    console.log(
-      "reqData.procurements.isNewVendor",
-      reqData.procurements.isNewVendor
-    );
 
     if (
       department === "Business Finance" &&
-      !reqData.procurements.isNewVendor
+      !reqData.procurements.isNewVendor &&
+      status === "Approved"
     ) {
       console.log("Am inside");
       if (reqData.hasDeviations === 1) {
@@ -2179,16 +2161,17 @@ const releaseReqStatus = async (req, res) => {
   try {
     const { empId, reqId } = req.params;
     const { status, department, role, email } = req.body;
-    console.log(status, department, role);
+    console.log(status, department, role,empId, reqId,email);
 
     // Fetch employee data from the database
     const empData =
       (await empModel.findOne(
-        { _id: empId },
+        { employee_id: empId },
         { full_name: 1, employee_id: 1, company_email_id: 1 }
       )) || (await addPanelUsers.findOne({ department: department }));
 
     console.log("Employee Data:", empData);
+
 
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
@@ -2199,9 +2182,14 @@ const releaseReqStatus = async (req, res) => {
         createdAt: 1,
         hasDeviations: 1,
         procurements: 1,
+        userId:1
       }
     );
     const theReqId = reqData.reqid;
+    const requestorData = await empModel.findOne(
+      { employee_id:reqData.userId },
+      { company_email_id: 1, full_name: 1, department: 1 }
+    );
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
@@ -2269,6 +2257,7 @@ const releaseReqStatus = async (req, res) => {
 
     console.log("Approval Record:", approvalRecord);
 
+
     const updateResult = await CreateNewReq.updateOne(
       { _id: reqId },
       {
@@ -2328,6 +2317,7 @@ const releaseReqStatus = async (req, res) => {
                 },
               }
             );
+          
 
             // Optionally, send approval email notifications
             await sendIndividualEmail(
@@ -2404,6 +2394,7 @@ const releaseReqStatus = async (req, res) => {
                 },
               }
             );
+            console.log("requestorData",requestorData)
 
             // Optionally, send approval email notifications
             await sendIndividualEmail(
@@ -2564,6 +2555,27 @@ const releaseReqStatus = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = {
   uploadInvoiceDocuments,

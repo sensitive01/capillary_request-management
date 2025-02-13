@@ -41,20 +41,20 @@ const currencies = [
     { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-
 const PreviewTheReq = () => {
     const navigate = useNavigate();
     const params = useParams();
-    const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
     const department = localStorage.getItem("department");
-    const email = localStorage.getItem("email")
-    console.log(email)
+    const email = localStorage.getItem("email");
+    console.log(email);
     const [showDialog, setShowDialog] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [showSubmissionDialog, setSubmissionDialog] = useState(false);
     const [approveStatus, setApproveStatus] = useState();
+    const [newStatus, setNewStatus] = useState();
 
     const [isLoading, setIsLoading] = useState(false);
     const [loadingAction, setLoadingAction] = useState("");
@@ -270,14 +270,6 @@ const PreviewTheReq = () => {
                                             {request.commercials.site}
                                         </div>
                                     </div>
-                                    {/* <div className="bg-gray-50 p-4 rounded-lg">
-                                        <span className="text-gray-600 font-medium">
-                                            Cost Centre
-                                        </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials.costCentre}
-                                        </div>
-                                    </div> */}
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -747,13 +739,16 @@ const PreviewTheReq = () => {
         } catch (err) {
             console.log("Error in approve the request", err);
             toast.error("Invalid workflow order");
-        } finally {
+        } 
+        finally {
             setIsLoading(false);
             setLoadingAction("");
         }
     };
 
     const handleRelese = async (status) => {
+        setIsLoading(true); // Show loading overlay
+
         try {
             const response = await releseReqStatus(
                 status,
@@ -775,6 +770,10 @@ const PreviewTheReq = () => {
         } catch (error) {
             console.error("Error:", error);
             toast.error("An error occurred while processing your request");
+        }
+        finally {
+            setIsLoading(false);
+            setLoadingAction("");
         }
     };
 
@@ -834,6 +833,13 @@ const PreviewTheReq = () => {
 
     const handleStatus = async (status) => {
         try {
+            if (status === "Approve") {
+                setNewStatus("Approved");
+            } else if (status === "Reject") {
+                setNewStatus("Rejected");
+            } else if (status === "Hold") {
+                setNewStatus("Hold");
+            }
             console.log("status", status);
             setApproveStatus(status);
             setSubmissionDialog(true);
@@ -879,208 +885,6 @@ const PreviewTheReq = () => {
         }
     };
 
-    // const renderApprovalButtons = (request) => {
-    //     return (
-    //         <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
-    //             {request.status !== "PO-Pending" && (
-    //                 <button
-    //                     onClick={() => setShowDialog(true)}
-    //                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm shadow-sm active:scale-95 transform"
-    //                 >
-    //                     <Bell size={16} className="animate-bounce" />
-    //                     <span>Nudge</span>
-    //                 </button>
-    //             )}
-
-    //             {role !== "Employee" && !disable && (
-    //                 <div className="flex space-x-4">
-    //                     {/* Status: Pending → Reject, Hold, Submit */}
-    //                     {request.status === "Pending" && (
-    //                         <>
-    //                             <button
-    //                                 // onClick={() => approveRequest("Rejected")}
-    //                                 onClick={() => handleStatus("Reject")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Reject
-    //                             </button>
-    //                             <button
-    //                                 // onClick={() => approveRequest("Hold")}
-    //                                 onClick={() => handleStatus("Hold")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Hold
-    //                             </button>
-    //                             <button
-    //                                 // onClick={() => approveRequest("Approved")}
-    //                                 onClick={() => handleStatus("Approve")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Approve
-    //                             </button>
-    //                         </>
-    //                     )}
-
-    //                     {/* Status: Hold → Reject, Release Hold, Submit */}
-    //                     {request.status === "Hold" && (
-    //                         <>
-    //                             {/* <button
-    //                                 onClick={() => approveRequest("Rejected")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Reject
-    //                             </button> */}
-    //                             <button
-    //                                 onClick={() => handleRelese("Pending")}
-    //                                 // onClick={() => handleStatus("Reject")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Reject
-    //                             </button>
-    //                             <button
-    //                                 onClick={() => handleStatus("Approved")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Approve
-    //                             </button>
-    //                         </>
-    //                     )}
-
-    //                     {/* Status: Rejected → Release Reject, Hold, Submit */}
-    //                     {request.status === "Reject" && (
-    //                         <>
-    //                             {/* <button
-    //                                 onClick={() => handleRelese("Pending")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Release Reject
-    //                             </button> */}
-    //                             <button
-    //                                 onClick={() => handleRelese("Pending")}
-    //                                 // onClick={() => handleStatus("Hold")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Hold
-    //                             </button>
-    //                             <button
-    //                                 // onClick={() => approveRequest("Approved")}
-    //                                 onClick={() => handleStatus("Approve")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Approve
-    //                             </button>
-    //                         </>
-    //                     )}
-    //                 </div>
-    //             )}
-
-    //             {request.status === "PO-Pending" && department === "HOF" && (
-    //                 <div className="flex items-center gap-4">
-    //                     {/* Preview Image */}
-    //                     {selectedImage && (
-    //                         <div className="h-10 w-10 rounded overflow-hidden">
-    //                             <img
-    //                                 src={URL.createObjectURL(selectedImage)}
-    //                                 alt="Preview"
-    //                                 className="h-full w-full object-cover"
-    //                             />
-    //                         </div>
-    //                     )}
-
-    //                     {/* Upload Button */}
-    //                     <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-    //                         <Upload className="w-5 h-5 text-gray-500 mr-2" />
-    //                         <span className="text-sm text-gray-600">
-    //                             Upload Image
-    //                         </span>
-    //                         <input
-    //                             type="file"
-    //                             className="hidden"
-    //                             accept="image/*"
-    //                             onChange={(e) => {
-    //                                 const file = e.target.files[0];
-    //                                 if (file) {
-    //                                     setSelectedImage(file);
-    //                                 }
-    //                             }}
-    //                         />
-    //                     </label>
-
-    //                     {/* Upload PO Button with PDF icon */}
-    //                     <button
-    //                         onClick={handleUploadPo}
-    //                         disabled={!selectedImage || isUploading}
-    //                         className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                     >
-    //                         <FileText className="w-5 h-5 mr-2" />
-    //                         {isUploading ? "Uploading..." : "Upload PO"}
-    //                     </button>
-
-    //                     {/* Release Button */}
-    //                 </div>
-    //             )}
-
-    //             {request.status === "Invoice-Pending" &&
-    //                 (role === "Employee" || role === "HOD Department") && (
-    //                     <div className="flex items-center gap-4">
-    //                         {/* Preview Image */}
-    //                         {selectedImage && (
-    //                             <div className="h-10 w-10 rounded overflow-hidden">
-    //                                 <img
-    //                                     src={URL.createObjectURL(selectedImage)}
-    //                                     alt="Preview"
-    //                                     className="h-full w-full object-cover"
-    //                                 />
-    //                             </div>
-    //                         )}
-
-    //                         {/* Upload Button */}
-    //                         <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-    //                             <Upload className="w-5 h-5 text-gray-500 mr-2" />
-    //                             <span className="text-sm text-gray-600">
-    //                                 Upload invoice
-    //                             </span>
-    //                             <input
-    //                                 type="file"
-    //                                 className="hidden"
-    //                                 accept="image/*"
-    //                                 onChange={(e) => {
-    //                                     const file = e.target.files[0];
-    //                                     if (file) {
-    //                                         setSelectedImage(file);
-    //                                     }
-    //                                 }}
-    //                             />
-    //                         </label>
-
-    //                         {/* Upload PO Button with PDF icon */}
-    //                         <button
-    //                             onClick={handleUploadInvoice}
-    //                             disabled={!selectedImage || isUploading}
-    //                             className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                         >
-    //                             <FileText className="w-5 h-5 mr-2" />
-    //                             {isUploading
-    //                                 ? "Uploading..."
-    //                                 : "Upload Invoice"}
-    //                         </button>
-
-    //                         {/* Release Button */}
-    //                     </div>
-    //                 )}
-    //         </div>
-    //     );
-    // };
-
     const renderApprovalButtons = (request) => {
         return (
             <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
@@ -1100,21 +904,24 @@ const PreviewTheReq = () => {
                         {request.status === "Pending" && (
                             <>
                                 <button
-                                    onClick={() => approveRequest("Rejected")}
+                                    // onClick={() => approveRequest("Rejected")}
+                                    onClick={() => handleStatus("Reject")}
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <XCircle className="mr-2" /> Reject
                                 </button>
                                 <button
-                                    onClick={() => approveRequest("Hold")}
+                                    // onClick={() => approveRequest("Hold")}
+                                    onClick={() => handleStatus("Hold")}
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <PauseCircle className="mr-2" /> Hold
                                 </button>
                                 <button
-                                    onClick={() => approveRequest("Approved")}
+                                    // onClick={() => approveRequest("Approved")}
+                                    onClick={() => handleStatus("Approve")}
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -1126,13 +933,6 @@ const PreviewTheReq = () => {
                         {/* Status: Hold → Reject, Release Hold, Submit */}
                         {request.status === "Hold" && (
                             <>
-                                {/* <button
-                                    onClick={() => approveRequest("Rejected")}
-                                    disabled={isLoading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <XCircle className="mr-2" /> Reject
-                                </button> */}
                                 <button
                                     onClick={() => handleRelese("Pending")}
                                     disabled={isLoading}
@@ -1141,13 +941,6 @@ const PreviewTheReq = () => {
                                     <PauseCircle className="mr-2" /> Release
                                     Hold
                                 </button>
-                                {/* <button
-                                    onClick={() => approveRequest("Approved")}
-                                    disabled={isLoading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <CheckCircle2 className="mr-2" /> Submit
-                                </button> */}
                             </>
                         )}
 
@@ -1161,27 +954,13 @@ const PreviewTheReq = () => {
                                 >
                                     <XCircle className="mr-2" /> Release Reject
                                 </button>
-                                {/* <button
-                                    onClick={() => approveRequest("Hold")}
-                                    disabled={isLoading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <PauseCircle className="mr-2" /> Hold
-                                </button> */}
-                                {/* <button
-                                    onClick={() => approveRequest("Approved")}
-                                    disabled={isLoading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <CheckCircle2 className="mr-2" /> Submit
-                                </button> */}
                             </>
                         )}
                     </div>
                 )}
 
                 {request.status === "PO-Pending" && department === "HOF" && (
-                    <div className="flex items-center gap-4 w-full">
+                    <div className="flex items-center gap-4">
                         {/* Preview Image */}
                         {selectedImage && (
                             <div className="h-10 w-10 rounded overflow-hidden">
@@ -1193,37 +972,36 @@ const PreviewTheReq = () => {
                             </div>
                         )}
 
-                        {/* Right-aligned upload section */}
-                        <div className="ml-auto flex items-center gap-4">
-                            {/* Upload Button */}
-                            <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-                                <Upload className="w-5 h-5 text-gray-500 mr-2" />
-                                <span className="text-sm text-gray-600">
-                                    Upload Image
-                                </span>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            setSelectedImage(file);
-                                        }
-                                    }}
-                                />
-                            </label>
+                        {/* Upload Button */}
+                        <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+                            <Upload className="w-5 h-5 text-gray-500 mr-2" />
+                            <span className="text-sm text-gray-600">
+                                Upload Image
+                            </span>
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        setSelectedImage(file);
+                                    }
+                                }}
+                            />
+                        </label>
 
-                            {/* Upload PO Button */}
-                            <button
-                                onClick={handleUploadPo}
-                                disabled={!selectedImage || isUploading}
-                                className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <FileText className="w-5 h-5 mr-2" />
-                                {isUploading ? "Uploading..." : "Upload PO"}
-                            </button>
-                        </div>
+                        {/* Upload PO Button with PDF icon */}
+                        <button
+                            onClick={handleUploadPo}
+                            disabled={!selectedImage || isUploading}
+                            className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <FileText className="w-5 h-5 mr-2" />
+                            {isUploading ? "Uploading..." : "Upload PO"}
+                        </button>
+
+                        {/* Release Button */}
                     </div>
                 )}
 
@@ -1278,6 +1056,206 @@ const PreviewTheReq = () => {
             </div>
         );
     };
+
+    // const renderApprovalButtons = (request) => {
+    //     return (
+    //         <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
+    //             {request.status !== "PO-Pending" && (
+    //                 <button
+    //                     onClick={() => setShowDialog(true)}
+    //                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm shadow-sm active:scale-95 transform"
+    //                 >
+    //                     <Bell size={16} className="animate-bounce" />
+    //                     <span>Nudge</span>
+    //                 </button>
+    //             )}
+
+    //             {role !== "Employee" && !disable && (
+    //                 <div className="flex space-x-4">
+    //                     {/* Status: Pending → Reject, Hold, Submit */}
+    //                     {request.status === "Pending" && (
+    //                         <>
+    //                             <button
+    //                                 onClick={() => approveRequest("Rejected")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <XCircle className="mr-2" /> Reject
+    //                             </button>
+    //                             <button
+    //                                 onClick={() => approveRequest("Hold")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <PauseCircle className="mr-2" /> Hold
+    //                             </button>
+    //                             <button
+    //                                 onClick={() => approveRequest("Approved")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <CheckCircle2 className="mr-2" /> Approve
+    //                             </button>
+    //                         </>
+    //                     )}
+
+    //                     {/* Status: Hold → Reject, Release Hold, Submit */}
+    //                     {request.status === "Hold" && (
+    //                         <>
+    //                             {/* <button
+    //                                 onClick={() => approveRequest("Rejected")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <XCircle className="mr-2" /> Reject
+    //                             </button> */}
+
+    //                             <button
+    //                                 onClick={() => handleRelese("Pending")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <PauseCircle className="mr-2" /> Release
+    //                                 Hold
+    //                             </button>
+
+    //                             {/* <button
+    //                                 onClick={() => approveRequest("Approved")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <CheckCircle2 className="mr-2" /> Submit
+    //                             </button> */}
+    //                         </>
+    //                     )}
+
+    //                     {/* Status: Rejected → Release Reject, Hold, Submit */}
+    //                     {request.status === "Rejected" && (
+    //                         <>
+    //                             <button
+    //                                 onClick={() => handleRelese("Pending")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <XCircle className="mr-2" /> Release Reject
+    //                             </button>
+    //                             {/* <button
+    //                                 onClick={() => approveRequest("Hold")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <PauseCircle className="mr-2" /> Hold
+    //                             </button> */}
+    //                             {/* <button
+    //                                 onClick={() => approveRequest("Approved")}
+    //                                 disabled={isLoading}
+    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                             >
+    //                                 <CheckCircle2 className="mr-2" /> Submit
+    //                             </button> */}
+    //                         </>
+    //                     )}
+    //                 </div>
+    //             )}
+
+    //             {request.status === "PO-Pending" && department === "HOF" && (
+    //                 <div className="flex items-center gap-4 w-full">
+    //                     {/* Preview Image */}
+    //                     {selectedImage && (
+    //                         <div className="h-10 w-10 rounded overflow-hidden">
+    //                             <img
+    //                                 src={URL.createObjectURL(selectedImage)}
+    //                                 alt="Preview"
+    //                                 className="h-full w-full object-cover"
+    //                             />
+    //                         </div>
+    //                     )}
+
+    //                     {/* Right-aligned upload section */}
+    //                     <div className="ml-auto flex items-center gap-4">
+    //                         {/* Upload Button */}
+    //                         <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+    //                             <Upload className="w-5 h-5 text-gray-500 mr-2" />
+    //                             <span className="text-sm text-gray-600">
+    //                                 Upload Image
+    //                             </span>
+    //                             <input
+    //                                 type="file"
+    //                                 className="hidden"
+    //                                 accept="image/*"
+    //                                 onChange={(e) => {
+    //                                     const file = e.target.files[0];
+    //                                     if (file) {
+    //                                         setSelectedImage(file);
+    //                                     }
+    //                                 }}
+    //                             />
+    //                         </label>
+
+    //                         {/* Upload PO Button */}
+    //                         <button
+    //                             onClick={handleUploadPo}
+    //                             disabled={!selectedImage || isUploading}
+    //                             className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                         >
+    //                             <FileText className="w-5 h-5 mr-2" />
+    //                             {isUploading ? "Uploading..." : "Upload PO"}
+    //                         </button>
+    //                     </div>
+    //                 </div>
+    //             )}
+
+    //             {request.status === "Invoice-Pending" &&
+    //                 (role === "Employee" || role === "HOD Department") && (
+    //                     <div className="flex items-center gap-4">
+    //                         {/* Preview Image */}
+    //                         {selectedImage && (
+    //                             <div className="h-10 w-10 rounded overflow-hidden">
+    //                                 <img
+    //                                     src={URL.createObjectURL(selectedImage)}
+    //                                     alt="Preview"
+    //                                     className="h-full w-full object-cover"
+    //                                 />
+    //                             </div>
+    //                         )}
+
+    //                         {/* Upload Button */}
+    //                         <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+    //                             <Upload className="w-5 h-5 text-gray-500 mr-2" />
+    //                             <span className="text-sm text-gray-600">
+    //                                 Upload invoice
+    //                             </span>
+    //                             <input
+    //                                 type="file"
+    //                                 className="hidden"
+    //                                 accept="image/*"
+    //                                 onChange={(e) => {
+    //                                     const file = e.target.files[0];
+    //                                     if (file) {
+    //                                         setSelectedImage(file);
+    //                                     }
+    //                                 }}
+    //                             />
+    //                         </label>
+
+    //                         {/* Upload PO Button with PDF icon */}
+    //                         <button
+    //                             onClick={handleUploadInvoice}
+    //                             disabled={!selectedImage || isUploading}
+    //                             className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+    //                         >
+    //                             <FileText className="w-5 h-5 mr-2" />
+    //                             {isUploading
+    //                                 ? "Uploading..."
+    //                                 : "Upload Invoice"}
+    //                         </button>
+
+    //                         {/* Release Button */}
+    //                     </div>
+    //                 )}
+    //         </div>
+    //     );
+    // };
 
     if (!request) {
         return <div className="text-center py-10">Loading...</div>;
@@ -1351,7 +1329,7 @@ const PreviewTheReq = () => {
 
                             <button
                                 onClick={() => {
-                                    approveRequest(approveStatus);
+                                    approveRequest(newStatus);
                                     setSubmissionDialog(false);
                                 }}
                                 className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary"

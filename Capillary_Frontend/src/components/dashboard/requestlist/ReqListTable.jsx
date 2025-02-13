@@ -33,7 +33,7 @@ const currencies = [
 ];
 
 const ReqListTable = () => {
-    const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
     const navigate = useNavigate();
 
@@ -45,6 +45,7 @@ const ReqListTable = () => {
     const [isReminderNotification, setReminderNotification] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDelete, setIsDelete] = useState(false);
 
     const [reqId, setReqId] = useState(null);
     const [dateFilters, setDateFilters] = useState({
@@ -215,8 +216,8 @@ const ReqListTable = () => {
         navigate(`/req-list-table/edit-req/${id}`);
     };
 
-    const handleDelete = async (e, id) => {
-        e.stopPropagation();
+    const handleDelete = async ( id) => {
+   
         try {
             const response = await deleteReq(id);
             if (response) {
@@ -224,6 +225,7 @@ const ReqListTable = () => {
                 setFilteredUsers(
                     filteredUsers?.filter((person) => person?._id !== id)
                 );
+                setIsDelete(false)
             }
         } catch (error) {
             console.error("Error deleting request:", error);
@@ -250,22 +252,26 @@ const ReqListTable = () => {
             );
         } else {
             return (
-                <td
-                    className="px-6 py-4 text-sm text-gray-500 flex items-center justify-center space-x-2 mt-6"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <button
-                        className="text-blue-500 hover:text-blue-700"
-                        onClick={(e) => handleEdit(e, user._id)}
-                    >
-                        <Edit className="h-5 w-5" />
-                    </button>
-                    <button
-                        className="text-red-500 hover:text-red-700"
-                        onClick={(e) => handleDelete(e, user._id)}
-                    >
-                        <Trash2 className="h-5 w-5" />
-                    </button>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                    <div className="flex justify-center items-center space-x-2">
+                        <button
+                            className="text-blue-500 hover:text-blue-700"
+                            onClick={(e) => handleEdit(e, user._id)}
+                        >
+                            <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                            className="text-red-500 hover:text-red-700"
+                            // onClick={(e) => handleDelete(e, user._id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setReqId(user._id);
+                                setIsDelete(true);
+                            }}
+                        >
+                            <Trash2 className="h-5 w-5" />
+                        </button>
+                    </div>
                 </td>
             );
         }
@@ -585,7 +591,6 @@ const ReqListTable = () => {
                                                             "N/A"
                                                         )}
                                                     </td>
-                                                    
 
                                                     {renderActionColumn(user)}
                                                 </tr>
@@ -650,33 +655,27 @@ const ReqListTable = () => {
                 )}
 
                 {/* Modal for Reminder Notification */}
-                {isReminderNotification && (
+                {isDelete && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-auto">
                             <h3 className="text-xl font-semibold mb-4">
-                                Send Reminder Notification
+                                Do you really want to delete this request
                             </h3>
-                            <p className="mb-6">
-                                Do you want to send a reminder notification?
-                            </p>
 
                             <div className="flex justify-end gap-4">
                                 <button
                                     onClick={() =>
-                                        setReminderNotification(false)
+                                        setIsDelete(false)
                                     }
                                     className="px-4 py-2 border rounded-lg hover:bg-gray-100"
                                 >
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        setReminderNotification(false);
-                                        // Add your reminder notification logic here
-                                    }}
+                                    onClick={() => handleDelete( reqId)}
                                     className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
                                 >
-                                    Notify
+                                    Yes Delete
                                 </button>
                             </div>
                         </div>

@@ -108,7 +108,7 @@ const createNewReq = async (req, res) => {
     }`;
 
     let empData = await Employee.findOne(
-      { _id: id },
+      { employee_id: id },
       { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
     ).lean();
     if (!empData) {

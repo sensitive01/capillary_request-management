@@ -11,7 +11,6 @@ adminServices.interceptors.request.use(
 
     if (extractedToken) {
       config.headers.Authorization = `Bearer ${extractedToken}`;
-      console.log("Adding token to headers:", extractedToken); // Debugging token
     }
 
     return config;

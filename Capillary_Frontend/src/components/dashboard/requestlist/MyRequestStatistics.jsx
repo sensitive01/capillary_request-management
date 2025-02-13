@@ -97,7 +97,7 @@ const EmptyState = ({ action }) => {
 
 const MyRequestStatistics = () => {
     const { action } = useParams();
-    const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);

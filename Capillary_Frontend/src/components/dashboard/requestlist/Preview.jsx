@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import pfdIcon from "../../../assets/images/pdfIcon.png";
-import {formatDateToDDMMYY} from "../../../utils/dateFormat"
+import { formatDateToDDMMYY } from "../../../utils/dateFormat";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -25,7 +25,6 @@ const currencies = [
     { code: "SGD", symbol: "S$", locale: "en-SG" },
     { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
-
 
 const Preview = ({ formData, onSubmit, onBack }) => {
     const [showDialog, setShowDialog] = useState(false);
@@ -144,14 +143,6 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                             {formData.commercials.site}
                                         </div>
                                     </div>
-                                    {/* <div className="bg-gray-50 p-4 rounded-lg">
-                    <span className="text-gray-600 font-medium">
-                      Cost Centre
-                    </span>
-                    <div className="text-gray-800 font-semibold mt-1">
-                      {formData.commercials.costCentre}
-                    </div>
-                  </div> */}
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">

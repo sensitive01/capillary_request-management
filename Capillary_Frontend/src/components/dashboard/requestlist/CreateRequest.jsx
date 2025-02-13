@@ -11,7 +11,7 @@ import AgreementCompliences from "./AgreementCompliences";
 
 const CreateRequest = () => {
     const navigate = useNavigate();
-    const empId = localStorage.getItem("userId");
+    const empId = localStorage.getItem("capEmpId");
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);

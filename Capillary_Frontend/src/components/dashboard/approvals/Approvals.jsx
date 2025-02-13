@@ -38,6 +38,10 @@ const Approvals = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDelete, setIsDelete] = useState(false);
+  const [reqId, setReqId] = useState(null);
+
+
 
   const [dateFilters, setDateFilters] = useState({
     fromDate: "",
@@ -141,12 +145,13 @@ const Approvals = () => {
     navigate(`/req-list-table/edit-req/${userId}`);
   };
 
-  const handleDelete = async (e, id) => {
-    e.stopPropagation();
+  const handleDelete = async ( id) => {
     try {
       const response = await deleteReq(id);
       if (response.status === 200) {
         setUsers(users.filter((user) => user._id !== id));
+        setIsDelete(false)
+
       }
     } catch (error) {
       console.error("Error deleting request:", error);
@@ -444,7 +449,12 @@ const Approvals = () => {
                               </button>
                               <button
                                 className="text-red-500 hover:text-red-700"
-                                onClick={(e) => handleDelete(e, user._id)}
+                                // onClick={(e) => handleDelete(e, user._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setReqId(user._id);
+                                  setIsDelete(true);
+                              }}
                               >
                                 <Trash2 className="h-5 w-5" />
                               </button>
@@ -482,6 +492,32 @@ const Approvals = () => {
             totalItems={filteredUsers.length}
           />
         )}
+             {isDelete && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-auto">
+                            <h3 className="text-xl font-semibold mb-4">
+                                Do you really want to delete this request
+                            </h3>
+
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    onClick={() =>
+                                        setIsDelete(false)
+                                    }
+                                    className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleDelete( reqId)}
+                                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+                                >
+                                    Yes Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
       </div>
     </>
   );
