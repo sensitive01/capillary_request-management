@@ -113,7 +113,7 @@ const getNewNotifications = async (req, res) => {
 
     const panelUserData = await addPanelUsers
       .findOne(
-        { _id: id },
+        { employee_id: id },
         { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
       )
       .lean();

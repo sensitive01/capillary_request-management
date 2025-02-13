@@ -14,6 +14,7 @@ const domainRoutes = require("./routes/domainRoutes");
 const addReqRoutes = require("./routes/reqRoutes");
 const reqRoutes = require("./routes/reqRoutes");
 const s3Router = require("./routes/preSignedUrl");
+const crediantialRoute = require("./routes/crediantialsRoute")
 
 dotenv.config();
 
@@ -44,6 +45,8 @@ app.use("/domains", domainRoutes);
 app.use("/users", addReqRoutes);
 app.use("/request", reqRoutes);
 app.use("/upload-s3", s3Router);
+app.use("/credantials", crediantialRoute);
+
 
 
 // Catch-all route

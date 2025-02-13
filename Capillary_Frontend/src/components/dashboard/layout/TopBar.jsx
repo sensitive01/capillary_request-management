@@ -6,7 +6,7 @@ import { getNewNotification } from "../../../api/service/adminServices";
 
 const TopBar = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("capEmpId");
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);

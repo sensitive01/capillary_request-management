@@ -835,3 +835,13 @@ export const updateDarwinStatus = async () => {
   }
 };
 
+// ..............................GENERATE CRETIANTIALS................................
+
+export const generateApiCrediantial = async (email) => {
+  try {
+    const response = await adminServices.post('/credantials/api-crediantials',{email});
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
