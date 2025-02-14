@@ -48,13 +48,14 @@ const PreviewTheReq = () => {
     const role = localStorage.getItem("role");
     const department = localStorage.getItem("department");
     const email = localStorage.getItem("email");
-    console.log(email);
     const [showDialog, setShowDialog] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [showSubmissionDialog, setSubmissionDialog] = useState(false);
     const [approveStatus, setApproveStatus] = useState();
     const [newStatus, setNewStatus] = useState();
+    const [reason, setReason] = useState("");
+    const needsReason = ["Hold", "Reject"].includes(approveStatus);
 
     const [isLoading, setIsLoading] = useState(false);
     const [loadingAction, setLoadingAction] = useState("");
@@ -141,7 +142,7 @@ const PreviewTheReq = () => {
                                                 href={file}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-xs text-blue-600 hover:text-blue-800 truncate max-w-full text-center"
+                                                className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
                                             >
                                                 {" "}
                                                 <img
@@ -718,6 +719,7 @@ const PreviewTheReq = () => {
 
     const approveRequest = async (status) => {
         setIsLoading(true); // Show loading overlay
+        console.log(reason);
 
         try {
             const response = await handleApprove(
@@ -725,7 +727,8 @@ const PreviewTheReq = () => {
                 role,
                 params.id,
                 status,
-                email
+                email,
+                reason
             );
             if (response.status === 200) {
                 toast.success(response.data.message);
@@ -739,8 +742,7 @@ const PreviewTheReq = () => {
         } catch (err) {
             console.log("Error in approve the request", err);
             toast.error("Invalid workflow order");
-        } 
-        finally {
+        } finally {
             setIsLoading(false);
             setLoadingAction("");
         }
@@ -770,8 +772,7 @@ const PreviewTheReq = () => {
         } catch (error) {
             console.error("Error:", error);
             toast.error("An error occurred while processing your request");
-        }
-        finally {
+        } finally {
             setIsLoading(false);
             setLoadingAction("");
         }
@@ -933,13 +934,27 @@ const PreviewTheReq = () => {
                         {/* Status: Hold → Reject, Release Hold, Submit */}
                         {request.status === "Hold" && (
                             <>
-                                <button
+                                {/* <button
                                     onClick={() => handleRelese("Pending")}
                                     disabled={isLoading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <PauseCircle className="mr-2" /> Release
                                     Hold
+                                </button> */}
+                                <button
+                                    onClick={() => handleStatus("Reject")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <XCircle className="mr-2" /> Reject
+                                </button>
+                                <button
+                                    onClick={() => handleStatus("Approve")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <CheckCircle2 className="mr-2" /> Approve
                                 </button>
                             </>
                         )}
@@ -947,63 +962,83 @@ const PreviewTheReq = () => {
                         {/* Status: Rejected → Release Reject, Hold, Submit */}
                         {request.status === "Rejected" && (
                             <>
-                                <button
+                                {/* <button
                                     onClick={() => handleRelese("Pending")}
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <XCircle className="mr-2" /> Release Reject
+                                </button> */}
+                                <button
+                                    // onClick={() => approveRequest("Hold")}
+                                    onClick={() => handleStatus("Hold")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <PauseCircle className="mr-2" /> Hold
+                                </button>
+                                <button
+                                    // onClick={() => approveRequest("Approved")}
+                                    onClick={() => handleStatus("Approve")}
+                                    disabled={isLoading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <CheckCircle2 className="mr-2" /> Approve
                                 </button>
                             </>
                         )}
                     </div>
                 )}
 
-                {request.status === "PO-Pending" && department === "HOF" && (
-                    <div className="flex items-center gap-4">
-                        {/* Preview Image */}
-                        {selectedImage && (
-                            <div className="h-10 w-10 rounded overflow-hidden">
-                                <img
-                                    src={URL.createObjectURL(selectedImage)}
-                                    alt="Preview"
-                                    className="h-full w-full object-cover"
-                                />
+                {request.status === "PO-Pending" &&
+                    department === "Head of Finance" && (
+                        <div className="flex items-center justify-between w-full">
+                            {/* Left side - Preview Image */}
+
+                            <div></div>
+                            <div className="flex items-center gap-4">
+                                {selectedImage && (
+                                    <div className="h-10 w-10 rounded overflow-hidden">
+                                        <img
+                                            src={URL.createObjectURL(
+                                                selectedImage
+                                            )}
+                                            alt="Preview"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </div>
+                                )}
+                                {/* Upload Button */}
+                                <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+                                    <Upload className="w-5 h-5 text-gray-500 mr-2" />
+                                    <span className="text-sm text-gray-600">
+                                        Upload Image
+                                    </span>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                setSelectedImage(file);
+                                            }
+                                        }}
+                                    />
+                                </label>
+
+                                {/* Upload PO Button */}
+                                <button
+                                    onClick={handleUploadPo}
+                                    disabled={!selectedImage || isUploading}
+                                    className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-100 disabled:cursor-not-allowed"
+                                >
+                                    <FileText className="w-5 h-5 mr-2" />
+                                    {isUploading ? "Uploading..." : "Upload PO"}
+                                </button>
                             </div>
-                        )}
-
-                        {/* Upload Button */}
-                        <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-                            <Upload className="w-5 h-5 text-gray-500 mr-2" />
-                            <span className="text-sm text-gray-600">
-                                Upload Image
-                            </span>
-                            <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                        setSelectedImage(file);
-                                    }
-                                }}
-                            />
-                        </label>
-
-                        {/* Upload PO Button with PDF icon */}
-                        <button
-                            onClick={handleUploadPo}
-                            disabled={!selectedImage || isUploading}
-                            className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <FileText className="w-5 h-5 mr-2" />
-                            {isUploading ? "Uploading..." : "Upload PO"}
-                        </button>
-
-                        {/* Release Button */}
-                    </div>
-                )}
+                        </div>
+                    )}
 
                 {request.status === "Invoice-Pending" &&
                     (role === "Employee" || role === "HOD Department") && (
@@ -1042,7 +1077,7 @@ const PreviewTheReq = () => {
                             <button
                                 onClick={handleUploadInvoice}
                                 disabled={!selectedImage || isUploading}
-                                className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <FileText className="w-5 h-5 mr-2" />
                                 {isUploading
@@ -1056,206 +1091,6 @@ const PreviewTheReq = () => {
             </div>
         );
     };
-
-    // const renderApprovalButtons = (request) => {
-    //     return (
-    //         <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
-    //             {request.status !== "PO-Pending" && (
-    //                 <button
-    //                     onClick={() => setShowDialog(true)}
-    //                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm shadow-sm active:scale-95 transform"
-    //                 >
-    //                     <Bell size={16} className="animate-bounce" />
-    //                     <span>Nudge</span>
-    //                 </button>
-    //             )}
-
-    //             {role !== "Employee" && !disable && (
-    //                 <div className="flex space-x-4">
-    //                     {/* Status: Pending → Reject, Hold, Submit */}
-    //                     {request.status === "Pending" && (
-    //                         <>
-    //                             <button
-    //                                 onClick={() => approveRequest("Rejected")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Reject
-    //                             </button>
-    //                             <button
-    //                                 onClick={() => approveRequest("Hold")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Hold
-    //                             </button>
-    //                             <button
-    //                                 onClick={() => approveRequest("Approved")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Approve
-    //                             </button>
-    //                         </>
-    //                     )}
-
-    //                     {/* Status: Hold → Reject, Release Hold, Submit */}
-    //                     {request.status === "Hold" && (
-    //                         <>
-    //                             {/* <button
-    //                                 onClick={() => approveRequest("Rejected")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Reject
-    //                             </button> */}
-
-    //                             <button
-    //                                 onClick={() => handleRelese("Pending")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Release
-    //                                 Hold
-    //                             </button>
-
-    //                             {/* <button
-    //                                 onClick={() => approveRequest("Approved")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Submit
-    //                             </button> */}
-    //                         </>
-    //                     )}
-
-    //                     {/* Status: Rejected → Release Reject, Hold, Submit */}
-    //                     {request.status === "Rejected" && (
-    //                         <>
-    //                             <button
-    //                                 onClick={() => handleRelese("Pending")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <XCircle className="mr-2" /> Release Reject
-    //                             </button>
-    //                             {/* <button
-    //                                 onClick={() => approveRequest("Hold")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <PauseCircle className="mr-2" /> Hold
-    //                             </button> */}
-    //                             {/* <button
-    //                                 onClick={() => approveRequest("Approved")}
-    //                                 disabled={isLoading}
-    //                                 className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                             >
-    //                                 <CheckCircle2 className="mr-2" /> Submit
-    //                             </button> */}
-    //                         </>
-    //                     )}
-    //                 </div>
-    //             )}
-
-    //             {request.status === "PO-Pending" && department === "HOF" && (
-    //                 <div className="flex items-center gap-4 w-full">
-    //                     {/* Preview Image */}
-    //                     {selectedImage && (
-    //                         <div className="h-10 w-10 rounded overflow-hidden">
-    //                             <img
-    //                                 src={URL.createObjectURL(selectedImage)}
-    //                                 alt="Preview"
-    //                                 className="h-full w-full object-cover"
-    //                             />
-    //                         </div>
-    //                     )}
-
-    //                     {/* Right-aligned upload section */}
-    //                     <div className="ml-auto flex items-center gap-4">
-    //                         {/* Upload Button */}
-    //                         <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-    //                             <Upload className="w-5 h-5 text-gray-500 mr-2" />
-    //                             <span className="text-sm text-gray-600">
-    //                                 Upload Image
-    //                             </span>
-    //                             <input
-    //                                 type="file"
-    //                                 className="hidden"
-    //                                 accept="image/*"
-    //                                 onChange={(e) => {
-    //                                     const file = e.target.files[0];
-    //                                     if (file) {
-    //                                         setSelectedImage(file);
-    //                                     }
-    //                                 }}
-    //                             />
-    //                         </label>
-
-    //                         {/* Upload PO Button */}
-    //                         <button
-    //                             onClick={handleUploadPo}
-    //                             disabled={!selectedImage || isUploading}
-    //                             className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                         >
-    //                             <FileText className="w-5 h-5 mr-2" />
-    //                             {isUploading ? "Uploading..." : "Upload PO"}
-    //                         </button>
-    //                     </div>
-    //                 </div>
-    //             )}
-
-    //             {request.status === "Invoice-Pending" &&
-    //                 (role === "Employee" || role === "HOD Department") && (
-    //                     <div className="flex items-center gap-4">
-    //                         {/* Preview Image */}
-    //                         {selectedImage && (
-    //                             <div className="h-10 w-10 rounded overflow-hidden">
-    //                                 <img
-    //                                     src={URL.createObjectURL(selectedImage)}
-    //                                     alt="Preview"
-    //                                     className="h-full w-full object-cover"
-    //                                 />
-    //                             </div>
-    //                         )}
-
-    //                         {/* Upload Button */}
-    //                         <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-    //                             <Upload className="w-5 h-5 text-gray-500 mr-2" />
-    //                             <span className="text-sm text-gray-600">
-    //                                 Upload invoice
-    //                             </span>
-    //                             <input
-    //                                 type="file"
-    //                                 className="hidden"
-    //                                 accept="image/*"
-    //                                 onChange={(e) => {
-    //                                     const file = e.target.files[0];
-    //                                     if (file) {
-    //                                         setSelectedImage(file);
-    //                                     }
-    //                                 }}
-    //                             />
-    //                         </label>
-
-    //                         {/* Upload PO Button with PDF icon */}
-    //                         <button
-    //                             onClick={handleUploadInvoice}
-    //                             disabled={!selectedImage || isUploading}
-    //                             className="px-6 py-2 rounded-lg flex items-center bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-    //                         >
-    //                             <FileText className="w-5 h-5 mr-2" />
-    //                             {isUploading
-    //                                 ? "Uploading..."
-    //                                 : "Upload Invoice"}
-    //                         </button>
-
-    //                         {/* Release Button */}
-    //                     </div>
-    //                 )}
-    //         </div>
-    //     );
-    // };
 
     if (!request) {
         return <div className="text-center py-10">Loading...</div>;
@@ -1311,17 +1146,36 @@ const PreviewTheReq = () => {
             )}
             {showSubmissionDialog && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96 md:w-[32rem]">
                         <h3 className="text-xl font-semibold mb-4">
                             Confirm Submission
                         </h3>
-                        <p className="mb-6">
-                            {`Are you want to ${approveStatus} the request?`}
+                        <p className="mb-4">
+                            {`Are you sure you want to ${approveStatus.toLowerCase()} the request?`}
                         </p>
+
+                        {needsReason && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Please provide a reason
+                                </label>
+                                <textarea
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                                    rows={4}
+                                    placeholder={`Enter reason for ${approveStatus.toLowerCase()}ing the request...`}
+                                    required
+                                />
+                            </div>
+                        )}
 
                         <div className="flex justify-end gap-4">
                             <button
-                                onClick={() => setSubmissionDialog(false)}
+                                onClick={() => {
+                                    setSubmissionDialog(false);
+                                    setReason("");
+                                }}
                                 className="px-4 py-2 border rounded-lg hover:bg-gray-100"
                             >
                                 Cancel
@@ -1332,7 +1186,8 @@ const PreviewTheReq = () => {
                                     approveRequest(newStatus);
                                     setSubmissionDialog(false);
                                 }}
-                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary"
+                                disabled={needsReason && !reason.trim()}
+                                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {approveStatus}
                             </button>

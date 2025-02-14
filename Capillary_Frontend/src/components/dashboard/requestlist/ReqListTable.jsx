@@ -216,8 +216,7 @@ const ReqListTable = () => {
         navigate(`/req-list-table/edit-req/${id}`);
     };
 
-    const handleDelete = async ( id) => {
-   
+    const handleDelete = async (id) => {
         try {
             const response = await deleteReq(id);
             if (response) {
@@ -225,7 +224,7 @@ const ReqListTable = () => {
                 setFilteredUsers(
                     filteredUsers?.filter((person) => person?._id !== id)
                 );
-                setIsDelete(false)
+                setIsDelete(false);
             }
         } catch (error) {
             console.error("Error deleting request:", error);
@@ -572,20 +571,53 @@ const ReqListTable = () => {
                                                         {user.status ===
                                                         "Approved" ? (
                                                             <div className="w-full flex justify-center">
-                                                                <button
-                                                                    onClick={(
-                                                                        e
-                                                                    ) => {
-                                                                        e.stopPropagation();
-                                                                        navigate(
-                                                                            `${user.in}`
-                                                                        );
-                                                                    }}
-                                                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary flex items-center space-x-1 w-full max-w-[120px]"
-                                                                >
-                                                                    <FileText className="h-4 w-4 mr-1" />
-                                                                    Invoice
-                                                                </button>
+                                                                {user?.invoiceDocumets[0]?.invoiceLink?.startsWith(
+                                                                    "https"
+                                                                ) ? (
+                                                                    <a
+                                                                        href={
+                                                                            user
+                                                                                ?.invoiceDocumets[0]
+                                                                                ?.invoiceLink
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                                                        onClick={(
+                                                                            e
+                                                                        ) => {
+                                                                            e.preventDefault(); // Prevent default only if you need custom handling
+                                                                            const url =
+                                                                                user
+                                                                                    ?.invoiceDocumets[0]
+                                                                                    ?.invoiceLink;
+                                                                            // Add error handling
+                                                                            if (
+                                                                                url
+                                                                            ) {
+                                                                                try {
+                                                                                    window.open(
+                                                                                        url,
+                                                                                        "_blank"
+                                                                                    );
+                                                                                } catch (error) {
+                                                                                    console.error(
+                                                                                        "Error opening link:",
+                                                                                        error
+                                                                                    );
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <FileText className="h-4 w-4 mr-1" />
+                                                                        Invoice
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-red-500">
+                                                                        Invalid
+                                                                        Link
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         ) : (
                                                             "N/A"
@@ -664,15 +696,13 @@ const ReqListTable = () => {
 
                             <div className="flex justify-end gap-4">
                                 <button
-                                    onClick={() =>
-                                        setIsDelete(false)
-                                    }
+                                    onClick={() => setIsDelete(false)}
                                     className="px-4 py-2 border rounded-lg hover:bg-gray-100"
                                 >
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={() => handleDelete( reqId)}
+                                    onClick={() => handleDelete(reqId)}
                                     className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
                                 >
                                     Yes Delete

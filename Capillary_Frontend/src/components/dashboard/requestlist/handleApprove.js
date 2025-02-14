@@ -8,20 +8,36 @@ import {
     vendorManagementApproveRequest,
 } from "../../../api/service/adminServices";
 
-const handleApprove = async (userId, role, reqId, status,email) => {
+const handleApprove = async (userId, role, reqId, status, email, reason) => {
     try {
-        console.log(`User ID: ${userId}, Role: ${role}, Request ID: ${reqId}`);
+        console.log(
+            `User ID: ${userId}, Role: ${role}, Request ID: ${reqId} reason ${reason}`
+        );
 
         let response;
 
         switch (role) {
             case "Admin":
                 console.log("Approving for HOD");
-                response = await hodApproveRequest(userId, role, reqId, status,email);
+                response = await hodApproveRequest(
+                    userId,
+                    role,
+                    reqId,
+                    status,
+                    email,
+                    reason
+                );
                 break;
             case "HOD Department":
                 console.log("Approving for HOD");
-                response = await hodApproveRequest(userId, role, reqId, status,email);
+                response = await hodApproveRequest(
+                    userId,
+                    role,
+                    reqId,
+                    status,
+                    email,
+                    reason
+                );
                 break;
 
             case "Business Finance":
@@ -31,7 +47,8 @@ const handleApprove = async (userId, role, reqId, status,email) => {
                     role,
                     reqId,
                     status,
-                    email
+                    email,
+                    reason
                 );
                 break;
 
@@ -42,7 +59,8 @@ const handleApprove = async (userId, role, reqId, status,email) => {
                     role,
                     reqId,
                     status,
-                    email
+                    email,
+                    reason
                 );
                 break;
 
@@ -53,7 +71,8 @@ const handleApprove = async (userId, role, reqId, status,email) => {
                     role,
                     reqId,
                     status,
-                    email
+                    email,
+                    reason
                 );
                 break;
 
@@ -64,7 +83,8 @@ const handleApprove = async (userId, role, reqId, status,email) => {
                     role,
                     reqId,
                     status,
-                    email
+                    email,
+                    reason
                 );
                 break;
 
@@ -75,13 +95,21 @@ const handleApprove = async (userId, role, reqId, status,email) => {
                     role,
                     reqId,
                     status,
-                    email
+                    email,
+                    reason
                 );
                 break;
 
             case "HOF":
                 console.log("Approving for HOF");
-                response = await hofApproveRequest(userId, role, reqId, status,email);
+                response = await hofApproveRequest(
+                    userId,
+                    role,
+                    reqId,
+                    status,
+                    email,
+                    reason
+                );
                 break;
 
             default:

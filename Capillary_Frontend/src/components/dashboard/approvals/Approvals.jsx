@@ -41,8 +41,6 @@ const Approvals = () => {
   const [isDelete, setIsDelete] = useState(false);
   const [reqId, setReqId] = useState(null);
 
-
-
   const [dateFilters, setDateFilters] = useState({
     fromDate: "",
     toDate: "",
@@ -145,13 +143,12 @@ const Approvals = () => {
     navigate(`/req-list-table/edit-req/${userId}`);
   };
 
-  const handleDelete = async ( id) => {
+  const handleDelete = async (id) => {
     try {
       const response = await deleteReq(id);
       if (response.status === 200) {
         setUsers(users.filter((user) => user._id !== id));
-        setIsDelete(false)
-
+        setIsDelete(false);
       }
     } catch (error) {
       console.error("Error deleting request:", error);
@@ -417,13 +414,29 @@ const Approvals = () => {
                             {user.status === "Approved" ? (
                               <div className="w-full flex justify-center">
                                 {user?.invoiceDocumets[0]?.invoiceLink?.startsWith(
-                                  "http"
+                                  "https"
                                 ) ? (
                                   <a
                                     href={user?.invoiceDocumets[0]?.invoiceLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                    onClick={(e) => {
+                                      e.preventDefault(); // Prevent default only if you need custom handling
+                                      const url =
+                                        user?.invoiceDocumets[0]?.invoiceLink;
+                                      // Add error handling
+                                      if (url) {
+                                        try {
+                                          window.open(url, "_blank");
+                                        } catch (error) {
+                                          console.error(
+                                            "Error opening link:",
+                                            error
+                                          );
+                                        }
+                                      }
+                                    }}
                                   >
                                     <FileText className="h-4 w-4 mr-1" />
                                     Invoice
@@ -454,7 +467,7 @@ const Approvals = () => {
                                   e.stopPropagation();
                                   setReqId(user._id);
                                   setIsDelete(true);
-                              }}
+                                }}
                               >
                                 <Trash2 className="h-5 w-5" />
                               </button>
@@ -492,32 +505,30 @@ const Approvals = () => {
             totalItems={filteredUsers.length}
           />
         )}
-             {isDelete && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg w-auto">
-                            <h3 className="text-xl font-semibold mb-4">
-                                Do you really want to delete this request
-                            </h3>
+        {isDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-auto">
+              <h3 className="text-xl font-semibold mb-4">
+                Do you really want to delete this request
+              </h3>
 
-                            <div className="flex justify-end gap-4">
-                                <button
-                                    onClick={() =>
-                                        setIsDelete(false)
-                                    }
-                                    className="px-4 py-2 border rounded-lg hover:bg-gray-100"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleDelete( reqId)}
-                                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
-                                >
-                                    Yes Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setIsDelete(false)}
+                  className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(reqId)}
+                  className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+                >
+                  Yes Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

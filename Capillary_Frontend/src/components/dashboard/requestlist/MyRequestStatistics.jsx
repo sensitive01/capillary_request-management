@@ -8,12 +8,10 @@ import {
     Filter,
     FileText,
     InboxIcon,
-    Loader,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     deleteReq,
-    getApprovedReq,
     getReqListEmployee,
     getAdminReqListEmployee,
 } from "../../../api/service/adminServices";
@@ -31,7 +29,6 @@ const currencies = [
     { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-
 const EmptyState = ({ action }) => {
     const navigate = useNavigate();
 
@@ -40,26 +37,22 @@ const EmptyState = ({ action }) => {
             case "Pending-Request":
                 return {
                     title: "No Pending Requests",
-                    description:
-                        "There are currently no requests waiting for approval.",
+                    description: "There are currently no requests waiting for approval.",
                 };
             case "Approved-Request":
                 return {
                     title: "No Approved Requests",
-                    description:
-                        "There are no requests that have been approved yet.",
+                    description: "There are no requests that have been approved yet.",
                 };
             case "Completed-Request":
                 return {
                     title: "No Completed Requests",
-                    description:
-                        "There are no requests that have been completed yet.",
+                    description: "There are no requests that have been completed yet.",
                 };
             case "Total-Request":
                 return {
                     title: "No Requests Found",
-                    description:
-                        "There are no requests in the system at the moment.",
+                    description: "There are no requests in the system at the moment.",
                 };
             default:
                 return {
@@ -78,9 +71,7 @@ const EmptyState = ({ action }) => {
                     <InboxIcon className="h-12 w-12 text-gray-400" />
                 </div>
             </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">
-                {message.title}
-            </h3>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">{message.title}</h3>
             <p className="mt-2 text-sm text-gray-500">{message.description}</p>
             <div className="mt-6">
                 <button
@@ -103,14 +94,45 @@ const MyRequestStatistics = () => {
     const [users, setUsers] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isDelete, setIsDelete] = useState(false);
+    const [reqId, setReqId] = useState(null);
+    const [dateFilters, setDateFilters] = useState({
+        fromDate: "",
+        toDate: ""
+    });
+
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const itemsPerPage = 10;
+
+    // Update filtered users when search term changes
+    useEffect(() => {
+        const filtered = users.filter(user => 
+            user.reqid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.commercials?.businessUnit?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredUsers(filtered);
+        setCurrentPage(1); // Reset to first page when search changes
+    }, [searchTerm, users]);
+
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            setSelectedUsers([]);
+        }
+    };
 
     let filterAction;
     if (action === "Pending-Request") {
         filterAction = "Pending";
-    } else if (
-        action === "Approved-Request" ||
-        action === "Completed-Request"
-    ) {
+    } else if (action === "Approved-Request" || action === "Completed-Request") {
         filterAction = "Approved";
     }
 
@@ -119,7 +141,6 @@ const MyRequestStatistics = () => {
             setIsLoading(true);
             try {
                 let response;
-
                 if (role === "Admin") {
                     response = await getAdminReqListEmployee();
                     if (action === "Total-Request") {
@@ -131,7 +152,6 @@ const MyRequestStatistics = () => {
                         setUsers(filteredData);
                     }
                 } else {
-                    // if (role === "Employee") {
                     response = await getReqListEmployee(userId);
                     if (response.status === 200) {
                         const filteredData = response.data.data.filter(
@@ -139,22 +159,10 @@ const MyRequestStatistics = () => {
                         );
                         setUsers(filteredData);
                     }
-                    // }
-
-                    // else {
-                    //     response = await getApprovedReq(userId);
-                    //     if (response.status === 200) {
-                    //         const filteredData = response.data.reqData.filter(
-                    //             (item) => item.status === filterAction
-                    //         );
-                    //         setUsers(filteredData);
-                    //     }
-                    // }
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
-                // Add a small delay to prevent flash of loading state
                 setTimeout(() => {
                     setIsLoading(false);
                 }, 500);
@@ -163,22 +171,6 @@ const MyRequestStatistics = () => {
 
         fetchReqTable();
     }, [userId, role, action, filterAction]);
-
-    const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedUsers(users.map((user) => user.sno));
-        } else {
-            setSelectedUsers([]);
-        }
-    };
-
-    const handleSelectUser = (sno) => {
-        setSelectedUsers((prev) =>
-            prev.includes(sno)
-                ? prev.filter((id) => id !== sno)
-                : [...prev, sno]
-        );
-    };
 
     const formatCurrency = (value, currencyCode) => {
         if (!value) return "N/A";
@@ -209,12 +201,20 @@ const MyRequestStatistics = () => {
             const response = await deleteReq(id);
             if (response.status === 200) {
                 setUsers(users.filter((user) => user._id !== id));
+                setIsDelete(false);
             }
         } catch (error) {
             console.error("Error deleting request:", error);
         }
     };
 
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
+
+    if (users.length === 0) {
+        return <EmptyState action={action} />;
+    }
     return (
         <>
             {isLoading && <LoadingSpinner />}
@@ -258,84 +258,90 @@ const MyRequestStatistics = () => {
                     </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg">
+                <div className="border border-gray-200 rounded-lg w-full">
                     <div className="overflow-x-auto">
                         <div className="inline-block min-w-full align-middle">
                             <div className="overflow-hidden">
-                                {!isLoading && users?.length > 0 ? (
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-primary">
-                                            <tr>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    SL No
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    ReqId
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Business Unit
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Entity
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Vendor
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Amount
-                                                </th>
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-primary">
+                                        <tr>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[5%]"
+                                            >
+                                                SNo
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                ReqId
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                Business Unit
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                                            >
+                                                Entity
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                                            >
+                                                Vendor
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                Amount
+                                            </th>
 
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Status
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    PO Document
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {users.map((user, index) => (
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                Status
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                PO_Document
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                Invoice_Document
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                            >
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {currentUsers.length > 0 ? (
+                                            currentUsers.map((user, index) => (
                                                 <tr
-                                                    key={user.sno}
-                                                    className="hover:bg-gray-50"
+                                                    key={user._id}
+                                                    className="hover:bg-gray-100 cursor-pointer"
                                                     onClick={() =>
                                                         navigate(
-                                                            `/req-list-table/preview-one-req/${user._id}`
+                                                            `/approval-request-list/preview-one-req/${user._id}`
                                                         )
                                                     }
                                                 >
                                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                        {index + 1}
+                                                        {startIndex + index + 1}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
@@ -357,7 +363,7 @@ const MyRequestStatistics = () => {
                                                     </td>
                                                     <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
-                                                            .businessUnit ||
+                                                            ?.businessUnit ||
                                                             "NA"}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500">
@@ -365,13 +371,13 @@ const MyRequestStatistics = () => {
                                                             <span className="block font-medium">
                                                                 {user
                                                                     .commercials
-                                                                    .entity ||
+                                                                    ?.entity ||
                                                                     "NA"}
                                                             </span>
                                                             <span className="block">
                                                                 {user
                                                                     .commercials
-                                                                    .site ||
+                                                                    ?.site ||
                                                                     "NA"}
                                                             </span>
                                                         </div>
@@ -382,14 +388,14 @@ const MyRequestStatistics = () => {
                                                                 {
                                                                     user
                                                                         .procurements
-                                                                        .vendor
+                                                                        ?.vendor
                                                                 }
                                                             </span>
                                                             <span className="block">
                                                                 {
                                                                     user
                                                                         .procurements
-                                                                        .vendorName
+                                                                        ?.vendorName
                                                                 }
                                                             </span>
                                                         </div>
@@ -407,9 +413,12 @@ const MyRequestStatistics = () => {
                                                         {user.status ||
                                                             "Pending"}
                                                     </td>
+
                                                     <td className="px-4 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
-                                                        "Approved" ? (
+                                                            "Approved" ||
+                                                        user.status ===
+                                                            "Invoice-Pending" ? (
                                                             <div className="w-full flex justify-center">
                                                                 <button
                                                                     onClick={(
@@ -423,14 +432,71 @@ const MyRequestStatistics = () => {
                                                                     className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
                                                                 >
                                                                     <FileText className="h-4 w-4 mr-1" />
-                                                                    View PO
+                                                                    View Po
                                                                 </button>
                                                             </div>
                                                         ) : (
                                                             "N/A"
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500 text-center">
+                                                    <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                        {user.status ===
+                                                        "Approved" ? (
+                                                            <div className="w-full flex justify-center">
+                                                                {user?.invoiceDocumets[0]?.invoiceLink?.startsWith(
+                                                                    "https"
+                                                                ) ? (
+                                                                    <a
+                                                                        href={
+                                                                            user
+                                                                                ?.invoiceDocumets[0]
+                                                                                ?.invoiceLink
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                                                        onClick={(
+                                                                            e
+                                                                        ) => {
+                                                                            e.preventDefault(); // Prevent default only if you need custom handling
+                                                                            const url =
+                                                                                user
+                                                                                    ?.invoiceDocumets[0]
+                                                                                    ?.invoiceLink;
+                                                                            // Add error handling
+                                                                            if (
+                                                                                url
+                                                                            ) {
+                                                                                try {
+                                                                                    window.open(
+                                                                                        url,
+                                                                                        "_blank"
+                                                                                    );
+                                                                                } catch (error) {
+                                                                                    console.error(
+                                                                                        "Error opening link:",
+                                                                                        error
+                                                                                    );
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <FileText className="h-4 w-4 mr-1" />
+                                                                        Invoice
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-red-500">
+                                                                        Invalid
+                                                                        Link
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            "N/A"
+                                                        )}
+                                                    </td>
+
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div className="flex justify-center items-center space-x-2">
                                                             <button
                                                                 className="text-blue-500 hover:text-blue-700"
@@ -445,24 +511,41 @@ const MyRequestStatistics = () => {
                                                             </button>
                                                             <button
                                                                 className="text-red-500 hover:text-red-700"
-                                                                onClick={(e) =>
-                                                                    handleDelete(
-                                                                        e,
+                                                                // onClick={(e) => handleDelete(e, user._id)}
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setReqId(
                                                                         user._id
-                                                                    )
-                                                                }
+                                                                    );
+                                                                    setIsDelete(
+                                                                        true
+                                                                    );
+                                                                }}
                                                             >
                                                                 <Trash2 className="h-5 w-5" />
                                                             </button>
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    !isLoading && <EmptyState action={action} />
-                                )}
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td
+                                                    colSpan="10"
+                                                    className="px-6 py-4 text-center text-gray-500"
+                                                >
+                                                    {searchTerm ||
+                                                    dateFilters.fromDate ||
+                                                    dateFilters.toDate
+                                                        ? "No matching results found."
+                                                        : "No data available."}
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

@@ -764,17 +764,16 @@ const getApprovedReqData = async (req, res) => {
     if (panelUserData) {
       consolidatedData = panelUserData;
     } else if (employeeData) {
-      const isEmpHod = await empModel
-        .findOne({ hod_email_id: employeeData.company_email_id })
-        .lean();
-
-      console.log("isEmpHod", isEmpHod);
+      const isEmpHod = await CreateNewReq.findOne({
+        "firstLevelApproval.hodEmail": employeeData.company_email_id,
+      }).lean();
 
       consolidatedData = {
         ...employeeData,
         role: isEmpHod ? "HOD Department" : "Employee",
       };
     }
+    console.log("consolidatedData", consolidatedData);
 
     if (!consolidatedData || !consolidatedData.company_email_id) {
       return res
@@ -788,9 +787,13 @@ const getApprovedReqData = async (req, res) => {
       .sort({ createdAt: -1 })
       .exec();
 
-    console.log("reqData", reqData);
+    console.log("reqData", reqData, consolidatedData.role);
 
-    if (reqData.length === 0) {
+    if (
+      reqData.length === 0 &&
+      consolidatedData.role !== "HOD Department" &&
+      consolidatedData.role !== "Employee"
+    ) {
       // Corrected condition
       console.log("Fetching all requests as no matching records found.");
       reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
@@ -1487,13 +1490,13 @@ const uploadPoDocuments = async (req, res) => {
     // Fetch employee data
     const empData =
       (await empModel.findOne(
-        { _id: empId },
+        { employee_id: empId },
         {
           full_name: 1,
           employee_id: 1,
           department: 1,
         }
-      )) || (await addPanelUsers.findOne({ _id: empId }));
+      )) || (await addPanelUsers.findOne({ employee_id: empId }));
 
     if (!empData) {
       return res.status(404).json({ message: "Employee not found" });
@@ -1560,13 +1563,13 @@ const uploadInvoiceDocuments = async (req, res) => {
     // Fetch employee data
     const empData =
       (await empModel.findOne(
-        { _id: empId },
+        { employee_id: empId },
         {
           full_name: 1,
           employee_id: 1,
           department: 1,
         }
-      )) || (await addPanelUsers.findOne({ _id: empId }));
+      )) || (await addPanelUsers.findOne({employee_id: empId }));
     console.log(empData);
 
     if (!empData) {
@@ -1798,7 +1801,6 @@ const approveRequest = async (req, res) => {
     const updateResult = await CreateNewReq.updateOne(
       {
         _id: reqId,
-        // Additional conditions to prevent race conditions
         $or: [
           { approvals: { $size: 0 } }, // First approval
           { "approvals.nextDepartment": department }, // Next in workflow
@@ -1833,6 +1835,7 @@ const approveRequest = async (req, res) => {
         message: "Unable to update request. Please verify the workflow state.",
       });
     }
+
 
     if (
       department === "Business Finance" &&
@@ -2161,7 +2164,7 @@ const releaseReqStatus = async (req, res) => {
   try {
     const { empId, reqId } = req.params;
     const { status, department, role, email } = req.body;
-    console.log(status, department, role,empId, reqId,email);
+    console.log(status, department, role, empId, reqId, email);
 
     // Fetch employee data from the database
     const empData =
@@ -2172,7 +2175,6 @@ const releaseReqStatus = async (req, res) => {
 
     console.log("Employee Data:", empData);
 
-
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
       {
@@ -2182,12 +2184,12 @@ const releaseReqStatus = async (req, res) => {
         createdAt: 1,
         hasDeviations: 1,
         procurements: 1,
-        userId:1
+        userId: 1,
       }
     );
     const theReqId = reqData.reqid;
     const requestorData = await empModel.findOne(
-      { employee_id:reqData.userId },
+      { employee_id: reqData.userId },
       { company_email_id: 1, full_name: 1, department: 1 }
     );
 
@@ -2257,7 +2259,6 @@ const releaseReqStatus = async (req, res) => {
 
     console.log("Approval Record:", approvalRecord);
 
-
     const updateResult = await CreateNewReq.updateOne(
       { _id: reqId },
       {
@@ -2317,7 +2318,6 @@ const releaseReqStatus = async (req, res) => {
                 },
               }
             );
-          
 
             // Optionally, send approval email notifications
             await sendIndividualEmail(
@@ -2394,7 +2394,7 @@ const releaseReqStatus = async (req, res) => {
                 },
               }
             );
-            console.log("requestorData",requestorData)
+            console.log("requestorData", requestorData);
 
             // Optionally, send approval email notifications
             await sendIndividualEmail(
@@ -2555,27 +2555,6 @@ const releaseReqStatus = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = {
   uploadInvoiceDocuments,

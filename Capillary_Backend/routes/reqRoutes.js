@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express()
 const reqController = require("../controllers/reqController")
+const approvalController= require("../controllers/approvalController") 
 
 
 
@@ -15,20 +16,32 @@ router.get('/generate-po/:id', reqController.generatePo);
 router.get('/get-all-chats/:id', reqController.getAllChats); 
 router.get('/get-reports', reqController.getReports); 
 router.get('/invoice/download/:id', reqController.downloadInvoicePdf); 
-
-
-
-
 router.get('/is-approved/:userId/:reqId', reqController.isApproved); 
 
 
-router.post('/accept-request-hod/:id', reqController.approveRequest); 
-router.post('/accept-request-business/:id', reqController.approveRequest); 
-router.post('/accept-request-vendor/:id', reqController.approveRequest); 
-router.post('/accept-request-legal/:id', reqController.approveRequest); 
-router.post('/accept-request-info-security/:id', reqController.approveRequest); 
-router.post('/accept-request-po-team/:id', reqController.approveRequest); 
-router.post('/accept-request-hof-team/:id', reqController.approveRequest); 
+
+// router.post('/accept-request-hod/:id', reqController.approveRequest); 
+// router.post('/accept-request-business/:id', reqController.approveRequest); 
+// router.post('/accept-request-vendor/:id', reqController.approveRequest); 
+// router.post('/accept-request-legal/:id', reqController.approveRequest); 
+// router.post('/accept-request-info-security/:id', reqController.approveRequest); 
+// router.post('/accept-request-po-team/:id', reqController.approveRequest); 
+// router.post('/accept-request-hof-team/:id', reqController.approveRequest);
+
+
+router.post('/accept-request-hod/:id', approvalController.approveRequest);
+router.post('/accept-request-business/:id', approvalController.approveRequest); 
+router.post('/accept-request-vendor/:id', approvalController.approveRequest); 
+router.post('/accept-request-legal/:id', approvalController.approveRequest); 
+router.post('/accept-request-info-security/:id', approvalController.approveRequest); 
+router.post('/accept-request-po-team/:id', approvalController.approveRequest); 
+router.post('/accept-request-hof-team/:id', approvalController.approveRequest);
+
+
+
+
+
+
 router.post('/send-reminder/:reqId', reqController.sendNudgeNotification); 
 router.post('/add-request', reqController.addReqForm); 
 router.post('/send-edit-request-mail/:empId/:reqId',reqController.editSendRequestMail)

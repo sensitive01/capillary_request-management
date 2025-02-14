@@ -46,7 +46,7 @@ const procurementsSchema = new mongoose.Schema({
   vendor: { type: String },
   vendorName: { type: String },
   email:{ type: String },
-  isNewVendor:{ type: String },
+  isNewVendor:{ type: Boolean,default:false },
   servicePeriod: { type: String },
   projectCode: { type: String },
   clientName: { type: String },
