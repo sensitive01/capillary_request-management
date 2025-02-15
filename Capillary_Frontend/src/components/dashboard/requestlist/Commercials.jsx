@@ -43,6 +43,21 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     const [uniqueDepartments, setUniqueDepartments] = useState(new Map());
 
     useEffect(() => {
+        if (formData.department && isDropDown) {
+            setSearchTerm(formData.department);
+            const savedDept = availableDepartments.find(
+                dept => dept.department === formData.department
+            );
+            
+            if (savedDept) {
+                setSelectedDepartment(savedDept);
+                setApprovers(savedDept.approvers);
+                setFilteredDepartments([savedDept]);
+            }
+        }
+    }, [formData.department, availableDepartments, isDropDown]);
+
+    useEffect(() => {
         const fetchEntity = async () => {
             try {
                 const response = await getAllEntityData(empId);
@@ -51,83 +66,57 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     setDepartment(response.data.department || []);
                     setIsDropDown(response.data.isDropDown);
 
-                    // Handle business units based on isDropDown
-                    if (
-                        response.data.isDropDown &&
-                        Array.isArray(response.data.department)
-                    ) {
-                        // Create a Set to store unique business units
+                    if (response.data.isDropDown && Array.isArray(response.data.department)) {
                         const uniqueBusinessUnitsSet = new Set();
-
-                        // Add all business units to the Set
                         response.data.department.forEach((dept) => {
                             if (dept.businessUnit) {
                                 uniqueBusinessUnitsSet.add(dept.businessUnit);
                             }
                         });
 
-                        // Convert Set to array of objects
-                        const uniqueBusinessUnits = Array.from(
-                            uniqueBusinessUnitsSet
-                        ).map((unit) => ({
+                        const uniqueBusinessUnits = Array.from(uniqueBusinessUnitsSet).map((unit) => ({
                             value: unit,
                             label: unit,
                         }));
 
                         setAvailableBusinessUnits(uniqueBusinessUnits);
+
+                        if (formData.businessUnit) {
+                            const filtered = response.data.department.filter(
+                                (dept) => dept.businessUnit?.toLowerCase() === formData.businessUnit.toLowerCase()
+                            );
+
+                            const deptMap = new Map();
+                            filtered.forEach((dept) => {
+                                const key = dept.department;
+                                if (!deptMap.has(key)) {
+                                    deptMap.set(key, {
+                                        department: dept.department,
+                                        businessUnit: dept.businessUnit,
+                                        approvers: filtered
+                                            .filter((d) => d.department === dept.department)
+                                            .map((d) => ({
+                                                hod: d.hod,
+                                                hodEmail: d.hod_email_id,
+                                            })),
+                                    });
+                                }
+                            });
+
+                            setUniqueDepartments(deptMap);
+                            setAvailableDepartments(Array.from(deptMap.values()));
+                            setFilteredDepartments(Array.from(deptMap.values()));
+                        }
                     } else {
-                        // Use the static business units from the import
                         setAvailableBusinessUnits(businessUnits);
                     }
 
-                    if (
-                        localFormData.businessUnit &&
-                        Array.isArray(response.data.department) &&
-                        isDropDown
-                    ) {
-                        const filtered = response.data.department.filter(
-                            (dept) =>
-                                dept.businessUnit?.toLowerCase() ===
-                                localFormData.businessUnit.toLowerCase()
-                        );
-
-                        const deptMap = new Map();
-                        filtered.forEach((dept) => {
-                            const key = dept.department;
-                            if (!deptMap.has(key)) {
-                                deptMap.set(key, {
-                                    department: dept.department,
-                                    businessUnit: dept.businessUnit,
-                                    approvers: filtered
-                                        .filter(
-                                            (d) =>
-                                                d.department === dept.department
-                                        )
-                                        .map((d) => ({
-                                            hod: d.hod,
-                                            hodEmail: d.hod_email_id,
-                                        })),
-                                });
-                            }
-                        });
-
-                        setUniqueDepartments(deptMap);
-                        setAvailableDepartments(Array.from(deptMap.values()));
-                        setFilteredDepartments(Array.from(deptMap.values()));
-                    }
-
-                    if (!isDropDown && localFormData.department) {
+                    if (!response.data.isDropDown && formData.department) {
                         const selectedDept = response.data.department.find(
-                            (dept) =>
-                                dept.department === localFormData.department
+                            (dept) => dept.department === formData.department
                         );
                         if (selectedDept) {
                             setLocalFormData((prev) => ({
-                                ...prev,
-                                hod: selectedDept.hod,
-                                hodEmail: selectedDept.hod_email_id,
-                            }));
-                            setFormData((prev) => ({
                                 ...prev,
                                 hod: selectedDept.hod,
                                 hodEmail: selectedDept.hod_email_id,
@@ -145,7 +134,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
             }
         };
         fetchEntity();
-    }, [empId, localFormData.businessUnit]);
+    }, [empId, formData.businessUnit, formData.department]);
 
     const handleBusinessUnitChange = (e) => {
         const { name, value } = e.target;
