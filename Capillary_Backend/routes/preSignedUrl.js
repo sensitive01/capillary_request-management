@@ -74,7 +74,6 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: result.Key,
-        Expires: 3600, // URL expires in 1 hour
       };
 
       // Generate pre-signed URL for the uploaded file

@@ -89,6 +89,7 @@ const EditRequestForm = () => {
                     }
                     onNext={() => handleStepComplete(1)}
                     onBack={() => setCurrentStep(0)}
+                    reqId = {formData.reqid}
                 />
             ),
         },
@@ -137,6 +138,7 @@ const EditRequestForm = () => {
                     onSubmit={handleSubmit}
                     onBack={() => setCurrentStep(2)}
                     onNext={() => handleStepComplete(3)}
+                    reqId = {formData.reqid}
                 />
             ),
         },

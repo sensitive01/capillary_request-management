@@ -14,8 +14,8 @@ import {
 } from "../../../api/service/adminServices";
 import uploadFiles from "../../../utils/s3BucketConfig";
 
-const ChatComments = ({ reqId }) => {
-    const userId = localStorage.getItem("userId");
+const ChatComments = ({ reqId ,reqid}) => {
+    const userId = localStorage.getItem("capEmpId");
     const [chatMessages, setChatMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [activeChatTopic, setActiveChatTopic] = useState(null);
@@ -115,7 +115,8 @@ const ChatComments = ({ reqId }) => {
                 try {
                     const uploadResponse = await uploadFiles(
                         selectedFile,
-                        "chat"
+                        "chat",
+                        reqid
                     );
                     console.log("uploadResponse",uploadResponse)
                     if (uploadResponse && uploadResponse.data.fileUrls[0]) {

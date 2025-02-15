@@ -138,7 +138,7 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
     const handleFileUpload = async (questionId, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
-                uploadFiles(file,"compliances",formData?.reqId)
+                uploadFiles(file,"compliances",formData?.procurements?.reqId)
             );
             const responses = await Promise.all(uploadPromises);
             console.log(responses)

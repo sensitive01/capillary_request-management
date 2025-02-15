@@ -92,7 +92,7 @@ const createNewReq = async (req, res) => {
     const { id } = req.params;
     const { complinces, commercials, procurements, supplies, hasDeviations } =
       req.body;
-    const { vendorName, email, isNewVendor } = procurements;
+    const { vendorName, email, isNewVendor,reqId } = procurements;
 
     if (!complinces || !commercials) {
       return res
@@ -100,12 +100,7 @@ const createNewReq = async (req, res) => {
         .json({ message: "Missing required compliance or commercial data." });
     }
 
-    const date = new Date();
-    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
-      Math.floor(Math.random() * 100) + 1
-    }`;
+
 
     let empData = await Employee.findOne(
       { employee_id: id },
@@ -132,7 +127,7 @@ const createNewReq = async (req, res) => {
     console.log("panelMemberEmail", panelMemberEmail);
 
     const newRequest = new CreateNewReq({
-      reqid,
+      reqid:reqId,
       userId: id,
       userName: empData.full_name,
       commercials,

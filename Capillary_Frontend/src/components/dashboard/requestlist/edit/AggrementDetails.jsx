@@ -11,7 +11,7 @@ import { getAllLegalQuestions } from "../../../../api/service/adminServices";
 import { FaFilePdf } from "react-icons/fa";
 import uploadFiles from "../../../../utils/s3BucketConfig";
 
-const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
+const AggrementDetails = ({ formData, setFormData, onNext, onBack ,reqId}) => {
     console.log("formData", formData, "setFormData", setFormData);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
@@ -153,12 +153,12 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack }) => {
     const handleFileUpload = async (questionId, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
-                uploadFiles(file,"deviation")
+                uploadFiles(file,"compliances",reqId)
             );
             const responses = await Promise.all(uploadPromises);
             console.log("file upload",responses)
 
-            const fileUrls = responses.flatMap((response) => response[0]);
+            const fileUrls = responses.flatMap((response) => response)
             const updatedAttachments = [
                 ...(deviations[questionId]?.attachments || []),
                 ...fileUrls,

@@ -39,7 +39,7 @@ const postComments = async (req, res) => {
     let empData =
       (await empModel
         .findOne(
-          { _id: data.senderId },
+          { employee_id: data.senderId },
           {
             full_name: 1,
             employee_id: 1,
@@ -49,7 +49,7 @@ const postComments = async (req, res) => {
           }
         )
         .lean()) ||
-      (await addPanelUsers.findOne({ _id: data.senderId }).lean());
+      (await addPanelUsers.findOne({ employee_id: data.senderId }).lean());
 
     const commentData = {
       senderId: data.senderId,

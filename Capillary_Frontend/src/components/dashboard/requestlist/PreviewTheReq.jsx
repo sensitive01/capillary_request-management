@@ -702,7 +702,7 @@ const PreviewTheReq = () => {
             case "preview":
                 return renderRequestPreview();
             case "chat":
-                return <ChatComments reqId={params.id} />;
+                return <ChatComments reqId={params.id} reqid={request.reqid} />;
             case "logs":
                 return (
                     <RequestLogs
@@ -811,7 +811,7 @@ const PreviewTheReq = () => {
             formData.append("poImage", selectedImage);
             formData.append("requestId", request.id); // Assuming you have request.id
 
-            const response = await uploadFiles(selectedImage, "PO-Documets");
+            const response = await uploadFiles(selectedImage, "PO-Documets",request.reqid);
             console.log("response", response);
 
             const response2 = await addPODocument(
@@ -864,7 +864,8 @@ const PreviewTheReq = () => {
 
             const response = await uploadFiles(
                 selectedImage,
-                "Invoice-Documets"
+                "Invoice-Documets",
+                request.reqid
             );
             console.log("response", response);
 
