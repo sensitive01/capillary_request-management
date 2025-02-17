@@ -93,6 +93,7 @@ const createNewReq = async (req, res) => {
     const { complinces, commercials, procurements, supplies, hasDeviations } =
       req.body;
     const { vendorName, email, isNewVendor,reqId } = procurements;
+    console.log("reqId",reqId)
 
     if (!complinces || !commercials) {
       return res
@@ -150,7 +151,7 @@ const createNewReq = async (req, res) => {
       panelMemberEmail,
       empData.full_name,
       empData.department,
-      reqid
+      reqId
     );
 
     if (isNewVendor) {
@@ -173,7 +174,7 @@ const createNewReq = async (req, res) => {
           sendEmail(company_email_id, "newVendorOnBoard", {
             vendorName,
             email,
-            reqid,
+            reqId,
           })
         )
       );
