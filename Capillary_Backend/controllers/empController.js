@@ -405,7 +405,7 @@ exports.verifyUser = async (req, res) => {
     `;
 
     if (consolidatedData) {
-      await sendLoginEmail(email, subject, textContent, htmlContent);
+      // await sendLoginEmail(email, subject, textContent, htmlContent);
       return res.status(200).json({
         success: true,
         message: "Employee verified successfully.",

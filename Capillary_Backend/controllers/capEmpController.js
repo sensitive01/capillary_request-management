@@ -63,7 +63,7 @@ const verifyUser = async (req, res) => {
         { expiresIn: "10h" }
       );
 
-      await sendEmail(email, "login", { full_name });
+      // await sendEmail(email, "login", { full_name });
 
       return res.status(200).json({
         success: true,
@@ -271,7 +271,7 @@ const createNewReq = async (req, res) => {
 
     // Send bulk emails
     try {
-      await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
+      // await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
     } catch (emailError) {
       console.error("Error sending bulk emails:", emailError);
       // You could implement retry logic here or log the error for future action
@@ -280,7 +280,7 @@ const createNewReq = async (req, res) => {
     // Send vendor onboarding email if necessary
     if (isNewVendor) {
       try {
-        await sendEmail(email, "vendorOnboarding", { vendorName });
+        // await sendEmail(email, "vendorOnboarding", { vendorName });
 
         const vendorManagementEmails = await addPanelUsers
           .find({ $or: [{ department: "Vendor Management" }, { role: "Vendor Management" }] }, { company_email_id: 1 })
@@ -289,7 +289,8 @@ const createNewReq = async (req, res) => {
         // Send vendor management emails
         await Promise.all(
           vendorManagementEmails.map(({ company_email_id }) =>
-            sendEmail(company_email_id, "newVendorOnBoard", { vendorName, email, reqId })
+            console.log(company_email_id)
+            // sendEmail(company_email_id, "newVendorOnBoard", { vendorName, email, reqId })
           )
         );
       } catch (emailError) {
@@ -319,7 +320,7 @@ const createNewReq = async (req, res) => {
 const sendEmailWithRetry = async (email, template, data, retries = 3, delay = 1000) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      await sendEmail(email, template, data);
+      // await sendEmail(email, template, data);
       return; // Successful send, exit
     } catch (error) {
       console.error(`Attempt ${attempt} failed to send email:`, error);
