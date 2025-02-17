@@ -164,7 +164,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                     </div>
                                 </div>
 
-                                <div className="grid md:grid-cols-4 gap-4">
+                                {/* <div className="grid md:grid-cols-4 gap-4">
                                     <div className="bg-gray-50 p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
                                             Payment Mode
@@ -198,6 +198,59 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                         </span>
                                         <div className="text-gray-800 font-semibold mt-1">
                                             {formData.commercials.shipTo}
+                                        </div>
+                                    </div>
+                                </div> */}
+                                <div className="bg-gray-50 p-6 rounded-lg w-full">
+                                    <div className="flex justify-between">
+                                        {/* Bill To Column */}
+                                        <div className="w-1/2 pr-4">
+                                            <span className="text-gray-600 font-medium">
+                                                Bill To
+                                            </span>
+                                            <div className="text-gray-800 font-semibold mt-1">
+                                                {formData.commercials.billTo
+                                                    .split("Tax ID:")[0]
+                                                    .trim()}
+                                            </div>
+                                            <div className="text-gray-500 mt-1">
+                                                Tax ID:{" "}
+                                                {formData.commercials.billTo
+                                                    .split("Tax ID:")[1]
+                                                    ?.split("Tax Type:")[0]
+                                                    .trim()}
+                                            </div>
+                                            <div className="text-gray-500 mt-1">
+                                                Tax Type:{" "}
+                                                {formData.commercials.billTo
+                                                    .split("Tax Type:")[1]
+                                                    ?.trim()}
+                                            </div>
+                                        </div>
+
+                                        {/* Ship To Column */}
+                                        <div className="w-1/2 pl-4">
+                                            <span className="text-gray-600 font-medium">
+                                                Ship To
+                                            </span>
+                                            <div className="text-gray-800 font-semibold mt-1">
+                                                {formData.commercials.shipTo
+                                                    .split("Tax ID:")[0]
+                                                    .trim()}
+                                            </div>
+                                            <div className="text-gray-500 mt-1">
+                                                Tax ID:{" "}
+                                                {formData.commercials.shipTo
+                                                    .split("Tax ID:")[1]
+                                                    ?.split("Tax Type:")[0]
+                                                    .trim()}
+                                            </div>
+                                            <div className="text-gray-500 mt-1">
+                                                Tax Type:{" "}
+                                                {formData.commercials.shipTo
+                                                    .split("Tax Type:")[1]
+                                                    ?.trim()}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

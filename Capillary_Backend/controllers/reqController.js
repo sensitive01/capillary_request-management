@@ -732,6 +732,83 @@ const calculateBudget = (reqData, department = null) => {
 //   }
 // };
 
+// const getApprovedReqData = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     console.log("Id", id);
+
+//     let consolidatedData;
+
+//     const panelUserData = await addPanelUsers
+//       .findOne(
+//         { _id: id },
+//         { _id: 1, full_name: 1, department: 1, role: 1, company_email_id: 1 }
+//       )
+//       .lean();
+
+//     console.log("panelUserData", panelUserData);
+
+//     const employeeData = await empModel
+//       .findOne(
+//         { _id: id },
+//         {
+//           _id: 1,
+//           full_name: 1,
+//           department: 1,
+//           hod_email_id: 1,
+//           company_email_id: 1,
+//         }
+//       )
+//       .lean();
+
+//     if (panelUserData) {
+//       consolidatedData = panelUserData;
+//     } else if (employeeData) {
+//       const isEmpHod = await CreateNewReq.findOne({
+//         "firstLevelApproval.hodEmail": employeeData.company_email_id,
+//       }).lean();
+
+//       consolidatedData = {
+//         ...employeeData,
+//         role: isEmpHod ? "HOD Department" : "Employee",
+//       };
+//     }
+//     console.log("consolidatedData", consolidatedData);
+
+//     if (!consolidatedData || !consolidatedData.company_email_id) {
+//       return res
+//         .status(404)
+//         .json({ message: "User not found or invalid data" });
+//     }
+
+//     let reqData = await CreateNewReq.find({
+//       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+//     })
+//       .sort({ createdAt: -1 })
+//       .exec();
+
+//     console.log("reqData", reqData, consolidatedData.role);
+
+//     if (
+//       reqData.length === 0 &&
+//       consolidatedData.role !== "HOD Department" &&
+//       consolidatedData.role !== "Employee"
+//     ) {
+//       // Corrected condition
+//       console.log("Fetching all requests as no matching records found.");
+//       reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
+//     }
+
+//     console.log("Request Data", reqData);
+//     console.log("ReqData.count", reqData.length);
+
+//     res.status(200).json({ reqData });
+//   } catch (err) {
+//     console.error("Error in fetching new notifications", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
 const getApprovedReqData = async (req, res) => {
   try {
     const { id } = req.params;
@@ -773,6 +850,7 @@ const getApprovedReqData = async (req, res) => {
         role: isEmpHod ? "HOD Department" : "Employee",
       };
     }
+
     console.log("consolidatedData", consolidatedData);
 
     if (!consolidatedData || !consolidatedData.company_email_id) {
@@ -785,7 +863,7 @@ const getApprovedReqData = async (req, res) => {
       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
     })
       .sort({ createdAt: -1 })
-      .exec();
+      .lean(); // Added .lean() for better performance
 
     console.log("reqData", reqData, consolidatedData.role);
 
@@ -794,15 +872,41 @@ const getApprovedReqData = async (req, res) => {
       consolidatedData.role !== "HOD Department" &&
       consolidatedData.role !== "Employee"
     ) {
-      // Corrected condition
       console.log("Fetching all requests as no matching records found.");
-      reqData = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
+      reqData = await CreateNewReq.find().sort({ createdAt: -1 }).lean();
     }
 
-    console.log("Request Data", reqData);
-    console.log("ReqData.count", reqData.length);
+    // Process reqData to extract department details based on status
+    const processedReqData = reqData.map((request) => {
+      const { approvals, firstLevelApproval } = request;
+      const latestLevelApproval = approvals?.[approvals.length - 1]; // Avoids error if approvals array is empty
+      console.log("latestLevelApproval", latestLevelApproval);
+      let departmentInfo = {};
 
-    res.status(200).json({ reqData });
+      if (!latestLevelApproval) {
+        if (firstLevelApproval.approved) {
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        } else {
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        }
+
+        return { ...request, ...departmentInfo }; // This return was missing a closing brace
+      }
+
+      if (latestLevelApproval.status === "Approved") {
+        departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+      } else if (
+        latestLevelApproval.status === "Hold" ||
+        latestLevelApproval.status === "Rejected"
+      ) {
+        departmentInfo.cDepartment = latestLevelApproval.departmentName;
+      }
+
+      return { ...request, ...departmentInfo };
+    });
+
+    console.log("Processed Request Data", processedReqData);
+    res.status(200).json({ reqData: processedReqData });
   } catch (err) {
     console.error("Error in fetching new notifications", err);
     res.status(500).json({ message: "Internal Server Error" });
@@ -1569,7 +1673,7 @@ const uploadInvoiceDocuments = async (req, res) => {
           employee_id: 1,
           department: 1,
         }
-      )) || (await addPanelUsers.findOne({employee_id: empId }));
+      )) || (await addPanelUsers.findOne({ employee_id: empId }));
     console.log(empData);
 
     if (!empData) {
@@ -1835,7 +1939,6 @@ const approveRequest = async (req, res) => {
         message: "Unable to update request. Please verify the workflow state.",
       });
     }
-
 
     if (
       department === "Business Finance" &&

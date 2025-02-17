@@ -292,7 +292,7 @@ const PreviewTheReq = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid md:grid-cols-4 gap-4">
+                                {/* <div className="grid md:grid-cols-4 gap-4">
                                     <div className="bg-gray-50 p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
                                             Payment Mode
@@ -312,7 +312,7 @@ const PreviewTheReq = () => {
                                                 : "No"}
                                         </div>
                                     </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="bg-gray-50 w-a p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
                                             Bill To
                                         </span>
@@ -321,6 +321,24 @@ const PreviewTheReq = () => {
                                         </div>
                                     </div>
                                     <div className="bg-gray-50 p-4 rounded-lg">
+                                        <span className="text-gray-600 font-medium">
+                                            Ship To
+                                        </span>
+                                        <div className="text-gray-800 font-semibold mt-1">
+                                            {request.commercials.shipTo}
+                                        </div>
+                                    </div>
+                                </div> */}
+                                <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                    <div className="bg-gray-50 p-6 rounded-lg w-full">
+                                        <span className="text-gray-600 font-medium">
+                                            Bill To
+                                        </span>
+                                        <div className="text-gray-800 font-semibold mt-1">
+                                            {request.commercials.billTo}
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-50 p-6 rounded-lg w-full">
                                         <span className="text-gray-600 font-medium">
                                             Ship To
                                         </span>
@@ -811,7 +829,11 @@ const PreviewTheReq = () => {
             formData.append("poImage", selectedImage);
             formData.append("requestId", request.id); // Assuming you have request.id
 
-            const response = await uploadFiles(selectedImage, "PO-Documets",request.reqid);
+            const response = await uploadFiles(
+                selectedImage,
+                "PO-Documets",
+                request.reqid
+            );
             console.log("response", response);
 
             const response2 = await addPODocument(

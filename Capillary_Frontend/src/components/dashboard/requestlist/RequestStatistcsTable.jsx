@@ -131,6 +131,7 @@ const RequestStatistcsTable = () => {
 
                 if (role === "Admin") {
                     response = await getAdminReqListEmployee();
+                    console.log("1",response)
                     if (action === "Total-Request") {
                         setUsers(response.data.data);
                     } else {
@@ -338,12 +339,12 @@ const RequestStatistcsTable = () => {
                                                 >
                                                     ReqId
                                                 </th>
-                                                <th
+                                                {/* <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
                                                 >
                                                     Business Unit
-                                                </th>
+                                                </th> */}
                                                 <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -369,7 +370,7 @@ const RequestStatistcsTable = () => {
                                                 >
                                                     Status
                                                 </th>
-                                                <th
+                                                {/* <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
                                                 >
@@ -380,7 +381,7 @@ const RequestStatistcsTable = () => {
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider]"
                                                 >
                                                     Invoice_Document
-                                                </th>
+                                                </th> */}
                                                 <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -421,13 +422,18 @@ const RequestStatistcsTable = () => {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-4 py-4 text-sm text-gray-500">
+                                                    {/* <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
                                                             .businessUnit ||
                                                             "NA"}
-                                                    </td>
+                                                    </td> */}
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
+                                                        <span className="block font-medium">
+                                                        {user.commercials
+                                                            .businessUnit ||
+                                                            "NA"}
+                                                            </span>
                                                             <span className="block font-medium">
                                                                 {user
                                                                     .commercials
@@ -470,10 +476,9 @@ const RequestStatistcsTable = () => {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {user.status ||
-                                                            "Pending"}
+                                                    {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
                                                     </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">
+                                                    {/* <td className="px-2 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
                                                             "Approved" ||
                                                         user.status ===
@@ -513,7 +518,7 @@ const RequestStatistcsTable = () => {
                                                         ) : (
                                                             "N/A"
                                                         )}
-                                                    </td>
+                                                    </td> */}
                                                     <td className="px-6 py-4 text-sm text-gray-500 text-center">
                                                         <div className="flex justify-center items-center space-x-2">
                                                             <button

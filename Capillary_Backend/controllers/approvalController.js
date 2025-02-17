@@ -11,6 +11,7 @@ const approveRequest = async (req, res) => {
     console.log("req.body", req.body);
     const { id } = req.params;
     const { reqId, status, email, reason } = req.body;
+    console.log(reqId, status, email, reason)
     const remarks = reason;
 
     // Fetch required data
@@ -143,6 +144,7 @@ const approveRequest = async (req, res) => {
 
       const nextDepartment = departmentOrder[currentDeptIndex + 1] || null;
       const latestApproval = reqData.approvals[reqData.approvals.length - 1];
+      console.log("last level approvals",latestApproval)
 
       const approvalRecord = {
         departmentName: approverData.department,
@@ -158,8 +160,8 @@ const approveRequest = async (req, res) => {
       };
 
       if (
-        latestApproval.status === "Rejected" ||
-        latestApproval.status === "Hold"
+        (latestApproval?.status === "Rejected" ||
+        latestApproval?.status === "Hold") && latestApproval.length>0
       ) {
         const approvalRecords = {
           departmentName: approverData.department,

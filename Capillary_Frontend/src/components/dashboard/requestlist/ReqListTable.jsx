@@ -237,7 +237,7 @@ const ReqListTable = () => {
                 <td className="text-sm text-gray-500 text-center">
                     <div className="flex flex-col items-center space-y-2">
                         <button
-                            className="px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary"
+                            className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setIsShowModal(true);
@@ -393,19 +393,19 @@ const ReqListTable = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                                             >
                                                 ReqId
                                             </th>
-                                            <th
+                                            {/* <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                                             >
                                                 Business Unit
-                                            </th>
+                                            </th> */}
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                                             >
                                                 Entity
                                             </th>
@@ -428,7 +428,7 @@ const ReqListTable = () => {
                                             >
                                                 Status
                                             </th>
-                                            <th
+                                            {/* <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                                             >
@@ -439,10 +439,10 @@ const ReqListTable = () => {
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                                             >
                                                 Invoice_Document
-                                            </th>
+                                            </th> */}
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[8%]"
                                             >
                                                 Actions
                                             </th>
@@ -485,15 +485,20 @@ const ReqListTable = () => {
                                                             </span>
                                                         </div>
                                                     </td>
-
+{/* 
                                                     <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
                                                             ?.businessUnit ||
                                                             "NA"}
-                                                    </td>
+                                                    </td> */}
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
+                                                            <span className="block">
+                                                            {user.commercials
+                                                            ?.businessUnit ||
+                                                            "NA"}
+                                                            </span>
                                                             <span className="block font-medium">
                                                                 {user
                                                                     .commercials
@@ -538,10 +543,9 @@ const ReqListTable = () => {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {user.status ||
-                                                            "Pending"}
+                                                    {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                    {/* <td className="px-4 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
                                                             "Invoice-Pending" ||
                                                         user.status ===
@@ -622,7 +626,7 @@ const ReqListTable = () => {
                                                         ) : (
                                                             "N/A"
                                                         )}
-                                                    </td>
+                                                    </td> */}
 
                                                     {renderActionColumn(user)}
                                                 </tr>

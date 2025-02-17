@@ -54,6 +54,7 @@ const Approvals = () => {
 
       try {
         const response = await getApprovedReq(userId);
+        console.log("response",response)
         if (response.status === 200) {
           setUsers(response.data.reqData);
           setFilteredUsers(response.data.reqData);
@@ -278,16 +279,16 @@ const Approvals = () => {
                       </th>
                       <th
                         scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                       >
                         Business Unit
                       </th>
-                      <th
+                      {/* <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                       >
                         Entity
-                      </th>
+                      </th> */}
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
@@ -296,18 +297,18 @@ const Approvals = () => {
                       </th>
                       <th
                         scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[8%]"
                       >
                         Amount
                       </th>
 
                       <th
                         scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                       >
                         Status
                       </th>
-                      <th
+                      {/* <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                       >
@@ -317,8 +318,8 @@ const Approvals = () => {
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                       >
-                        Invoice_Document
-                      </th>
+                        Invoice_Document   
+                      </th> */}
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
@@ -355,11 +356,14 @@ const Approvals = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-500">
+                          {/* <td className="px-4 py-4 text-sm text-gray-500">
                             {user.commercials?.businessUnit || "NA"}
-                          </td>
+                          </td> */}
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div>
+                            <span className="block font-medium">
+                            {user.commercials?.businessUnit || "NA"}
+                              </span>
                               <span className="block font-medium">
                                 {user.commercials?.entity || "NA"}
                               </span>
@@ -386,10 +390,10 @@ const Approvals = () => {
                           </td>
 
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            {user.status || "Pending"}
+                          {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
                           </td>
 
-                          <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                          {/* <td className="px-4 py-3 text-sm text-gray-500 text-center">
                             {user.status === "Approved" ||
                             user.status === "Invoice-Pending" ? (
                               <div className="w-full flex justify-center">
@@ -450,7 +454,7 @@ const Approvals = () => {
                             ) : (
                               "N/A"
                             )}
-                          </td>
+                          </td> */}
 
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div className="flex justify-center items-center space-x-2">

@@ -308,7 +308,7 @@ const MyRequestStatistics = () => {
                                             >
                                                 Status
                                             </th>
-                                            <th
+                                            {/* <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                                             >
@@ -319,7 +319,7 @@ const MyRequestStatistics = () => {
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                                             >
                                                 Invoice_Document
-                                            </th>
+                                            </th> */}
                                             <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
@@ -410,11 +410,10 @@ const MyRequestStatistics = () => {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {user.status ||
-                                                            "Pending"}
+                                                    {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
                                                     </td>
 
-                                                    <td className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                    {/* <td className="px-4 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
                                                             "Approved" ||
                                                         user.status ===
@@ -494,7 +493,7 @@ const MyRequestStatistics = () => {
                                                         ) : (
                                                             "N/A"
                                                         )}
-                                                    </td>
+                                                    </td> */}
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div className="flex justify-center items-center space-x-2">
