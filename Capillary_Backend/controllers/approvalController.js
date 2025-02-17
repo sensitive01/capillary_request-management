@@ -10,7 +10,7 @@ const approveRequest = async (req, res) => {
   try {
     console.log("req.body", req.body);
     const { id } = req.params;
-    const { reqId, status, email, reason } = req.body;
+    const { reqId, status, email, reason,role } = req.body;
     console.log(reqId, status, email, reason)
     const remarks = reason;
 
@@ -139,7 +139,7 @@ const approveRequest = async (req, res) => {
       if (email === reqData.firstLevelApproval.hodEmail) {
         currentDeptIndex = departmentOrder.indexOf(email);
       } else {
-        currentDeptIndex = departmentOrder.indexOf(department);
+        currentDeptIndex = departmentOrder.indexOf(role);
       }
 
       const nextDepartment = departmentOrder[currentDeptIndex + 1] || null;
@@ -191,7 +191,7 @@ const approveRequest = async (req, res) => {
 
       // Business Finance Auto-approval flow
       if (
-        department === "Business Finance" &&
+        role === "Business Finance" &&
         !reqData.procurements.isNewVendor &&
         status === "Approved"
       ) {
@@ -207,7 +207,7 @@ const approveRequest = async (req, res) => {
               : autoApproveDepartments[i + 1];
 
             const autoApproverData = await panelUserData.findOne(
-              { department: autoDepartment },
+              { role: autoDepartment },
               { full_name: 1, employee_id: 1, company_email_id: 1 }
             );
 
@@ -277,7 +277,7 @@ const approveRequest = async (req, res) => {
               : autoApproveDepartments[i + 1];
 
             const autoApproverData = await panelUserData.findOne(
-              { department: autoDepartment },
+              { role: autoDepartment },
               { full_name: 1, employee_id: 1, company_email_id: 1 }
             );
 
@@ -344,8 +344,7 @@ const approveRequest = async (req, res) => {
       }
 
       // HOF Approval flow
-      console.log("department",department)
-      if (approverData.department === "Head of Finance" && status === "Approved") {
+      if (role === "Head of Finance" && status === "Approved") {
         await CreateNewReq.updateOne(
           { _id: reqId },
           {
@@ -370,7 +369,7 @@ const approveRequest = async (req, res) => {
 
       // Vendor Management Auto-approval flow
       if (
-        department === "Vendor Management" &&
+        role === "Vendor Management" &&
         reqData.hasDeviations === 0 &&
         status === "Approved"
       ) {
@@ -385,7 +384,7 @@ const approveRequest = async (req, res) => {
             : autoApproveDepartments[i + 1];
 
           const autoApproverData = await panelUserData.findOne(
-            { department: autoDepartment },
+            { role: autoDepartment },
             { full_name: 1, employee_id: 1, company_email_id: 1 }
           );
 
