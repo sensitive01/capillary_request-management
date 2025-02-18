@@ -15,7 +15,10 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchDateFilterStatistics, getStatisticData } from "../api/service/adminServices";
+import {
+  fetchDateFilterStatistics,
+  getStatisticData,
+} from "../api/service/adminServices";
 import LoadingSpinner from "./spinner/LoadingSpinner";
 
 const currencies = [
@@ -30,14 +33,13 @@ const currencies = [
   { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
   const empId = localStorage.getItem("capEmpId");
   const department = localStorage.getItem("department");
-  const email= localStorage.getItem("email") 
+  const email = localStorage.getItem("email");
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     fromDate: "",
@@ -65,7 +67,7 @@ const Dashboard = () => {
       setIsLoading(true);
 
       try {
-        const response = await getStatisticData(empId, role,email);
+        const response = await getStatisticData(empId, role, email);
         if (response.status === 200) {
           setDashboardStats(response.data);
         }
@@ -99,32 +101,36 @@ const Dashboard = () => {
   };
   const clearFilters = () => {
     setDateRange({
-      fromDate: '',
-      toDate: ''
+      fromDate: "",
+      toDate: "",
     });
     setIsFilterActive(false);
-   
   };
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
-    setDateRange(prev => ({
+    setDateRange((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleFilter = async() => {
+  const handleFilter = async () => {
     if (dateRange.fromDate && dateRange.toDate) {
       setIsFilterActive(true);
       console.log(dateRange.fromDate, dateRange.toDate);
-      const response = await fetchDateFilterStatistics(empId,role,dateRange.fromDate, dateRange.toDate)
-      console.log("Response",response)
-      if(response.status===200){
-        setDashboardStats(response.data)
+      const response = await fetchDateFilterStatistics(
+        empId,
+        role,
+        dateRange.fromDate,
+        dateRange.toDate
+      );
+      console.log("Response", response);
+      if (response.status === 200) {
+        setDashboardStats(response.data);
       }
     } else {
-      alert('Please select both From and To dates');
+      alert("Please select both From and To dates");
     }
   };
 
@@ -549,10 +555,13 @@ const Dashboard = () => {
   const renderStatisticCards = () => {
     switch (role?.toLowerCase()) {
       case "admin":
-        return renderAdminCards();
+        if (department?.toLowerCase() === "admin") {
+          return renderAdminCards();
+        }
+        return renderHODCards();
       case "hod department":
         return renderHODCards();
-      case "hof":
+      case "head of finance":
       case "business finance":
         return renderFinanceCards();
       case "vendor management":

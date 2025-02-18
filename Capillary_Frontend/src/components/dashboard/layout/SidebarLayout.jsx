@@ -91,7 +91,7 @@ const SidebarLayout = () => {
       { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
     ],
-    HOF: [
+    "Head of Finance": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
       { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },

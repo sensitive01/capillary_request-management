@@ -27,7 +27,7 @@ const currencies = [
 ];
 
 const Approvals = () => {
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("capEmpId");
   const role = localStorage.getItem("role");
   const navigate = useNavigate();
 
@@ -54,7 +54,7 @@ const Approvals = () => {
 
       try {
         const response = await getApprovedReq(userId);
-        console.log("response",response)
+        console.log("response", response);
         if (response.status === 200) {
           setUsers(response.data.reqData);
           setFilteredUsers(response.data.reqData);
@@ -304,22 +304,11 @@ const Approvals = () => {
 
                       <th
                         scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                       >
                         Status
                       </th>
-                      {/* <th
-                        scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
-                      >
-                        PO_Document
-                      </th>
-                      <th
-                        scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
-                      >
-                        Invoice_Document   
-                      </th> */}
+                     
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
@@ -361,8 +350,8 @@ const Approvals = () => {
                           </td> */}
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div>
-                            <span className="block font-medium">
-                            {user.commercials?.businessUnit || "NA"}
+                              <span className="block font-medium">
+                                {user.commercials?.businessUnit || "NA"}
                               </span>
                               <span className="block font-medium">
                                 {user.commercials?.entity || "NA"}
@@ -390,92 +379,41 @@ const Approvals = () => {
                           </td>
 
                           <td className="px-6 py-4 text-sm text-gray-500">
-                          {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
-                          </td>
-
-                          {/* <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                            {user.status === "Approved" ||
-                            user.status === "Invoice-Pending" ? (
-                              <div className="w-full flex justify-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(
-                                      `/req-list-table/invoice/${user._id}`
-                                    );
-                                  }}
-                                  className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
-                                >
-                                  <FileText className="h-4 w-4 mr-1" />
-                                  View Po
-                                </button>
-                              </div>
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                            {user.status === "Approved" ? (
-                              <div className="w-full flex justify-center">
-                                {user?.invoiceDocumets[0]?.invoiceLink?.startsWith(
-                                  "https"
-                                ) ? (
-                                  <a
-                                    href={user?.invoiceDocumets[0]?.invoiceLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
-                                    onClick={(e) => {
-                                      e.preventDefault(); // Prevent default only if you need custom handling
-                                      const url =
-                                        user?.invoiceDocumets[0]?.invoiceLink;
-                                      // Add error handling
-                                      if (url) {
-                                        try {
-                                          window.open(url, "_blank");
-                                        } catch (error) {
-                                          console.error(
-                                            "Error opening link:",
-                                            error
-                                          );
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    Invoice
-                                  </a>
-                                ) : (
-                                  <span className="text-red-500">
-                                    Invalid Link
-                                  </span>
+                            {user.isCompleted ? (
+                              <>
+                                {user.status !== "Approved" && (
+                                  <>
+                                    {user.nextDepartment} <br />
+                                  </>
                                 )}
-                              </div>
+                                {user.status || "Pending"}
+                              </>
                             ) : (
-                              "N/A"
+                              <span className="text-red-500">Draft</span>
                             )}
-                          </td> */}
+                          </td>
 
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            <div className="flex justify-center items-center space-x-2">
-                              <button
-                                className="text-blue-500 hover:text-blue-700"
-                                onClick={(e) => handleEdit(e, user._id)}
-                              >
-                                <Edit className="h-5 w-5" />
-                              </button>
-                              <button
-                                className="text-red-500 hover:text-red-700"
-                                // onClick={(e) => handleDelete(e, user._id)}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setReqId(user._id);
-                                  setIsDelete(true);
-                                }}
-                              >
-                                <Trash2 className="h-5 w-5" />
-                              </button>
-                            </div>
+                            {user.status !== "Approved" && (
+                              <div className="flex justify-center items-center space-x-2">
+                                <button
+                                  className="text-blue-500 hover:text-blue-700"
+                                  onClick={(e) => handleEdit(e, user._id)}
+                                >
+                                  <Edit className="h-5 w-5" />
+                                </button>
+                                <button
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setReqId(user._id);
+                                    setIsDelete(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))

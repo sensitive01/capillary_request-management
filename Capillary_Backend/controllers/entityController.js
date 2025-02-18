@@ -116,7 +116,7 @@ exports.getAllEntities = async (req, res) => {
         { departments: 1,businessUnit: 1 } 
       );
 
-      console.log("Approver Department Data:", departmentData);
+     
 
       departmentHod = [];
 

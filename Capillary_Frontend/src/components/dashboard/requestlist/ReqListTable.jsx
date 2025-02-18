@@ -236,16 +236,25 @@ const ReqListTable = () => {
             return (
                 <td className="text-sm text-gray-500 text-center">
                     <div className="flex flex-col items-center space-y-2">
-                        <button
-                            className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsShowModal(true);
-                                setReqId(user._id);
-                            }}
-                        >
-                            Request Edit
-                        </button>
+                        {user.isCompleted ? (
+                            <button
+                                className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsShowModal(true);
+                                    setReqId(user._id);
+                                }}
+                            >
+                                Request Edit
+                            </button>
+                        ) : (
+                            <button
+                                className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                onClick={(e) => handleEdit(e, user._id)}
+                            >
+                                Complete Request
+                            </button>
+                        )}
                     </div>
                 </td>
             );
@@ -261,7 +270,6 @@ const ReqListTable = () => {
                         </button>
                         <button
                             className="text-red-500 hover:text-red-700"
-                            // onClick={(e) => handleDelete(e, user._id)}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setReqId(user._id);
@@ -424,7 +432,7 @@ const ReqListTable = () => {
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                                             >
                                                 Status
                                             </th>
@@ -442,7 +450,7 @@ const ReqListTable = () => {
                                             </th> */}
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[8%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
                                             >
                                                 Actions
                                             </th>
@@ -485,7 +493,7 @@ const ReqListTable = () => {
                                                             </span>
                                                         </div>
                                                     </td>
-{/* 
+                                                    {/* 
                                                     <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
                                                             ?.businessUnit ||
@@ -495,9 +503,10 @@ const ReqListTable = () => {
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
                                                             <span className="block">
-                                                            {user.commercials
-                                                            ?.businessUnit ||
-                                                            "NA"}
+                                                                {user
+                                                                    .commercials
+                                                                    ?.businessUnit ||
+                                                                    "NA"}
                                                             </span>
                                                             <span className="block font-medium">
                                                                 {user
@@ -543,92 +552,34 @@ const ReqListTable = () => {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                    {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
-                                                    </td>
-                                                    {/* <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                                                        {user.status ===
-                                                            "Invoice-Pending" ||
-                                                        user.status ===
-                                                            "Approved" ? (
-                                                            <div className="w-full flex justify-center">
-                                                                <button
-                                                                    onClick={(
-                                                                        e
-                                                                    ) => {
-                                                                        e.stopPropagation();
-                                                                        navigate(
-                                                                            `/req-list-table/invoice/${user._id}`
-                                                                        );
-                                                                    }}
-                                                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary flex items-center space-x-1 w-full max-w-[120px]"
-                                                                >
-                                                                    <FileText className="h-4 w-4 mr-1" />
-                                                                    View PO
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            "N/A"
-                                                        )}
-                                                    </td>
-
-                                                    <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                                                        {user.status ===
-                                                        "Approved" ? (
-                                                            <div className="w-full flex justify-center">
-                                                                {user?.invoiceDocumets[0]?.invoiceLink?.startsWith(
-                                                                    "https"
-                                                                ) ? (
-                                                                    <a
-                                                                        href={
-                                                                            user
-                                                                                ?.invoiceDocumets[0]
-                                                                                ?.invoiceLink
-                                                                        }
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
-                                                                        onClick={(
-                                                                            e
-                                                                        ) => {
-                                                                            e.preventDefault(); // Prevent default only if you need custom handling
-                                                                            const url =
-                                                                                user
-                                                                                    ?.invoiceDocumets[0]
-                                                                                    ?.invoiceLink;
-                                                                            // Add error handling
-                                                                            if (
-                                                                                url
-                                                                            ) {
-                                                                                try {
-                                                                                    window.open(
-                                                                                        url,
-                                                                                        "_blank"
-                                                                                    );
-                                                                                } catch (error) {
-                                                                                    console.error(
-                                                                                        "Error opening link:",
-                                                                                        error
-                                                                                    );
-                                                                                }
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <FileText className="h-4 w-4 mr-1" />
-                                                                        Invoice
-                                                                    </a>
-                                                                ) : (
-                                                                    <span className="text-red-500">
-                                                                        Invalid
-                                                                        Link
-                                                                    </span>
+                                                        {user.isCompleted ? (
+                                                            <>
+                                                                {user.status !==
+                                                                    "Approved" && (
+                                                                    <>
+                                                                        {
+                                                                            user.nextDepartment
+                                                                        }{" "}
+                                                                        <br />
+                                                                    </>
                                                                 )}
-                                                            </div>
+                                                                {user.status ||
+                                                                    "Pending"}
+                                                            </>
                                                         ) : (
-                                                            "N/A"
+                                                            <span className="text-red-500">
+                                                                Draft
+                                                            </span>
                                                         )}
-                                                    </td> */}
+                                                    </td>
 
-                                                    {renderActionColumn(user)}
+                                                 
+
+                                                    {user.status !==
+                                                        "Approved" &&
+                                                        renderActionColumn(
+                                                            user
+                                                        )}
                                                 </tr>
                                             ))
                                         ) : (

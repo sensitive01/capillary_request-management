@@ -100,7 +100,7 @@ const handleApprove = async (userId, role, reqId, status, email, reason) => {
                 );
                 break;
 
-            case "HOF":
+            case "Head of Finance":
                 console.log("Approving for HOF");
                 response = await hofApproveRequest(
                     userId,

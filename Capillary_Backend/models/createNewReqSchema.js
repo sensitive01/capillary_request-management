@@ -26,7 +26,7 @@ const commercialsSchema = new mongoose.Schema({
 
   department: { type: String },
   entity: { type: String },
-  entityId:{ type: String },
+  entityId: { type: String },
   hod: { type: String },
   isCreditCardSelected: { type: Boolean },
   paymentMode: { type: String },
@@ -39,14 +39,20 @@ const commercialsSchema = new mongoose.Schema({
 const procurementsSchema = new mongoose.Schema({
   quotationDate: { type: Date },
   quotationNumber: { type: String },
-  uploadedFiles: {
-    type: Map,
-    of: [String],
-  },
+  // uploadedFiles: [
+  //   {
+  //     type: Map,
+  //     of: [String],
+  //   },
+  // ],
+  uploadedFiles: [{
+    type: Object  // Change from Map to Object to allow dynamic keys
+  }],
+
   vendor: { type: String },
   vendorName: { type: String },
-  email:{ type: String },
-  isNewVendor:{ type: Boolean,default:false },
+  email: { type: String },
+  isNewVendor: { type: Boolean, default: false },
   servicePeriod: { type: String },
   projectCode: { type: String },
   clientName: { type: String },
@@ -117,28 +123,29 @@ const createnewReqSchema = new mongoose.Schema(
       hodDepartment: { type: String },
       status: { type: String },
     },
-    poDocuments:{
-      uploadedBy:{
-        empName:{type:String},
-        empId:{type:String},
-        department:{type:String},
-        uploadedOn:{type:Date},
-        receivedConfirmation:{type:Date}
+    poDocuments: {
+      uploadedBy: {
+        empName: { type: String },
+        empId: { type: String },
+        department: { type: String },
+        uploadedOn: { type: Date },
+        receivedConfirmation: { type: Date },
       },
-      poLink:{type:String}
+      poLink: { type: String },
     },
-    invoiceDocumets:[
+    isCompleted:{type:Boolean,default:false},
+    invoiceDocumets: [
       {
-        uploadedBy:{
-          empName:{type:String},
-          empId:{type:String},
-          department:{type:String},
-          uploadedOn:{type:Date},
-          receivedConfirmation:{type:Date},   
+        uploadedBy: {
+          empName: { type: String },
+          empId: { type: String },
+          department: { type: String },
+          uploadedOn: { type: Date },
+          receivedConfirmation: { type: Date },
         },
-        invoiceLink:{type:String}
-      }
-    ]
+        invoiceLink: { type: String },
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -38,6 +38,17 @@ router.post('/accept-request-po-team/:id', approvalController.approveRequest);
 router.post('/accept-request-hof-team/:id', approvalController.approveRequest);
 
 
+router.post('/save-commercial-data/:empId', reqController.saveCommercialData);
+router.put('/save-procurements-data/:newReqId', reqController.saveProcurementsData);
+router.put('/save-supplies-data/:reqId', reqController.saveSuppliesData);
+router.put('/save-aggrement-data/:reqId', reqController.saveAggrementData);
+
+
+
+
+router.post('/edit-commercial-data/:empId/:reqId', reqController.editCommercialData);
+
+
 
 
 

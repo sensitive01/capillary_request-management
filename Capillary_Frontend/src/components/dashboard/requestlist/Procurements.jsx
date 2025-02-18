@@ -2,12 +2,19 @@ import { useState, useEffect, useRef } from "react";
 import {
     deleteFileFromAwsS3,
     fetchAllVendorData,
+    savePocurementsData
 } from "../../../api/service/adminServices";
 import { FaFilePdf, FaSearch } from "react-icons/fa";
 import { toast } from "react-toastify";
 import uploadFiles from "../../../utils/s3BucketConfig.js";
 
-const Procurements = ({ formData, setFormData, onBack, onNext }) => {
+const Procurements = ({
+    formData = {},
+    setFormData,
+    onBack,
+    onNext,
+    reqId,
+}) => {
     console.log("procurements formData", formData);
     const [vendors, setVendors] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -224,21 +231,22 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     };
     const handleSelectVendor = (vendor) => {
         const vendorId = vendor.ID || vendor.vendorId;
-        const vendorName = vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
-        
-        setFormData(prevState => ({
+        const vendorName =
+            vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
+
+        setFormData((prevState) => ({
             ...prevState,
             vendor: vendorId,
             vendorName: vendorName,
             email: vendor.email,
-            isNewVendor: vendor.isNewVendor
+            isNewVendor: vendor.isNewVendor,
         }));
-        
+
         setSearchTerm(getVendorDisplayName(vendor));
         setShowResults(false);
-        
+
         // Clear any vendor-related errors
-        setErrors(prev => ({ ...prev, vendor: "" }));
+        setErrors((prev) => ({ ...prev, vendor: "" }));
     };
 
     const getDateRange = () => {
@@ -281,7 +289,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         if (vendor.isNewVendor) {
             return `${vendor.firstName} (New Vendor)`;
         }
-        const displayName = vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
+        const displayName =
+            vendor.firstName || vendor.Name || vendor.name || vendor.vendorName;
         const id = vendor.vendorId || vendor.ID;
         return `${id} - ${displayName}`;
     };
@@ -310,13 +319,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
             const uploadedUrls = await Promise.all(
                 files.map(async (file) => {
                     //   const data = await uploadCloudinary(file);
-                    const data = await uploadFiles(
-                        file,
-                        fileType,
-                        formData?.reqId
-                    );
+                    const data = await uploadFiles(file, fileType, reqId);
                     console.log("data", data);
-                    setFormData({ ...formData, reqId: data.data.newReqId });
 
                     return data.data.fileUrls[0];
                 })
@@ -358,8 +362,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
     // Remove a specific file
     const handleRemoveFile = async (fileType, fileIndex, url) => {
         console.log(fileType, fileIndex, url);
-        const removeS3Image = await deleteFileFromAwsS3(url);
-        console.log("fileDeleted", removeS3Image);
+        // const removeS3Image = await deleteFileFromAwsS3(url);
+        // console.log("fileDeleted", removeS3Image);
 
         setFormData((prevState) => {
             const updatedFiles = { ...prevState.uploadedFiles };
@@ -593,9 +597,12 @@ const Procurements = ({ formData, setFormData, onBack, onNext }) => {
         );
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateFields()) {
-            onNext();
+            const response = await savePocurementsData(formData,reqId);
+            if (response.status === 200) {
+                onNext();
+            }
         } else {
             toast.error("Please fill in all required fields correctly");
         }

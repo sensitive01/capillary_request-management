@@ -23,7 +23,7 @@ export const fetchDateFilterStatistics = async (empId, role, from, to) => {
   }
 };
 
-export const getStatisticData = async (empId, role,email) => {
+export const getStatisticData = async (empId, role, email) => {
   try {
     const response = await adminServices.get(
       `/request/get-statistic-data/${empId}/${role}/${email}`
@@ -207,10 +207,10 @@ export const getPanelMenberData = async () => {
   }
 };
 
-export const createNewRequest = async (id, formData) => {
+export const createNewRequest = async (id, formData,reqId) => {
   try {
-    const response = await adminServices.post(
-      `/employees/create-newrequest/${id}`,
+    const response = await adminServices.put(
+      `/employees/create-newrequest/${id}/${reqId}`,
       formData
     );
     return response;
@@ -493,12 +493,19 @@ export const getAdminReqListEmployee = async () => {
   }
 };
 
-export const hodApproveRequest = async (userId, role, reqId, status,email,reason) => {
+export const hodApproveRequest = async (
+  userId,
+  role,
+  reqId,
+  status,
+  email,
+  reason
+) => {
   try {
     console.log("request/accept-request-hod");
     const response = await adminServices.post(
       `/request/accept-request-hod/${userId}`,
-      { role, reqId, status,email ,reason}
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -517,7 +524,7 @@ export const businessFinanceApproveRequest = async (
   try {
     const response = await adminServices.post(
       `/request/accept-request-business/${userId}`,
-      { role, reqId, status,email,reason }
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -536,7 +543,7 @@ export const vendorManagementApproveRequest = async (
   try {
     const response = await adminServices.post(
       `/request/accept-request-vendor/${userId}`,
-      { role, reqId, status,email ,reason}
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -544,11 +551,18 @@ export const vendorManagementApproveRequest = async (
   }
 };
 
-export const legalTeamApproveRequest = async (userId, role, reqId, status,email,reason) => {
+export const legalTeamApproveRequest = async (
+  userId,
+  role,
+  reqId,
+  status,
+  email,
+  reason
+) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-legal/${userId}`,
-      { role, reqId, status,email,reason }
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -560,14 +574,14 @@ export const infoSecurityApproveRequest = async (
   userId,
   role,
   reqId,
-  status,email,
+  status,
+  email,
   reason
-
 ) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-info-security/${userId}`,
-      { role, reqId, status ,email,reason}
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -575,11 +589,18 @@ export const infoSecurityApproveRequest = async (
   }
 };
 
-export const poTeamApproveRequest = async (userId, role, reqId, status,email,reason) => {
+export const poTeamApproveRequest = async (
+  userId,
+  role,
+  reqId,
+  status,
+  email,
+  reason
+) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-po-team/${userId}`,
-      { role, reqId, status,email,reason }
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -587,11 +608,18 @@ export const poTeamApproveRequest = async (userId, role, reqId, status,email,rea
   }
 };
 
-export const hofApproveRequest = async (userId, role, reqId, status,email,reason) => {
+export const hofApproveRequest = async (
+  userId,
+  role,
+  reqId,
+  status,
+  email,
+  reason
+) => {
   try {
     const response = await adminServices.post(
       `/request/accept-request-hof-team/${userId}`,
-      { role, reqId, status,email,reason }
+      { role, reqId, status, email, reason }
     );
     return response;
   } catch (err) {
@@ -659,12 +687,11 @@ export const releseReqStatus = async (
   reqId,
   role,
   email
-
 ) => {
   try {
     const response = await adminServices.put(
       `/request/relese-status/${userId}/${reqId}`,
-      { status, department, role,email }
+      { status, department, role, email }
     );
     return response;
   } catch (err) {
@@ -804,14 +831,17 @@ export const getAllApprovalData = async () => {
   }
 };
 
-
 export const uploadCSVFile = async (formData) => {
   try {
-    const response = await adminServices.post('/employees/upload-csv-file', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await adminServices.post(
+      "/employees/upload-csv-file",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response;
   } catch (err) {
     return err;
@@ -820,18 +850,16 @@ export const uploadCSVFile = async (formData) => {
 
 export const checkDarwinStatus = async () => {
   try {
-    const response = await adminServices.get('/employees/darwin-status');
+    const response = await adminServices.get("/employees/darwin-status");
     return response;
   } catch (err) {
     return err;
   }
 };
 
-
-
 export const updateDarwinStatus = async () => {
   try {
-    const response = await adminServices.put('/employees/update-darwin-status');
+    const response = await adminServices.put("/employees/update-darwin-status");
     return response;
   } catch (err) {
     return err;
@@ -842,7 +870,77 @@ export const updateDarwinStatus = async () => {
 
 export const generateApiCrediantial = async (email) => {
   try {
-    const response = await adminServices.post('/credantials/api-crediantials',{email});
+    const response = await adminServices.post("/credantials/api-crediantials", {
+      email,
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const saveCommercialData = async (formData, empId) => {
+  try {
+    const response = await adminServices.post(
+      `/request/save-commercial-data/${empId}`,
+      { formData }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const editCommercials = async (formData, empId,reqId) => {
+  try {
+    const response = await adminServices.post(
+      `/request/edit-commercial-data/${empId}/${reqId}`,
+      { formData }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+
+
+
+export const savePocurementsData = async (formData,reqId) => {
+  try {
+    const response = await adminServices.put(
+      `/request/save-procurements-data/${reqId}`,
+      { formData }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const saveSuppliesData = async (formData,reqId) => {
+  try {
+    const response = await adminServices.put(
+      `/request/save-supplies-data/${reqId}`,
+      { formData }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const saveAggrementData = async (formData,reqId) => {
+  try {
+    const response = await adminServices.put(
+      `/request/save-aggrement-data/${reqId}`,
+      { formData }
+    );
     return response;
   } catch (err) {
     return err;

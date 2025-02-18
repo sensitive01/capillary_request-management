@@ -124,7 +124,7 @@ const emailTemplates = {
     `,
   },
   nudgeNotification: {
-    subject: `Reminder: Request ID {{reqid}} Pending Action`,
+    subject: `Reminder:PO-Request Pending Action`,
     html: `
       <!DOCTYPE html>
       <html>

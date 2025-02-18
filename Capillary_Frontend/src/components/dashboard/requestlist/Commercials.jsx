@@ -1,11 +1,14 @@
 import { PlusCircle, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAllEntityData } from "../../../api/service/adminServices";
+import {
+    getAllEntityData,
+    saveCommercialData,
+} from "../../../api/service/adminServices";
 import { toast } from "react-toastify";
 import { CommercialValidationSchema } from "./yupValidation/commercialValidation";
 import businessUnits from "./dropDownData/businessUnit";
 
-const Commercials = ({ formData, setFormData, onNext }) => {
+const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
     const empDepartment = localStorage.getItem("department");
     const empId = localStorage.getItem("userId");
     const [isDropDown, setIsDropDown] = useState(false);
@@ -30,6 +33,7 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         hodEmail: formData.hodEmail || "",
         businessUnit: formData.businessUnit || "",
         isCreditCardSelected: formData.isCreditCardSelected || false,
+        newReqId :formData.newReqId||""
     });
 
     const [entities, setEntities] = useState([]);
@@ -46,9 +50,9 @@ const Commercials = ({ formData, setFormData, onNext }) => {
         if (formData.department && isDropDown) {
             setSearchTerm(formData.department);
             const savedDept = availableDepartments.find(
-                dept => dept.department === formData.department
+                (dept) => dept.department === formData.department
             );
-            
+
             if (savedDept) {
                 setSelectedDepartment(savedDept);
                 setApprovers(savedDept.approvers);
@@ -66,7 +70,10 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                     setDepartment(response.data.department || []);
                     setIsDropDown(response.data.isDropDown);
 
-                    if (response.data.isDropDown && Array.isArray(response.data.department)) {
+                    if (
+                        response.data.isDropDown &&
+                        Array.isArray(response.data.department)
+                    ) {
                         const uniqueBusinessUnitsSet = new Set();
                         response.data.department.forEach((dept) => {
                             if (dept.businessUnit) {
@@ -74,7 +81,9 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             }
                         });
 
-                        const uniqueBusinessUnits = Array.from(uniqueBusinessUnitsSet).map((unit) => ({
+                        const uniqueBusinessUnits = Array.from(
+                            uniqueBusinessUnitsSet
+                        ).map((unit) => ({
                             value: unit,
                             label: unit,
                         }));
@@ -83,7 +92,9 @@ const Commercials = ({ formData, setFormData, onNext }) => {
 
                         if (formData.businessUnit) {
                             const filtered = response.data.department.filter(
-                                (dept) => dept.businessUnit?.toLowerCase() === formData.businessUnit.toLowerCase()
+                                (dept) =>
+                                    dept.businessUnit?.toLowerCase() ===
+                                    formData.businessUnit.toLowerCase()
                             );
 
                             const deptMap = new Map();
@@ -94,7 +105,11 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                                         department: dept.department,
                                         businessUnit: dept.businessUnit,
                                         approvers: filtered
-                                            .filter((d) => d.department === dept.department)
+                                            .filter(
+                                                (d) =>
+                                                    d.department ===
+                                                    dept.department
+                                            )
                                             .map((d) => ({
                                                 hod: d.hod,
                                                 hodEmail: d.hod_email_id,
@@ -104,8 +119,12 @@ const Commercials = ({ formData, setFormData, onNext }) => {
                             });
 
                             setUniqueDepartments(deptMap);
-                            setAvailableDepartments(Array.from(deptMap.values()));
-                            setFilteredDepartments(Array.from(deptMap.values()));
+                            setAvailableDepartments(
+                                Array.from(deptMap.values())
+                            );
+                            setFilteredDepartments(
+                                Array.from(deptMap.values())
+                            );
                         }
                     } else {
                         setAvailableBusinessUnits(businessUnits);
@@ -360,7 +379,17 @@ const Commercials = ({ formData, setFormData, onNext }) => {
     const handleNextStep = async () => {
         const isValid = await validateForm();
         if (isValid) {
-            onNext();
+            const response = await saveCommercialData(formData, empId);
+            console.log("response", response);
+            if (response.status === 201) {
+                setReqId(response.data.reqid);
+                setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    newReqId: response.data.reqid,
+                  }))
+
+                onNext();
+            }
         }
     };
 

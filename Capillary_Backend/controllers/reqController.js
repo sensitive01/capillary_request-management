@@ -123,7 +123,7 @@ const getNewNotifications = async (req, res) => {
     } else {
       const employeeData = await empModel
         .findOne(
-          { _id: id },
+          { employee_id: id },
           {
             _id: 1,
             full_name: 1,
@@ -176,7 +176,7 @@ const getNewNotifications = async (req, res) => {
 
     if (!reqData || reqData.length === 0) {
       return res
-        .status(404)
+        .status(401)
         .json({ message: "No requests found for this employee" });
     }
 
@@ -192,6 +192,7 @@ const getNewNotifications = async (req, res) => {
 const getStatisticData = async (req, res) => {
   try {
     const { empId, role, email } = req.params;
+    console.log("ROLE", role);
 
     let consolidatedData;
 
@@ -256,10 +257,8 @@ const getStatisticData = async (req, res) => {
     let totalApprovals = 0;
 
     const reqData = await CreateNewReq.find();
-    console.log("reqDta.length", reqData.length);
-    console.log("Riles", role);
 
-    if (role === "Admin") {
+    if (role === "Admin" && consolidatedData.department === "Admin") {
       adminAllTotalRequests = reqData.length;
       adminAllPendingRequests = reqData.filter(
         (req) => req.status === "Pending"
@@ -277,7 +276,7 @@ const getStatisticData = async (req, res) => {
       }, {});
     } else if (
       role === "Business Finance" ||
-      role === "HOF" ||
+      role === "Head of Finance" ||
       role === "Vendor Management" ||
       role === "Info Security" ||
       role === "Legal Team"
@@ -286,63 +285,62 @@ const getStatisticData = async (req, res) => {
       myRequests = myRequestData.length;
 
       const reqDataStatics = reqData.filter((req) =>
-        req.approvals.some(
-          (app) => app.nextDepartment === consolidatedData.department
-        )
+        req.approvals.some((app) => app.nextDepartment === role)
       );
       console.log("reqDataStatics", reqDataStatics);
 
-      totalApprovals = reqData.length;
-
+      totalApprovals = reqDataStatics.length;
       reqData.forEach((request) => {
-        console.log("request", request);
+        console.log("request----", request);
 
         if (!request.approvals || request.approvals.length === 0) {
           console.log("No approvals found for request ID:", request.reqid);
           return; // Skip this iteration if approvals are missing
         }
 
-        const pendingRequests = request.approvals.filter((app) => {
-          // Check if the approval is meant for the employee's department
-          const isForEmployeeDept =
-            app.nextDepartment === consolidatedData.department;
+        let count = 0; // Initialize count for each request
 
-          // Check if it is pending by verifying if it has already been approved in the past
+        const pendingRequests = request.approvals.filter((app) => {
+          const isForEmployeeDept =
+            app.nextDepartment === role &&
+            app.departmentName !== consolidatedData.deparment;
+          console.log("isForEmployeeDept", isForEmployeeDept);
+
           const isPending =
-            app.status === "Approved" &&
-            !request.approvals.some(
-              (prevApp) =>
-                prevApp.departmentName === consolidatedData.department &&
-                prevApp.status === "Approved"
+            app.status === "Approved" && app.approvalId !== empId;
+          request.approvals.some((prevApp) => {
+            console.log("prevApp", prevApp);
+            return (
+              prevApp.nextDepartment === role && prevApp.status === "Approved"
             );
+          });
+
+          if (isForEmployeeDept && isPending) {
+            count++;
+          }
 
           return isForEmployeeDept && isPending;
         });
 
         pendingApprovals = pendingRequests.length;
 
-        const approvalsForEmployee2 = request.approvals.filter((app) => {
-          console.log(
-            "vendoris",
-            app.departmentName,
-            consolidatedData.department,
-            app.status === "Approved"
-          );
+        console.log("pendingRequests--", pendingRequests);
 
-          return (
-            app.departmentName == consolidatedData.department &&
-            app.status == "Approved"
-          );
+        const approvalsForEmployee2 = request.approvals.filter((app) => {
+          return app.approvalId === empId && app.status === "Approved";
         });
 
-        completedApprovals = approvalsForEmployee2.length;
+        completedApprovals += approvalsForEmployee2.length; // Add to completedApprovals
       });
 
       console.log("Total Completed Approvals:", completedApprovals);
       console.log("Total Pending Approvals:", pendingApprovals);
-
       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
-        if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+        if (
+          req.supplies?.totalValue &&
+          req.isCompleted &&
+          req.supplies?.selectedCurrency
+        ) {
           const { selectedCurrency, totalValue } = req.supplies;
           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
         }
@@ -355,11 +353,11 @@ const getStatisticData = async (req, res) => {
       myRequestData.forEach((request) => {
         if (request.status === "Approved") {
           completedApprovals++;
-        } else {
+        } else if (request.isCompleted) {
           pendingApprovals++;
         }
       });
-    } else if (consolidatedData.role === "HOD Department") {
+    } else if (role === "HOD Department" || role === "Admin") {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
 
@@ -372,7 +370,7 @@ const getStatisticData = async (req, res) => {
       });
 
       const hodApprovals = await CreateNewReq.find(
-        { "firstLevelApproval.hodEmail": email },
+        { "firstLevelApproval.hodEmail": email, isCompleted: true },
         { firstLevelApproval: 1 }
       ).lean();
       totalApprovals = hodApprovals.length;
@@ -396,7 +394,8 @@ const getStatisticData = async (req, res) => {
         if (
           req.supplies?.totalValue &&
           req.supplies?.selectedCurrency &&
-          req.firstLevelApproval?.hodEmail === email
+          req.firstLevelApproval?.hodEmail === email &&
+          req.isCompleted
         ) {
           const { selectedCurrency, totalValue } = req.supplies;
           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
@@ -818,7 +817,7 @@ const getApprovedReqData = async (req, res) => {
 
     const panelUserData = await addPanelUsers
       .findOne(
-        { _id: id },
+        { employee_id: id },
         { _id: 1, full_name: 1, department: 1, role: 1, company_email_id: 1 }
       )
       .lean();
@@ -827,7 +826,7 @@ const getApprovedReqData = async (req, res) => {
 
     const employeeData = await empModel
       .findOne(
-        { _id: id },
+        { employee_id: id },
         {
           _id: 1,
           full_name: 1,
@@ -861,6 +860,7 @@ const getApprovedReqData = async (req, res) => {
 
     let reqData = await CreateNewReq.find({
       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+      isCompleted: true,
     })
       .sort({ createdAt: -1 })
       .lean(); // Added .lean() for better performance
@@ -873,7 +873,9 @@ const getApprovedReqData = async (req, res) => {
       consolidatedData.role !== "Employee"
     ) {
       console.log("Fetching all requests as no matching records found.");
-      reqData = await CreateNewReq.find().sort({ createdAt: -1 }).lean();
+      reqData = await CreateNewReq.find({ isCompleted: true })
+        .sort({ createdAt: -1 })
+        .lean();
     }
 
     // Process reqData to extract department details based on status
@@ -1013,6 +1015,7 @@ const updateRequest = async (req, res) => {
           complinces: complinces || [],
           status: status || "Pending",
           hasDeviations: hasDeviations,
+          isCompleted: true,
         },
       },
       { new: true }
@@ -1326,7 +1329,7 @@ const sendNudgeNotification = async (req, res) => {
       { approvals: 1, firstLevelApproval: 1, userId: 1, reqid: 1 }
     );
     const userData = await empModel.findOne(
-      { _id: nudgeData.userId },
+      { employee_id: nudgeData.userId },
       { full_name: 1, company_email_id: 1, employee_id: 1, department: 1 }
     );
     if (!nudgeData) {
@@ -1364,7 +1367,7 @@ const sendNudgeNotification = async (req, res) => {
           )
           .lean()) ||
         (await addPanelUsers
-          .findOne({ department: latestApprovedApproval.nextDepartment })
+          .findOne({ role: latestApprovedApproval.nextDepartment })
           .lean());
 
       if (!empData) {
@@ -1376,6 +1379,7 @@ const sendNudgeNotification = async (req, res) => {
       to_name = empData.full_name;
       to_email = empData.company_email_id;
     }
+    console.log("nudgeData", nudgeData.reqid);
 
     await sendEmail(to_email, "nudgeNotification", {
       to_name,
@@ -1481,8 +1485,7 @@ const isApproved = async (req, res) => {
       }
     } else if (
       reqData?.approvals?.some(
-        (app) =>
-          app.departmentName === empData.department && app.status === "Approved"
+        (app) => app.approvalId === userId && app.status === "Approved"
       )
     ) {
       console.log("Else if");
@@ -1495,16 +1498,13 @@ const isApproved = async (req, res) => {
       console.log("lastApprovedDepartment", lastApprovedDepartment);
       if (
         !lastApprovedDepartment &&
-        lastApprovedDepartment?.nextDepartment !== empData?.department &&
+        lastApprovedDepartment?.nextDepartment !== empData?.role &&
         lastApprovedDepartment?.status !== "Approved" &&
         empData.company_email_id !== reqData.firstLevelApproval.hodEmail
       ) {
+        console.log("hi");
         disable = true;
       }
-      // else {
-      //   console.log("else=======?")
-      //   disable = true;
-      // }
     }
 
     console.log("disable", disable);
@@ -1584,12 +1584,12 @@ const uploadPoDocuments = async (req, res) => {
     console.log("Welcome to upload documets");
     const { reqId, empId } = req.params;
     const { link } = req.body;
-    // const oldReqData = await CreateNewReq.findOne(
-    //   { _id: reqId },
-    //   { approvals: 1 }
-    // );
-    // const { approvals } = oldReqData;
-    // const latestApproval = approvals[approvals.length - 1];
+    const oldReqData = await CreateNewReq.findOne(
+      { _id: reqId },
+      { approvals: 1 }
+    );
+    const { approvals } = oldReqData;
+    const latestApproval = approvals[approvals.length - 1];
 
     // Fetch employee data
     const empData =
@@ -1618,10 +1618,24 @@ const uploadPoDocuments = async (req, res) => {
       poLink: link,
     };
 
+    const approvalRecord = {
+      departmentName: empData.department,
+      status: "Po-Uploaded",
+      approverName: empData.full_name,
+      approvalId: empData.employee_id,
+      approvalDate: new Date(),
+      remarks:  "",
+      nextDepartment: "Invoice-Pending",
+      receivedOn: latestApproval?.approvalDate
+        
+    };
+    
+
     // Update the request with PO document details
     const updatedRequest = await CreateNewReq.findByIdAndUpdate(
       reqId,
       {
+        $push: { approvals: approvalRecord },
         $set: {
           poDocuments: poDocument,
           status: "Invoice-Pending",
@@ -1629,20 +1643,13 @@ const uploadPoDocuments = async (req, res) => {
       },
       { new: true }
     );
+    
 
     if (!updatedRequest) {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    // const approvalRecord = {
-    //   departmentName: empData.department,
-    //   status: "PO-Uploaded",
-    //   uploadedByName: empData.full_name,
-    //   uploadedByEmpId: empData.employee_id,
-    //   uploadedDate: new Date(), // Current date and time
-    //   remarks: remarks || "",
-    //   receivedOn: latestApproval.approvalDate,
-    // };
+    
 
     return res.status(200).json({
       message: "PO Document uploaded successfully",
@@ -1663,6 +1670,13 @@ const uploadInvoiceDocuments = async (req, res) => {
     const { reqId, empId } = req.params;
     const { link } = req.body;
     console.log(link, reqId, empId);
+    const reqData = await CreateNewReq.findOne(
+      { _id: reqId },
+      { reqid: 1, approvals: 1 }
+    );
+    const { approvals } = reqData;
+    const latestApproval = approvals[approvals.length - 1];
+
 
     // Fetch employee data
     const empData =
@@ -1691,11 +1705,23 @@ const uploadInvoiceDocuments = async (req, res) => {
       },
       invoiceLink: link,
     };
+    const approvalRecord = {
+      departmentName: empData.department,
+      status: "Invoice-Uploaded",
+      approverName: empData.full_name,
+      approvalId: empData.employee_id,
+      approvalDate: new Date(),
+      remarks:  "",
+      nextDepartment: "Request flow completed",
+      receivedOn: latestApproval?.approvalDate
+        
+    };
 
     // Update the request with PO document details
     const updatedRequest = await CreateNewReq.findByIdAndUpdate(
       reqId,
       {
+        $push: { approvals: approvalRecord },
         $set: {
           invoiceDocumets: invoiceDocument,
           status: "Approved",
@@ -2659,7 +2685,327 @@ const releaseReqStatus = async (req, res) => {
   }
 };
 
+const saveCommercialData = async (req, res) => {
+  try {
+    const { empId } = req.params;
+    const { formData } = req.body;
+    console.log("empId", empId, "formData", formData);
+
+    const { newReqId } = formData;
+    const date = new Date();
+
+    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
+      Math.floor(Math.random() * 100) + 1
+    }`;
+    console.log(reqid);
+
+    let empData = await empModel
+      .findOne(
+        { _id: empId },
+        { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+      )
+      .lean();
+
+    if (!empData) {
+      empData = await addPanelUsers.findOne({ _id: empId }).lean();
+    }
+
+    if (!empData) {
+      return res.status(404).json({
+        message: "Employee not found. Please provide a valid employee ID.",
+      });
+    }
+
+    const panelMemberEmail = (
+      await addPanelUsers
+        .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
+        .lean()
+    ).map((member) => member.company_email_id);
+
+    console.log("panelMemberEmail", panelMemberEmail);
+
+    let responseMessage = "";
+    let updatedRequest;
+
+    if (newReqId) {
+      updatedRequest = await CreateNewReq.findOneAndUpdate(
+        { reqid: newReqId },
+        { $set: { commercials: formData } },
+        { new: true }
+      );
+
+      if (!updatedRequest) {
+        return res.status(404).json({
+          message: "Request not found. Unable to update.",
+        });
+      }
+
+      responseMessage = "Commercial data updated successfully.";
+    } else {
+      updatedRequest = new CreateNewReq({
+        reqid: reqid,
+        userId: empData.employee_id,
+        userName: empData.full_name,
+        commercials: formData,
+        firstLevelApproval: {
+          hodName: formData.hod,
+          hodEmail: formData.hodEmail,
+          hodDepartment: formData.department,
+          status: "Pending",
+          approved: false,
+        },
+      });
+
+      await updatedRequest.save();
+      responseMessage = "Commercial data saved successfully.";
+    }
+
+    return res.status(201).json({
+      message: responseMessage,
+      reqid: updatedRequest.reqid,
+      employee: empData,
+      panelEmails: panelMemberEmail,
+    });
+  } catch (err) {
+    console.error("Error in saving the commercial data:", err);
+    return res.status(500).json({
+      message: "An error occurred while saving the commercial data.",
+      error: err.message,
+    });
+  }
+};
+
+const editCommercialData = async (req, res) => {
+  try {
+    const { empId, reqId } = req.params;
+    const { formData } = req.body;
+    console.log("empId", empId, "formData", formData);
+
+    let empData = await empModel
+      .findOne(
+        { _id: empId },
+        { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+      )
+      .lean();
+
+    if (!empData) {
+      empData = await addPanelUsers.findOne({ _id: empId }).lean();
+    }
+
+    if (!empData) {
+      return res.status(404).json({
+        message: "Employee not found. Please provide a valid employee ID.",
+      });
+    }
+
+    const panelMemberEmail = (
+      await addPanelUsers
+        .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
+        .lean()
+    ).map((member) => member.company_email_id);
+
+    console.log("panelMemberEmail", panelMemberEmail);
+
+    let updatedRequest = await CreateNewReq.findOneAndUpdate(
+      { _id: reqId },
+      { $set: { commercials: formData } },
+      { new: true }
+    );
+
+    if (!updatedRequest) {
+      return res.status(404).json({
+        message: "Request not found. Unable to update.",
+      });
+    }
+
+    return res.status(201).json({
+      message: "Commercial data updated successfully.",
+      reqid: updatedRequest.reqid,
+      employee: empData,
+      panelEmails: panelMemberEmail,
+    });
+  } catch (err) {
+    console.error("Error in saving the commercial data:", err);
+    return res.status(500).json({
+      message: "An error occurred while saving the commercial data.",
+      error: err.message,
+    });
+  }
+};
+
+const saveProcurementsData = async (req, res) => {
+  try {
+    const { formData } = req.body;
+    const { reqId } = formData;
+    const { newReqId } = req.params;
+
+    const updateData = await CreateNewReq.findOne({
+      reqid: reqId || newReqId,
+    });
+
+    if (!updateData) {
+      return res.status(404).json({
+        message: "Request not found. Please provide a valid request ID.",
+      });
+    }
+
+    // Initialize procurements if it doesn't exist
+    if (!updateData.procurements) {
+      updateData.procurements = {};
+    }
+
+    let formattedUploadedFiles = [];
+    if (formData.uploadedFiles) {
+      formattedUploadedFiles = Array.isArray(formData.uploadedFiles)
+        ? formData.uploadedFiles
+        : [formData.uploadedFiles];
+    }
+
+    if (!updateData.procurements.uploadedFiles) {
+      updateData.procurements.uploadedFiles = [];
+    }
+
+    if (formattedUploadedFiles.length > 0) {
+      // Create a Set of existing file URLs to prevent duplicates
+      const existingUrls = new Set();
+      if (updateData.procurements.uploadedFiles[0]) {
+        Object.values(updateData.procurements.uploadedFiles[0]).forEach(
+          (urls) => {
+            urls.forEach((url) => existingUrls.add(url));
+          }
+        );
+      }
+
+      const mergedFiles = {};
+      const newFiles = formattedUploadedFiles[0] || {};
+
+      // Only add files that don't already exist
+      Object.entries(newFiles).forEach(([key, urls]) => {
+        mergedFiles[key] = urls.filter((url) => !existingUrls.has(url));
+
+        // If there are existing files for this key, add them
+        if (updateData.procurements.uploadedFiles[0]?.[key]) {
+          mergedFiles[key] = [
+            ...updateData.procurements.uploadedFiles[0][key],
+            ...mergedFiles[key],
+          ];
+        }
+      });
+
+      updateData.procurements.uploadedFiles = [mergedFiles];
+    }
+
+    // Update other procurements data
+    const { uploadedFiles, ...otherFormData } = formData;
+    updateData.procurements = {
+      ...updateData.procurements,
+      ...otherFormData,
+      uploadedFiles: updateData.procurements.uploadedFiles,
+    };
+
+    await updateData.save();
+
+    return res.status(200).json({
+      message: "Procurements data updated successfully.",
+      updatedData: updateData,
+    });
+  } catch (err) {
+    console.error("Error in saving the procurements data:", err);
+    return res.status(500).json({
+      message: "An error occurred while updating procurements data.",
+      error: err.message,
+    });
+  }
+};
+
+const saveSuppliesData = async (req, res) => {
+  try {
+    console.log("Welcome to supplies data", req.body);
+
+    const { reqId } = req.params;
+    const { remarks, services, selectedCurrency } = req.body.formData;
+
+    console.log(
+      "remarks, services, selectedCurrency, reqId",
+      remarks,
+      services,
+      selectedCurrency,
+      reqId
+    );
+
+    const updateData = await CreateNewReq.findOne({ reqid: reqId });
+
+    if (!updateData) {
+      return res.status(404).json({
+        message: "Request not found. Please provide a valid request ID.",
+      });
+    }
+
+    updateData.supplies = req.body.formData;
+    await updateData.save();
+
+    return res.status(200).json({
+      message: "Supplies data updated successfully.",
+      reqid: updateData.reqid,
+      updatedSupplies: updateData.supplies,
+    });
+  } catch (err) {
+    console.error("Error in saving the supplies", err);
+    return res.status(500).json({
+      message: "An error occurred while saving the supplies data.",
+      error: err.message,
+    });
+  }
+};
+
+const saveAggrementData = async (req, res) => {
+  try {
+    const { reqId } = req.params;
+    const { formData } = req.body;
+
+    console.log("Received formData:", formData, "Req ID:", reqId);
+
+    if (!formData || typeof formData !== "object") {
+      return res.status(400).json({ message: "Invalid formData" });
+    }
+
+    let { complinces, hasDeviations } = formData;
+
+    // Ensure complinces is an object
+    if (typeof complinces !== "object" || complinces === null) {
+      return res.status(400).json({ message: "Invalid compliance data" });
+    }
+
+    const updateData = await CreateNewReq.findOne({ reqid: reqId });
+
+    if (!updateData) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    // Convert the object to an array and process each compliance item
+    const compliancesArray = Object.values(complinces);
+
+    // Store compliances in the updateData model
+    updateData.complinces = compliancesArray;
+    updateData.hasDeviations = hasDeviations ? 1 : 0;
+
+    await updateData.save();
+
+    res.status(200).json({ message: "Compliance data saved successfully" });
+  } catch (err) {
+    console.error("Error in saving the compliance:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
+  editCommercialData,
+  saveAggrementData,
+  saveSuppliesData,
+  saveProcurementsData,
+  saveCommercialData,
   uploadInvoiceDocuments,
   uploadPoDocuments,
   releaseReqStatus,

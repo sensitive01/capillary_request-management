@@ -31,7 +31,6 @@ const currencies = [
     { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-
 const EmptyState = ({ action }) => {
     const navigate = useNavigate();
 
@@ -97,9 +96,11 @@ const EmptyState = ({ action }) => {
 
 const RequestStatistcsTable = () => {
     const { action } = useParams();
-    const userId = localStorage.getItem("capEmpdI");
+    const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
     const department = localStorage.getItem("department");
+    const email = localStorage.getItem("email");
+
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -129,9 +130,9 @@ const RequestStatistcsTable = () => {
             try {
                 let response;
 
-                if (role === "Admin") {
+                if (role === "Admin" && department === "Admin") {
                     response = await getAdminReqListEmployee();
-                    console.log("1",response)
+                    console.log("1", response);
                     if (action === "Total-Request") {
                         setUsers(response.data.data);
                     } else {
@@ -163,7 +164,10 @@ const RequestStatistcsTable = () => {
                                     );
                                 setUsers(filteredData);
                             } else if (action === "Pending-Approvals") {
-                                if (role === "HOD Department") {
+                                if (
+                                    role === "HOD Department" ||
+                                    role === "Admin"
+                                ) {
                                     const filteredData =
                                         response.data.reqData.filter((items) =>
                                             [
@@ -184,6 +188,15 @@ const RequestStatistcsTable = () => {
                                                     app.nextDepartment === role
                                                 );
                                             })
+                                        ) ||
+                                        response.data.filter((items) =>
+                                            items.firstLevelApproval.some(
+                                                (app) => {
+                                                    return (
+                                                        app.hodEmail === email
+                                                    );
+                                                }
+                                            )
                                         );
                                     setUsers(filteredData);
                                 }
@@ -194,9 +207,7 @@ const RequestStatistcsTable = () => {
                                 const filteredData =
                                     response.data.reqData.filter((item) =>
                                         item.approvals.some(
-                                            (app) =>
-                                                app.departmentName ===
-                                                department
+                                            (app) => app.approvalId === userId
                                         )
                                     );
 
@@ -429,10 +440,11 @@ const RequestStatistcsTable = () => {
                                                     </td> */}
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
-                                                        <span className="block font-medium">
-                                                        {user.commercials
-                                                            .businessUnit ||
-                                                            "NA"}
+                                                            <span className="block font-medium">
+                                                                {user
+                                                                    .commercials
+                                                                    .businessUnit ||
+                                                                    "NA"}
                                                             </span>
                                                             <span className="block font-medium">
                                                                 {user
@@ -476,7 +488,25 @@ const RequestStatistcsTable = () => {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                    {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
+                                                        {user.isCompleted ? (
+                                                            <>
+                                                                {user.status !==
+                                                                    "Approved" && (
+                                                                    <>
+                                                                        {
+                                                                            user.nextDepartment
+                                                                        }{" "}
+                                                                        <br />
+                                                                    </>
+                                                                )}
+                                                                {user.status ||
+                                                                    "Pending"}
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-red-500">
+                                                                Draft
+                                                            </span>
+                                                        )}
                                                     </td>
                                                     {/* <td className="px-2 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
@@ -519,31 +549,41 @@ const RequestStatistcsTable = () => {
                                                             "N/A"
                                                         )}
                                                     </td> */}
-                                                    <td className="px-6 py-4 text-sm text-gray-500 text-center">
-                                                        <div className="flex justify-center items-center space-x-2">
-                                                            <button
-                                                                className="text-blue-500 hover:text-blue-700"
-                                                                onClick={(e) =>
-                                                                    handleEdit(
-                                                                        e,
-                                                                        user._id
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Edit className="h-5 w-5" />
-                                                            </button>
-                                                            <button
-                                                                className="text-red-500 hover:text-red-700"
-                                                                onClick={(e) =>
-                                                                    handleDelete(
-                                                                        e,
-                                                                        user._id
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-5 w-5" />
-                                                            </button>
-                                                        </div>
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                        {user.status !==
+                                                            "Approved" && (
+                                                            <div className="flex justify-center items-center space-x-2">
+                                                                <button
+                                                                    className="text-blue-500 hover:text-blue-700"
+                                                                    onClick={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleEdit(
+                                                                            e,
+                                                                            user._id
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Edit className="h-5 w-5" />
+                                                                </button>
+                                                                <button
+                                                                    className="text-red-500 hover:text-red-700"
+                                                                    onClick={(
+                                                                        e
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        setReqId(
+                                                                            user._id
+                                                                        );
+                                                                        setIsDelete(
+                                                                            true
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-5 w-5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}

@@ -11,8 +11,7 @@ import { getAllLegalQuestions } from "../../../../api/service/adminServices";
 import { FaFilePdf } from "react-icons/fa";
 import uploadFiles from "../../../../utils/s3BucketConfig";
 
-const AggrementDetails = ({ formData, setFormData, onNext, onBack ,reqId}) => {
-    console.log("formData", formData, "setFormData", setFormData);
+const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [deviations, setDeviations] = useState({});
@@ -26,53 +25,43 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack ,reqId}) => {
                 const questionData = response.data.data;
                 setQuestions(questionData);
 
-                // Ensure we have an array of existing compliances
                 const existingCompliances = Array.isArray(formData.complinces)
                     ? formData.complinces
                     : [];
 
-                // Create a map of existing compliances
                 const complianceMap = new Map(
                     existingCompliances.map((comp) => [comp.questionId, comp])
                 );
 
-                // Create updated compliances array
                 const updatedCompliances = questionData.map((q) => {
                     const existing = complianceMap.get(q._id);
-
-                    if (existing) {
-                        return {
-                            ...existing,
-                            question: q.question,
-                            department: q.createdBy.department,
-                        };
-                    }
+                    const hasDeviation = existing?.answer !== q.expectedAnswer;
 
                     return {
                         questionId: q._id,
                         question: q.question,
-                        answer: q.expectedAnswer,
+                        answer: existing?.answer ?? q.expectedAnswer,
                         department: q.createdBy.department,
-                        deviation: { reason: "", attachments: [] },
+                        deviation: hasDeviation 
+                            ? (existing?.deviation || { reason: "", attachments: [] })
+                            : null
                     };
                 });
 
-                // Set form data with updated compliances
                 setFormData((prev) => ({
                     ...prev,
                     complinces: updatedCompliances,
+                    hasDeviations: updatedCompliances.some(comp => comp.deviation !== null) ? 1 : 0
                 }));
 
-                // Initialize answers and deviations state
                 const initialAnswers = {};
                 const initialDeviations = {};
 
                 updatedCompliances.forEach((comp) => {
                     initialAnswers[comp.questionId] = comp.answer;
-                    initialDeviations[comp.questionId] = comp.deviation || {
-                        reason: "",
-                        attachments: [],
-                    };
+                    if (comp.deviation) {
+                        initialDeviations[comp.questionId] = comp.deviation;
+                    }
                 });
 
                 setAnswers(initialAnswers);
@@ -90,38 +79,47 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack ,reqId}) => {
     const handleAnswerChange = (questionId, value) => {
         const question = questions.find((q) => q._id === questionId);
         const isDeviation = value !== question?.expectedAnswer;
-        console.log("isDeviation", isDeviation);
 
-        // Update answers state
         setAnswers((prev) => ({
             ...prev,
             [questionId]: value,
         }));
 
-        // Update form data
-        setFormData((prev) => {
-            const updatedCompliances = (prev.complinces || []).map(
-                (compliance) =>
-                    compliance.questionId === questionId
-                        ? {
-                              ...compliance,
-                              answer: value,
-                              deviation: isDeviation
-                                  ? deviations[questionId]
-                                  : null,
-                          }
-                        : compliance
-            );
-            const hasAnyDeviation = questions.some(q => {
-                const currentAnswer = q._id === questionId ? value : answers[q._id];
-                return currentAnswer !== q.expectedAnswer;
+        // If switching to non-deviation, clear the deviation
+        if (!isDeviation) {
+            setDeviations((prev) => {
+                const { [questionId]: removed, ...rest } = prev;
+                return rest;
             });
-            console.log("hasAnyDeviation",hasAnyDeviation)
+        } else if (isDeviation && !deviations[questionId]) {
+            // If switching to deviation and no deviation exists, initialize it
+            setDeviations((prev) => ({
+                ...prev,
+                [questionId]: { reason: "", attachments: [] }
+            }));
+        }
+
+        setFormData((prev) => {
+            const updatedCompliances = prev.complinces.map((compliance) =>
+                compliance.questionId === questionId
+                    ? {
+                          ...compliance,
+                          answer: value,
+                          deviation: isDeviation
+                              ? (deviations[questionId] || { reason: "", attachments: [] })
+                              : null
+                      }
+                    : compliance
+            );
+
+            const hasAnyDeviation = updatedCompliances.some(
+                comp => comp.answer !== questions.find(q => q._id === comp.questionId)?.expectedAnswer
+            );
 
             return {
                 ...prev,
                 complinces: updatedCompliances,
-                hasDeviations: hasAnyDeviation ? 1 : 0,
+                hasDeviations: hasAnyDeviation ? 1 : 0
             };
         });
     };

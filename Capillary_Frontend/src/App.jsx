@@ -130,7 +130,7 @@ function App() {
 
         </Route>
       </Routes>
-      {/* <SessionTimeout/> */}
+      <SessionTimeout/>
     </Router>
   );
 }

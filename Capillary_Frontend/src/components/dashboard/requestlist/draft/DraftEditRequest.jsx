@@ -9,14 +9,12 @@ import { toast, ToastContainer } from "react-toastify";
 import { createNewRequest } from "../../../api/service/adminServices";
 import AgreementCompliences from "./AgreementCompliences";
 
-const CreateRequest = () => {
-  
+const DraftEditRequest = () => {
     const navigate = useNavigate();
     const empId = localStorage.getItem("capEmpId");
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [reqId,setReqId] = useState()
 
     const [formData, setFormData] = useState({
         commercials: {},
@@ -24,7 +22,6 @@ const CreateRequest = () => {
         supplies: [],
         remarks: "",
         complinces: [],
-       
     });
 
     const handleSubmit = async () => {
@@ -49,9 +46,9 @@ const CreateRequest = () => {
                 ),
             };
 
-            const response = await createNewRequest(empId, transformedData,transformedData?.commercials?.newReqId);
+            const response = await createNewRequest(empId, transformedData);
             console.log(response);
-            if (response.status === 200) {
+            if (response.status === 201) {
                 toast.success("New Request is created");
                 setTimeout(() => {
                     navigate("/req-list-table");
@@ -81,7 +78,6 @@ const CreateRequest = () => {
                         }))
                     }
                     onNext={() => handleStepComplete(0)}
-                    setReqId = {()=>setReqId()}
                 />
             ),
         },
@@ -102,7 +98,6 @@ const CreateRequest = () => {
                     }
                     onNext={() => handleStepComplete(1)}
                     onBack={() => setCurrentStep(0)}
-                    reqId = {formData.commercials.newReqId}
                 />
             ),
         },
@@ -124,8 +119,6 @@ const CreateRequest = () => {
                     remarks={formData.remarks}
                     onBack={() => setCurrentStep(1)}
                     onNext={() => handleStepComplete(2)}
-                    reqId = {formData.commercials.newReqId}
-
                 />
             ),
         },
@@ -138,8 +131,6 @@ const CreateRequest = () => {
                     setFormData={setFormData}
                     onBack={() => setCurrentStep(2)}
                     onNext={() => handleStepComplete(3)}
-                    reqId = {formData.commercials.newReqId}
-
                 />
             ),
         },
@@ -158,7 +149,7 @@ const CreateRequest = () => {
     ];
 
     const handleStepComplete = (stepIndex) => {
-        console.log("create formData",formData,reqId);
+        console.log(formData);
         if (!completedSteps.includes(stepIndex)) {
             setCompletedSteps([...completedSteps, stepIndex]);
         }
@@ -251,4 +242,4 @@ const CreateRequest = () => {
     );
 };
 
-export default CreateRequest;
+export default DraftEditRequest;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Trash2, PlusCircle, CheckCircle2 } from "lucide-react";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
+import {saveSuppliesData} from "../../../api/service/adminServices"
 
 const validationSchema = Yup.object().shape({
     services: Yup.array().of(
@@ -34,8 +35,6 @@ const currencies = [
     { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-
-
 const Supplies = ({
     formData,
     setFormData,
@@ -43,7 +42,9 @@ const Supplies = ({
     onSubmit,
     handleSubmited,
     onNext,
+    reqId
 }) => {
+    console.log("reqId",reqId)
     const initialService = {
         productName: "",
         productDescription: "",
@@ -52,7 +53,7 @@ const Supplies = ({
         tax: "",
     };
     const [services, setServices] = useState(
-        formData.services || [initialService]
+        formData?.services || [initialService]
     );
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [selectedCurrency, setSelectedCurrency] = useState(
@@ -130,7 +131,11 @@ const Supplies = ({
             if (onSubmit) {
                 onSubmit(submissionData);
             }
-            onNext();
+            const response = await saveSuppliesData(submissionData,reqId);
+            console.log("Supplies", response);
+            if (response.status === 200) {
+                onNext();
+            }
         } catch (err) {
             if (err.inner) {
                 const errorMessages = err.inner
@@ -184,7 +189,7 @@ const Supplies = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {services.map((service, index) => (
+                            {services?.map((service, index) => (
                                 <tr
                                     key={index}
                                     className="border-b hover:bg-gray-50 transition duration-200"
@@ -193,7 +198,7 @@ const Supplies = ({
                                         <input
                                             type="text"
                                             name="productName"
-                                            value={service.productName}
+                                            value={service?.productName}
                                             onChange={(e) =>
                                                 handleServiceChange(e, index)
                                             }
@@ -204,7 +209,7 @@ const Supplies = ({
                                     <td className="px-3 py-5 w-56">
                                         <textarea
                                             name="productDescription"
-                                            value={service.productDescription}
+                                            value={service?.productDescription}
                                             onChange={(e) =>
                                                 handleServiceChange(e, index)
                                             }
@@ -216,7 +221,7 @@ const Supplies = ({
                                     <td className="px-3 py-4 w-56">
                                         <textarea
                                             name="productPurpose"
-                                            value={service.productPurpose}
+                                            value={service?.productPurpose}
                                             onChange={(e) =>
                                                 handleServiceChange(e, index)
                                             }
@@ -229,7 +234,7 @@ const Supplies = ({
                                         <input
                                             type="number"
                                             name="quantity"
-                                            value={service.quantity}
+                                            value={service?.quantity}
                                             onChange={(e) =>
                                                 handleServiceChange(e, index)
                                             }
@@ -242,7 +247,7 @@ const Supplies = ({
                                         <input
                                             type="number"
                                             name="price"
-                                            value={service.price}
+                                            value={service?.price}
                                             onChange={(e) =>
                                                 handleServiceChange(e, index)
                                             }
@@ -256,7 +261,7 @@ const Supplies = ({
                                         <input
                                             type="number"
                                             name="tax"
-                                            value={service.tax}
+                                            value={service?.tax}
                                             onChange={(e) =>
                                                 handleServiceChange(e, index)
                                             }

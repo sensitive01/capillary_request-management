@@ -16,6 +16,7 @@ import {
     getAdminReqListEmployee,
 } from "../../../api/service/adminServices";
 import LoadingSpinner from "../../spinner/LoadingSpinner";
+import Pagination from "./Pagination";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -37,22 +38,26 @@ const EmptyState = ({ action }) => {
             case "Pending-Request":
                 return {
                     title: "No Pending Requests",
-                    description: "There are currently no requests waiting for approval.",
+                    description:
+                        "There are currently no requests waiting for approval.",
                 };
             case "Approved-Request":
                 return {
                     title: "No Approved Requests",
-                    description: "There are no requests that have been approved yet.",
+                    description:
+                        "There are no requests that have been approved yet.",
                 };
             case "Completed-Request":
                 return {
                     title: "No Completed Requests",
-                    description: "There are no requests that have been completed yet.",
+                    description:
+                        "There are no requests that have been completed yet.",
                 };
             case "Total-Request":
                 return {
                     title: "No Requests Found",
-                    description: "There are no requests in the system at the moment.",
+                    description:
+                        "There are no requests in the system at the moment.",
                 };
             default:
                 return {
@@ -71,7 +76,9 @@ const EmptyState = ({ action }) => {
                     <InboxIcon className="h-12 w-12 text-gray-400" />
                 </div>
             </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">{message.title}</h3>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">
+                {message.title}
+            </h3>
             <p className="mt-2 text-sm text-gray-500">{message.description}</p>
             <div className="mt-6">
                 <button
@@ -89,6 +96,8 @@ const EmptyState = ({ action }) => {
 const MyRequestStatistics = () => {
     const { action } = useParams();
     const userId = localStorage.getItem("capEmpId");
+    const department = localStorage.getItem("department");
+
     const role = localStorage.getItem("role");
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
@@ -100,7 +109,7 @@ const MyRequestStatistics = () => {
     const [reqId, setReqId] = useState(null);
     const [dateFilters, setDateFilters] = useState({
         fromDate: "",
-        toDate: ""
+        toDate: "",
     });
 
     const [filteredUsers, setFilteredUsers] = useState([]);
@@ -108,10 +117,15 @@ const MyRequestStatistics = () => {
 
     // Update filtered users when search term changes
     useEffect(() => {
-        const filtered = users.filter(user => 
-            user.reqid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.commercials?.businessUnit?.toLowerCase().includes(searchTerm.toLowerCase())
+        const filtered = users.filter(
+            (user) =>
+                user.reqid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.userName
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                user.commercials?.businessUnit
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase())
         );
         setFilteredUsers(filtered);
         setCurrentPage(1); // Reset to first page when search changes
@@ -131,9 +145,12 @@ const MyRequestStatistics = () => {
 
     let filterAction;
     if (action === "Pending-Request") {
-        filterAction = "Pending";
-    } else if (action === "Approved-Request" || action === "Completed-Request") {
-        filterAction = "Approved";
+        filterAction = ["Pending", "Hold", "Rejected"];
+    } else if (
+        action === "Approved-Request" ||
+        action === "Completed-Request"
+    ) {
+        filterAction = ["Approved"];
     }
 
     useEffect(() => {
@@ -141,13 +158,13 @@ const MyRequestStatistics = () => {
             setIsLoading(true);
             try {
                 let response;
-                if (role === "Admin") {
+                if (role === "Admin" && department === "Admin") {
                     response = await getAdminReqListEmployee();
                     if (action === "Total-Request") {
                         setUsers(response.data.data);
                     } else {
                         const filteredData = response.data.data.filter(
-                            (item) => item.status === filterAction
+                            (item) => filterAction.includes(item.status) // Check if status is in the array
                         );
                         setUsers(filteredData);
                     }
@@ -155,7 +172,7 @@ const MyRequestStatistics = () => {
                     response = await getReqListEmployee(userId);
                     if (response.status === 200) {
                         const filteredData = response.data.data.filter(
-                            (item) => item.status === filterAction
+                            (item) => filterAction.includes(item.status) // Check if status is in the array
                         );
                         setUsers(filteredData);
                     }
@@ -170,7 +187,7 @@ const MyRequestStatistics = () => {
         };
 
         fetchReqTable();
-    }, [userId, role, action, filterAction]);
+    }, [userId, role, action]);
 
     const formatCurrency = (value, currencyCode) => {
         if (!value) return "N/A";
@@ -215,6 +232,60 @@ const MyRequestStatistics = () => {
     if (users.length === 0) {
         return <EmptyState action={action} />;
     }
+
+    const renderActionColumn = (user) => {
+        if (role === "Employee") {
+            return (
+                <td className="text-sm text-gray-500 text-center">
+                    <div className="flex flex-col items-center space-y-2">
+                        {user.isCompleted ? (
+                            <button
+                                className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsShowModal(true);
+                                    setReqId(user._id);
+                                }}
+                            >
+                                Request Edit
+                            </button>
+                        ) : (
+                            <button
+                                className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                onClick={(e) => handleEdit(e, user._id)}
+                            >
+                                Complete Request
+                            </button>
+                        )}
+                    </div>
+                </td>
+            );
+        } else {
+            return (
+                <td className="px-6 py-4 text-sm text-gray-500">
+                    <div className="flex justify-center items-center space-x-2">
+                        <button
+                            className="text-blue-500 hover:text-blue-700"
+                            onClick={(e) => handleEdit(e, user._id)}
+                        >
+                            <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                            className="text-red-500 hover:text-red-700"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setReqId(user._id);
+                                setIsDelete(true);
+                            }}
+                        >
+                            <Trash2 className="h-5 w-5" />
+                        </button>
+                    </div>
+                </td>
+            );
+        }
+    };
+
     return (
         <>
             {isLoading && <LoadingSpinner />}
@@ -273,16 +344,16 @@ const MyRequestStatistics = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                                             >
                                                 ReqId
                                             </th>
-                                            <th
+                                            {/* <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                                             >
                                                 Business Unit
-                                            </th>
+                                            </th> */}
                                             <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
@@ -304,45 +375,49 @@ const MyRequestStatistics = () => {
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                                             >
                                                 Status
                                             </th>
                                             {/* <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                                             >
                                                 PO_Document
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
                                             >
                                                 Invoice_Document
                                             </th> */}
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
                                             >
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {currentUsers.length > 0 ? (
-                                            currentUsers.map((user, index) => (
+                                        {filteredUsers?.length > 0 ? (
+                                            filteredUsers.map((user, index) => (
                                                 <tr
-                                                    key={user._id}
+                                                    key={user.sno}
                                                     className="hover:bg-gray-100 cursor-pointer"
                                                     onClick={() =>
                                                         navigate(
-                                                            `/approval-request-list/preview-one-req/${user._id}`
+                                                            `/req-list-table/preview-one-req/${user._id}`
                                                         )
                                                     }
                                                 >
                                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                        {startIndex + index + 1}
+                                                        {(currentPage - 1) *
+                                                            itemsPerPage +
+                                                            index +
+                                                            1}
                                                     </td>
+
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
                                                             <span className="block font-medium">
@@ -361,13 +436,21 @@ const MyRequestStatistics = () => {
                                                             </span>
                                                         </div>
                                                     </td>
+                                                    {/* 
                                                     <td className="px-4 py-4 text-sm text-gray-500">
                                                         {user.commercials
                                                             ?.businessUnit ||
                                                             "NA"}
-                                                    </td>
+                                                    </td> */}
+
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
+                                                            <span className="block">
+                                                                {user
+                                                                    .commercials
+                                                                    ?.businessUnit ||
+                                                                    "NA"}
+                                                            </span>
                                                             <span className="block font-medium">
                                                                 {user
                                                                     .commercials
@@ -382,6 +465,7 @@ const MyRequestStatistics = () => {
                                                             </span>
                                                         </div>
                                                     </td>
+
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
                                                             <span className="block font-medium">
@@ -400,6 +484,7 @@ const MyRequestStatistics = () => {
                                                             </span>
                                                         </div>
                                                     </td>
+
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         {formatCurrency(
                                                             user.supplies
@@ -410,14 +495,26 @@ const MyRequestStatistics = () => {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
-                                                    {user.nextDepartment ||user.cDepartment} <br /> {user.status || "Pending"}
+                                                        {user.isCompleted ? (
+                                                            <>
+                                                                {user.nextDepartment ||
+                                                                    user.cDepartment}{" "}
+                                                                <br />
+                                                                {user.status ||
+                                                                    "Pending"}
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-red-500">
+                                                                Draft
+                                                            </span>
+                                                        )}
                                                     </td>
 
                                                     {/* <td className="px-4 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
-                                                            "Approved" ||
+                                                            "Invoice-Pending" ||
                                                         user.status ===
-                                                            "Invoice-Pending" ? (
+                                                            "Approved" ? (
                                                             <div className="w-full flex justify-center">
                                                                 <button
                                                                     onClick={(
@@ -428,16 +525,17 @@ const MyRequestStatistics = () => {
                                                                             `/req-list-table/invoice/${user._id}`
                                                                         );
                                                                     }}
-                                                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary/90 flex items-center space-x-1 w-full max-w-[120px]"
+                                                                    className="bg-primary text-white px-4 py-1 rounded-md hover:bg-primary flex items-center space-x-1 w-full max-w-[120px]"
                                                                 >
                                                                     <FileText className="h-4 w-4 mr-1" />
-                                                                    View Po
+                                                                    View PO
                                                                 </button>
                                                             </div>
                                                         ) : (
                                                             "N/A"
                                                         )}
                                                     </td>
+
                                                     <td className="px-4 py-3 text-sm text-gray-500 text-center">
                                                         {user.status ===
                                                         "Approved" ? (
@@ -495,56 +593,30 @@ const MyRequestStatistics = () => {
                                                         )}
                                                     </td> */}
 
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        <div className="flex justify-center items-center space-x-2">
-                                                            <button
-                                                                className="text-blue-500 hover:text-blue-700"
-                                                                onClick={(e) =>
-                                                                    handleEdit(
-                                                                        e,
-                                                                        user._id
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Edit className="h-5 w-5" />
-                                                            </button>
-                                                            <button
-                                                                className="text-red-500 hover:text-red-700"
-                                                                // onClick={(e) => handleDelete(e, user._id)}
-                                                                onClick={(
-                                                                    e
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    setReqId(
-                                                                        user._id
-                                                                    );
-                                                                    setIsDelete(
-                                                                        true
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-5 w-5" />
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                                                    {renderActionColumn(user)}
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
                                                 <td
-                                                    colSpan="10"
+                                                    colSpan="13"
                                                     className="px-6 py-4 text-center text-gray-500"
                                                 >
-                                                    {searchTerm ||
-                                                    dateFilters.fromDate ||
-                                                    dateFilters.toDate
-                                                        ? "No matching results found."
-                                                        : "No data available."}
+                                                    No matching results found.
                                                 </td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
+                                <div className="mt-4">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        handlePageChange={handlePageChange}
+                                        itemsPerPage={itemsPerPage}
+                                        totalItems={filteredUsers.length}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -14,13 +14,14 @@ import PreviewDetails from "./PreviewDetails";
 
 const EditRequestForm = () => {
     const { id } = useParams();
-    console.log("Edit",id)
+   
 
     const navigate = useNavigate();
     const empId = localStorage.getItem("userId");
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState([]);
     const [formData, setFormData] = useState({});
+
 
     useEffect(() => {
         const fetchResponse = async () => {
@@ -69,6 +70,9 @@ const EditRequestForm = () => {
                         }))
                     }
                     onNext={() => handleStepComplete(0)}
+                    reqId = {id}
+
+                    
                 />
             ),
         },
@@ -111,6 +115,7 @@ const EditRequestForm = () => {
                     remarks={formData?.remarks}
                     onBack={() => setCurrentStep(1)}
                     onNext={() => handleStepComplete(2)}
+                    reqId = {formData.reqid}
                 />
             ),
         },

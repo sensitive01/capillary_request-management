@@ -88,7 +88,7 @@ router.put("/update-darwin-status", updateDarwinStatus);
 router.post("/upload-csv-file", upload.single("file"), uploadApproverExcel);
 
 router.post("/verify-person", capEmpController.verifyUser);
-router.post("/create-newrequest/:id", capEmpController.createNewReq);
+router.put("/create-newrequest/:id/:reqId", capEmpController.createNewReq);
 
 // router.post('/verify-person',verifyUser);
 // router.post('/create-newrequest/:id',createNewReq);

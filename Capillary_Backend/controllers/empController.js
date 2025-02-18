@@ -529,49 +529,130 @@ exports.createNewReq = async (req, res) => {
   }
 };
 
+// exports.getAllEmployeeReq = async (req, res) => {
+//   try {
+//     console.log("wlcome to get req", req.params.id);
+//     const reqList = await CreateNewReq.find({ userId: req.params.id })
+//       .sort({ createdAt: -1 })
+//       .exec();
+
+//     console.log("Sorted reqList", reqList)
+
+
+//     if (reqList.length > 0) {
+//       return res.status(200).json({
+//         message: "Requests fetched successfully",
+//         data: reqList,
+//       });
+//     } else {
+//       return res.status(404).json({
+//         message: "No requests found for the given userId",
+//       });
+//     }
+//   } catch (err) {
+//     return res.status(500).json({
+//       message: "Error fetching employee requests",
+//       error: err.message,
+//     });
+//   }
+// };
+
+
 exports.getAllEmployeeReq = async (req, res) => {
   try {
-    console.log("wlcome to get req", req.params.id);
+    console.log("Welcome to get req", req.params.id);
+    
+    // Fetch requests for the given user ID
     const reqList = await CreateNewReq.find({ userId: req.params.id })
       .sort({ createdAt: -1 })
-      .exec();
+      .lean();
+    
+    console.log("Sorted reqList", reqList);
 
-    console.log("Sorted reqList", reqList.createdAt);
-
-    console.log("reqList", reqList.createdAt);
-
-    if (reqList.length > 0) {
-      return res.status(200).json({
-        message: "Requests fetched successfully",
-        data: reqList,
-      });
-    } else {
+    if (reqList.length === 0) {
       return res.status(404).json({
         message: "No requests found for the given userId",
       });
     }
+
+    // Process request data to determine nextDepartment and cDepartment
+    const processedReqData = reqList.map((request) => {
+      const { approvals, firstLevelApproval } = request;
+      const latestLevelApproval = approvals?.[approvals.length - 1];
+
+      let departmentInfo = {};
+
+      if (!latestLevelApproval) {
+        departmentInfo.nextDepartment = firstLevelApproval?.hodDepartment || null;
+      } else if (latestLevelApproval.status === "Approved") {
+        departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+      } else if (latestLevelApproval.status === "Hold" || latestLevelApproval.status === "Rejected") {
+        departmentInfo.cDepartment = latestLevelApproval.departmentName;
+      }
+
+      return { ...request, ...departmentInfo };
+    });
+
+    console.log("Processed Request Data", processedReqData);
+
+    return res.status(200).json({
+      message: "Requests fetched successfully",
+      data: processedReqData,
+    });
   } catch (err) {
+    console.error("Error fetching employee requests", err);
     return res.status(500).json({
       message: "Error fetching employee requests",
       error: err.message,
     });
   }
 };
+
+
+
+
 
 exports.getAdminEmployeeReq = async (req, res) => {
   try {
-    console.log("welcome to admin get data");
-    const reqList = await CreateNewReq.find().sort({ createdAt: -1 }).exec();
+    console.log("Welcome to admin get data");
+
+    const reqList = await CreateNewReq.find().sort({ createdAt: -1 }).lean();
+
     console.log("Reqlist", reqList);
 
     if (reqList.length > 0) {
+      const processedReqList = reqList.map((request) => {
+        const { approvals, firstLevelApproval } = request;
+        const latestLevelApproval = approvals?.[approvals.length - 1];
+        let departmentInfo = {};
+
+        if (!latestLevelApproval) {
+          if (firstLevelApproval?.approved) {
+            departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+          } else {
+            departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+          }
+        } else if (latestLevelApproval.status === "Approved") {
+          departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+        } else if (
+          latestLevelApproval.status === "Hold" ||
+          latestLevelApproval.status === "Rejected"
+        ) {
+          departmentInfo.cDepartment = latestLevelApproval.departmentName;
+        }
+
+        return { ...request, ...departmentInfo };
+      });
+
+      console.log("Processed Request Data", processedReqList);
+
       return res.status(200).json({
         message: "Requests fetched successfully",
-        data: reqList,
+        data: processedReqList,
       });
     } else {
       return res.status(404).json({
-        message: "No requests found for the given userId",
+        message: "No requests found",
       });
     }
   } catch (err) {
@@ -581,6 +662,7 @@ exports.getAdminEmployeeReq = async (req, res) => {
     });
   }
 };
+
 
 exports.deleteRequest = async (req, res) => {
   try {

@@ -28,6 +28,7 @@ import RequestLogs from "./RequestLogs";
 import pfdIcon from "../../../assets/images/pdfIcon.png";
 import uploadFiles from "../../../utils/s3BucketConfig";
 import { formatDateToDDMMYY } from "../../../utils/dateFormat";
+import DocumentsDisplay from "./DocumentsDisplay";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -68,6 +69,7 @@ const PreviewTheReq = () => {
         const fetchReq = async () => {
             try {
                 const response = await fetchIndividualReq(params.id);
+                console.log("response",response)
 
                 if (response.status === 200) {
                     setRequest(response.data.data);
@@ -114,49 +116,55 @@ const PreviewTheReq = () => {
         </div>
     );
     const renderUploadedFiles = (uploadedFiles) => {
-        if (!uploadedFiles || Object.keys(uploadedFiles).length === 0) {
-            return <div className="text-gray-500">No files uploaded</div>;
+        if (!uploadedFiles || uploadedFiles.length === 0) {
+            return null;
         }
+    
+        // Transform the data structure
+        const fileCategories = uploadedFiles.reduce((acc, fileGroup) => {
+            // Get all keys (categories) from the file group
+            Object.entries(fileGroup).forEach(([category, urls]) => {
+                acc[category] = urls;
+            });
+            return acc;
+        }, {});
+    
         return (
-            <div className="grid grid-cols-3 gap-4">
-                {Object.entries(uploadedFiles).map(
-                    ([key, files]) =>
-                        files &&
-                        files.length > 0 && (
-                            <div
-                                key={key}
-                                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
-                            >
-                                <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
-                                    {key
-                                        .replace(/([A-Z])/g, " $1")
-                                        .toLowerCase()}
-                                </h4>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {files.map((file, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex flex-col items-center bg-gray-50 rounded p-2"
-                                        >
-                                            <a
-                                                href={file}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
-                                            >
-                                                {" "}
-                                                <img
-                                                    src={pfdIcon}
-                                                    alt={`Icon ${index + 1}`}
-                                                    className="w-10 h-10 object-cover mb-2"
-                                                />
-                                            </a>
-                                        </div>
-                                    ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(fileCategories).map(([category, files], index) => (
+                    <div
+                        key={index}
+                        className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                    >
+                        <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
+                            {category.replace(/_/g, ' ')}
+                        </h4>
+                        <div className="grid grid-cols-3 gap-2">
+                            {files.map((file, fileIndex) => (
+                                <div
+                                    key={fileIndex}
+                                    className="flex flex-col items-center bg-gray-50 rounded p-2"
+                                >
+                                    <a
+                                        href={file}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
+                                    >
+                                        <img
+                                            src={pfdIcon}
+                                            alt={`${category} file ${fileIndex + 1}`}
+                                            className="w-10 h-10 object-cover mb-2"
+                                        />
+                                        <span className="block">
+                                            File {fileIndex + 1}
+                                        </span>
+                                    </a>
                                 </div>
-                            </div>
-                        )
-                )}
+                            ))}
+                        </div>
+                    </div>
+                ))}
             </div>
         );
     };
@@ -912,7 +920,7 @@ const PreviewTheReq = () => {
     const renderApprovalButtons = (request) => {
         return (
             <div className="bg-white p-4 flex justify-between items-center border-t shadow-md">
-                {request.status !== "PO-Pending" && (
+                {request.status !== "Approved" && (
                     <button
                         onClick={() => setShowDialog(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm shadow-sm active:scale-95 transform"
@@ -1130,6 +1138,7 @@ const PreviewTheReq = () => {
                 <SectionNavigation />
                 <div className="flex-1 overflow-y-auto">
                     {renderSectionContent()}
+                    <DocumentsDisplay request={request} />
                 </div>
             </div>
             {renderApprovalButtons(request)}

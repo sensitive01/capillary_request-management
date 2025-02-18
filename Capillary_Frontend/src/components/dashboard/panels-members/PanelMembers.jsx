@@ -183,7 +183,7 @@ const PanelMembers = () => {
               <option value="Vendor Management">Vendor Management</option>
               <option value="Legal Team">Legal Team</option>
               <option value="Info Security">Info Security</option>
-              <option value="HOF">Head of Finance</option>
+              <option value="Head of Finance">Head of Finance</option>
             </select>
           </div>
         </div>

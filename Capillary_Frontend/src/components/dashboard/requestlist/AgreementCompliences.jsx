@@ -7,13 +7,21 @@ import {
     Upload,
     X,
 } from "lucide-react";
-import { getAllLegalQuestions } from "../../../api/service/adminServices";
-import { uploadCloudinary } from "../../../utils/cloudinaryUtils";
+import {
+    getAllLegalQuestions,
+    saveAggrementData,
+} from "../../../api/service/adminServices";
 import { FaFilePdf } from "react-icons/fa";
 import uploadFiles from "../../../utils/s3BucketConfig";
 
-const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
-    console.log("Comploances",formData)
+const AgreementCompliances = ({
+    formData,
+    setFormData,
+    onNext,
+    onBack,
+    reqId,
+}) => {
+    console.log("Comploances", formData, reqId);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [deviations, setDeviations] = useState({});
@@ -138,12 +146,14 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
     const handleFileUpload = async (questionId, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
-                uploadFiles(file,"compliances",formData?.procurements?.reqId)
+                uploadFiles(file, "compliances", reqId)
             );
             const responses = await Promise.all(uploadPromises);
-            console.log(responses)
+            console.log(responses);
 
-            const fileUrls = responses.flatMap((response) => response.data.fileUrls[0]);
+            const fileUrls = responses.flatMap(
+                (response) => response.data.fileUrls[0]
+            );
             const updatedAttachments = [
                 ...(deviations[questionId]?.attachments || []),
                 ...fileUrls,
@@ -164,6 +174,15 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
             (url) => url !== fileUrl
         );
         handleDeviationChange(questionId, "attachments", updatedAttachments);
+    };
+
+    const handleSubmit = async () => {
+        console.log("ggreentmA", formData);
+        const response = await saveAggrementData(formData, reqId);
+        console.log(response);
+        if (response.status === 200) {
+            onNext();
+        }
     };
 
     const getCleanFileName = (url) => {
@@ -417,7 +436,7 @@ const AgreementCompliances = ({ formData, setFormData, onNext, onBack }) => {
                     </button>
 
                     <button
-                        onClick={onNext}
+                        onClick={handleSubmit}
                         className="px-6 py-3 bg-primary text-white font-medium rounded-lg flex items-center gap-2 hover:bg-primary/90"
                     >
                         Preview

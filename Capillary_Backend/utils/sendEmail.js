@@ -20,7 +20,7 @@ const sendEmail = async (email, templateType, customData={}) => {
         pass: process.env.EMAIL_PASSWORD,
       },
     });
-    console.log("email",email)
+    console.log("html",html)
 
     console.log("subject",subject)
     console.log("customData",customData)
