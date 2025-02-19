@@ -514,7 +514,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                         >
                                             <h3
                                                 className={`text-lg font-semibold ${
-                                                    compliance.deviation
+                                                    compliance.expectedAnswer!==compliance.answer
                                                         ? "text-red-800"
                                                         : "text-green-800"
                                                 }`}
@@ -523,7 +523,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                             </h3>
                                             <p
                                                 className={`mt-2 font-medium ${
-                                                    compliance.deviation
+                                                    compliance.expectedAnswer!==compliance.answer
                                                         ? "text-red-600"
                                                         : "text-green-600"
                                                 }`}
@@ -538,7 +538,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                     {compliance.department}
                                                 </p>
                                             )}
-                                            {compliance.deviation && (
+                                            {compliance.deviation && compliance.expectedAnswer!==compliance.answer&& (
                                                 <div className="mt-2 p-3 bg-red-100 rounded">
                                                     <p className="text-sm text-red-700">
                                                         <strong>

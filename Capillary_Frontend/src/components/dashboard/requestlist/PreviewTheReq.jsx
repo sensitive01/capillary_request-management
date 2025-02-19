@@ -525,6 +525,9 @@ const PreviewTheReq = () => {
                                                 Description
                                             </th>
                                             <th className="p-3 text-left text-primary">
+                                                Purpose
+                                            </th>
+                                            <th className="p-3 text-left text-primary">
                                                 Quantity
                                             </th>
                                             <th className="p-3 text-left text-primary">
@@ -567,6 +570,10 @@ const PreviewTheReq = () => {
                                                         </td>
                                                         <td className="p-3">
                                                             {service.productDescription ||
+                                                                "N/A"}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            {service.productPurpose ||
                                                                 "N/A"}
                                                         </td>
                                                         <td className="p-3">

@@ -405,12 +405,7 @@ const ReqListTable = () => {
                                             >
                                                 ReqId
                                             </th>
-                                            {/* <th
-                                                scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
-                                            >
-                                                Business Unit
-                                            </th> */}
+                           
                                             <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
@@ -436,18 +431,7 @@ const ReqListTable = () => {
                                             >
                                                 Status
                                             </th>
-                                            {/* <th
-                                                scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
-                                            >
-                                                PO_Document
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[100%]"
-                                            >
-                                                Invoice_Document
-                                            </th> */}
+                                    
                                             <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
@@ -460,7 +444,7 @@ const ReqListTable = () => {
                                         {filteredUsers?.length > 0 ? (
                                             filteredUsers.map((user, index) => (
                                                 <tr
-                                                    key={user.sno}
+                                                    key={user._id}
                                                     className="hover:bg-gray-100 cursor-pointer"
                                                     onClick={() =>
                                                         navigate(

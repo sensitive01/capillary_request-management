@@ -6,9 +6,11 @@ const PDFDocument = require("pdfkit");
 const addPanelUsers = require("../models/addPanelUsers");
 const sendEmail = require("../utils/sendEmail");
 const Approver = require("../models/approverSchema");
-
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 const entityModel = require("../models/entityModel");
+const vendorSchema = require("../models/vendorModel")
+
+
 
 const addReqForm = async (req, res) => {
   try {
@@ -1624,12 +1626,10 @@ const uploadPoDocuments = async (req, res) => {
       approverName: empData.full_name,
       approvalId: empData.employee_id,
       approvalDate: new Date(),
-      remarks:  "",
+      remarks: "",
       nextDepartment: "Invoice-Pending",
-      receivedOn: latestApproval?.approvalDate
-        
+      receivedOn: latestApproval?.approvalDate,
     };
-    
 
     // Update the request with PO document details
     const updatedRequest = await CreateNewReq.findByIdAndUpdate(
@@ -1643,13 +1643,10 @@ const uploadPoDocuments = async (req, res) => {
       },
       { new: true }
     );
-    
 
     if (!updatedRequest) {
       return res.status(404).json({ message: "Request not found" });
     }
-
-    
 
     return res.status(200).json({
       message: "PO Document uploaded successfully",
@@ -1676,7 +1673,6 @@ const uploadInvoiceDocuments = async (req, res) => {
     );
     const { approvals } = reqData;
     const latestApproval = approvals[approvals.length - 1];
-
 
     // Fetch employee data
     const empData =
@@ -1711,10 +1707,9 @@ const uploadInvoiceDocuments = async (req, res) => {
       approverName: empData.full_name,
       approvalId: empData.employee_id,
       approvalDate: new Date(),
-      remarks:  "",
+      remarks: "",
       nextDepartment: "Request flow completed",
-      receivedOn: latestApproval?.approvalDate
-        
+      receivedOn: latestApproval?.approvalDate,
     };
 
     // Update the request with PO document details
@@ -2724,8 +2719,6 @@ const saveCommercialData = async (req, res) => {
         .lean()
     ).map((member) => member.company_email_id);
 
-    console.log("panelMemberEmail", panelMemberEmail);
-
     let responseMessage = "";
     let updatedRequest;
 
@@ -2840,6 +2833,9 @@ const saveProcurementsData = async (req, res) => {
     const { formData } = req.body;
     const { reqId } = formData;
     const { newReqId } = req.params;
+    console.log("formData", formData);
+    const { vendor } = formData;
+    const vendorData = await vendorSchema.findOne({ vendorId: vendor });
 
     const updateData = await CreateNewReq.findOne({
       reqid: reqId || newReqId,
@@ -2904,6 +2900,10 @@ const saveProcurementsData = async (req, res) => {
       ...otherFormData,
       uploadedFiles: updateData.procurements.uploadedFiles,
     };
+    if (vendorData) {
+      updateData.procurements.email = "";
+      updateData.procurements.isNewVendor = false;
+    }
 
     await updateData.save();
 

@@ -8,14 +8,7 @@ import {
 } from "../../../../api/service/adminServices.js";
 import uploadFiles from "../../../../utils/s3BucketConfig.js";
 
-const Procurements = ({
-    formData ,
-    setFormData,
-    onBack,
-    onNext,
-    reqId,
-}) => {
- 
+const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
     const [vendors, setVendors] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -36,10 +29,15 @@ const Procurements = ({
         name: "",
         email: "",
         isNewVendor: false,
-    }); 
+    });
     const [filesData, setFilesData] = useState([
         { id: Date.now(), fileType: "", otherType: "", files: [], urls: [] },
     ]);
+    const formatDateForInput = (isoDateString) => {
+        if (!isoDateString) return "";
+        const date = new Date(isoDateString);
+        return date.toISOString().split("T")[0];
+    };
 
     useEffect(() => {
         if (formData?.vendor && formData?.vendorName) {
@@ -152,7 +150,7 @@ const Procurements = ({
 
     const getFilteredVendors = () => {
         if (!searchTerm) return [];
-
+    
         return vendors.filter((vendor) => {
             const vendorName = (
                 vendor.firstName ||
@@ -161,15 +159,13 @@ const Procurements = ({
                 vendor.vendorName ||
                 ""
             ).toLowerCase();
-            const vendorId = (vendor.ID || vendor.vendorId || "")
-                .toString()
-                .toLowerCase();
+            const vendorId = (vendor.ID || vendor.vendorId || "").toString().toLowerCase();
             const search = searchTerm.toLowerCase();
-
+    
+            // Check if either the name or ID contains the search term
             return vendorName.includes(search) || vendorId.includes(search);
         });
     };
-
     const getEffectiveFileType = (fileData) => {
         return fileData.fileType === "Other"
             ? fileData.otherType
@@ -260,8 +256,10 @@ const Procurements = ({
             isNewVendor: vendor.isNewVendor,
         }));
 
+        // Update the search term but don't hide results immediately
         setSearchTerm(getVendorDisplayName(vendor));
-        setShowResults(false);
+        // Remove this line: setShowResults(false);
+        setFormDataChanged(true);
 
         // Clear any vendor-related errors
         setErrors((prev) => ({ ...prev, vendor: "" }));
@@ -325,8 +323,6 @@ const Procurements = ({
         const fileType = getEffectiveFileType(currentFileData);
         setFormDataChanged(true); // Add this line
 
-
-
         if (!fileType) {
             alert("Please select a file type first");
             return;
@@ -337,7 +333,6 @@ const Procurements = ({
                 files.map(async (file) => {
                     //   const data = await uploadCloudinary(file);
                     const data = await uploadFiles(file, fileType, reqId);
-              
 
                     return data.data.fileUrls[0];
                 })
@@ -547,9 +542,15 @@ const Procurements = ({
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
-                            setShowResults(true);
+                            setShowResults(true); // Always show results when typing
                         }}
-                        onClick={() => setShowResults(true)}
+                        onClick={() => {
+                            setShowResults(true); // Show results when clicking the input
+                            // If there's a search term, trigger the search
+                            if (searchTerm) {
+                                getFilteredVendors();
+                            }
+                        }}
                         className="w-full pl-10 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                     />
                 </div>
@@ -708,7 +709,9 @@ const Procurements = ({
                             <input
                                 type="date"
                                 name="quotationDate"
-                                value={formData?.quotationDate || ""}
+                                value={formatDateForInput(
+                                    formData?.quotationDate || ""
+                                )}
                                 onChange={handleInputChange}
                                 min={getDateRange().min}
                                 max={getDateRange().max}
@@ -765,7 +768,11 @@ const Procurements = ({
                                     <input
                                         type="date"
                                         name="poValidFrom"
-                                        value={formData?.poValidFrom || ""}
+                                        value={
+                                            formatDateForInput(
+                                                formData?.poValidFrom
+                                            ) || ""
+                                        }
                                         onChange={handleInputChange}
                                         min={getDateRange().min}
                                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
@@ -778,7 +785,11 @@ const Procurements = ({
                                     <input
                                         type="date"
                                         name="poValidTo"
-                                        value={formData?.poValidTo || ""}
+                                        value={
+                                            formatDateForInput(
+                                                formData?.poValidTo
+                                            ) || ""
+                                        }
                                         onChange={handleInputChange}
                                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                                     />

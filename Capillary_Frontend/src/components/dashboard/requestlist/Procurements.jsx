@@ -74,7 +74,7 @@ const Procurements = ({
         };
 
         fetchVendor();
-    }, [formData.vendor]);
+    }, []);
 
     useEffect(() => {
         if (

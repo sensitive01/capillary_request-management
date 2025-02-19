@@ -26,7 +26,7 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
                 setQuestions(questionData);
 
                 const existingCompliances = Array.isArray(formData.complinces)
-                    ? formData.complinces
+                    ? formData.complinces 
                     : [];
 
                 const complianceMap = new Map(
@@ -42,6 +42,7 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
                         question: q.question,
                         answer: existing?.answer ?? q.expectedAnswer,
                         department: q.createdBy.department,
+                        expectedAnswer:q.expectedAnswer,
                         deviation: hasDeviation 
                             ? (existing?.deviation || { reason: "", attachments: [] })
                             : null

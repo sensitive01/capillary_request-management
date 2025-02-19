@@ -436,6 +436,9 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                 Description
                                             </th>
                                             <th className="p-3 text-left text-primary">
+                                                Purpose
+                                            </th>
+                                            <th className="p-3 text-left text-primary">
                                                 Quantity
                                             </th>
                                             <th className="p-3 text-left text-primary">
@@ -478,6 +481,10 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                         </td>
                                                         <td className="p-3">
                                                             {service.productDescription ||
+                                                                "N/A"}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            {service.productPurpose ||
                                                                 "N/A"}
                                                         </td>
                                                         <td className="p-3">

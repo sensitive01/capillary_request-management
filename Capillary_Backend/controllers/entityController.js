@@ -108,7 +108,7 @@ exports.getAllEntities = async (req, res) => {
       );
       isDropDown = false;
     } else {
-      console.log("empData.department", empData.department);
+      // console.log("empData.department", empData.department);
 
 
 
@@ -140,7 +140,7 @@ exports.getAllEntities = async (req, res) => {
       isDropDown = true;
     }
 
-    console.log("departmentHod", departmentHod);
+    // console.log("departmentHod", departmentHod);
 
     res
       .status(200)

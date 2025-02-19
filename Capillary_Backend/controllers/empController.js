@@ -567,7 +567,6 @@ exports.getAllEmployeeReq = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
     
-    console.log("Sorted reqList", reqList);
 
     if (reqList.length === 0) {
       return res.status(404).json({
