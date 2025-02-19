@@ -25,6 +25,7 @@ const approveRequest = async (req, res) => {
         createdAt: 1,
         status: 1,
         commercials: 1,
+        reqid:1
       }
     );
 
@@ -96,7 +97,7 @@ const approveRequest = async (req, res) => {
         requesterData.company_email_id,
         requesterData.full_name,
         requesterData.department,
-        reqId,
+        reqData.reqid,
         approvalRecord
       );
 
@@ -105,7 +106,7 @@ const approveRequest = async (req, res) => {
         approverData.company_email_id,
         approverData.full_name,
         approverData.department,
-        reqId,
+        reqData.reqid,
         approvalRecord
       );
 

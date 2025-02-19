@@ -8,9 +8,7 @@ const sendEmail = require("../utils/sendEmail");
 const Approver = require("../models/approverSchema");
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 const entityModel = require("../models/entityModel");
-const vendorSchema = require("../models/vendorModel")
-
-
+const vendorSchema = require("../models/vendorModel");
 
 const addReqForm = async (req, res) => {
   try {
@@ -303,9 +301,8 @@ const getStatisticData = async (req, res) => {
         let count = 0; // Initialize count for each request
 
         const pendingRequests = request.approvals.filter((app) => {
-          const isForEmployeeDept =
-            app.nextDepartment === role &&
-            app.departmentName !== consolidatedData.deparment;
+          const isForEmployeeDept = app.departmentName=== consolidatedData.department;
+
           console.log("isForEmployeeDept", isForEmployeeDept);
 
           const isPending =

@@ -74,6 +74,7 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: result.Key,
+        Expires: 60 * 60 * 24 * 90, 
       };
 
       // Generate pre-signed URL for the uploaded file
@@ -95,18 +96,6 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
 });
 
 
-// s3Router.get("/display/:key", async (req, res) => {
-//   const key = req.params.key;
-//   const params = { Bucket: process.env.S3_BUCKET_NAME, Key: key };
-//   s3.getObject(params, (err, data) => {
-//     if (err) {
-//       return res.status(500).json({ error: err.message });
-//     }
-//     res.set("Content-Type", data.ContentType);
-//     res.send(data.Body);
-//   });
-// });
 
-// s3Router.post("/delete-s3-image",s3Controller.deleteImageFromS3Bucket)
 
 module.exports = s3Router;
