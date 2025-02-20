@@ -771,6 +771,9 @@ const PreviewTheReq = () => {
             } else if (response.status === 400) {
                 console.log("response", response.response);
                 toast.info(response.response.data.message);
+            }else if (response.status === 401) {
+                console.log("response", response.response);
+                toast.info(response.response.data.message);
             }
         } catch (err) {
             console.log("Error in approve the request", err);

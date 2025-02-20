@@ -10,7 +10,15 @@ const approveRequest = async (req, res) => {
     console.log("req.body", req.body);
     const { id } = req.params;
     const { reqId, status, email, reason, role } = req.body;
-    console.log(reqId, status, email, reason);
+    console.log(
+      "reqId, status, email, reason,role",
+      reqId,
+      status,
+      email,
+      reason,
+      role,
+      id
+    );
     const remarks = reason;
 
     // Fetch required data
@@ -25,7 +33,7 @@ const approveRequest = async (req, res) => {
         createdAt: 1,
         status: 1,
         commercials: 1,
-        reqid:1
+        reqid: 1,
       }
     );
 
@@ -116,13 +124,11 @@ const approveRequest = async (req, res) => {
         data: approvalRecord,
       });
     } else {
-      console.log("reqData.status", reqData.status);
-      if (reqData.status === "Hold" || reqData.status === "Rejected") {
-        console.log("A checkigm");
-        reqData.status = "Pending";
-        await reqData.save();
-      }
-
+      console.log(
+        "reqData.status",
+        reqData.status,
+        reqData.firstLevelApproval.hodEmail
+      );
       const departmentOrder = [
         reqData.firstLevelApproval.hodEmail,
         "Business Finance",
@@ -142,7 +148,21 @@ const approveRequest = async (req, res) => {
 
       const nextDepartment = departmentOrder[currentDeptIndex + 1] || null;
       const latestApproval = reqData.approvals[reqData.approvals.length - 1];
-      console.log("last level approvals", latestApproval);
+
+      if (
+        latestApproval?.nextDepartment !== role &&
+        latestApproval?.approvalId !== id &&
+        latestApproval?.length < 0
+      ) {
+        return res.status(401).json({
+          message: `Request approve failed!. Expected deparment is ${latestApproval.nextDepartment} `,
+        });
+      }
+      if (reqData.status === "Hold" || reqData.status === "Rejected") {
+        console.log("A checkigm");
+        reqData.status = "Pending";
+        await reqData.save();
+      }
 
       const approvalRecord = {
         departmentName: approverData.department,
@@ -200,10 +220,15 @@ const approveRequest = async (req, res) => {
             "Vendor Management",
             "Legal Team",
           ];
-          const remarks = "Auto-approved";
 
           for (let i = 0; i < autoApproveDepartments.length - 1; i++) {
             const autoDepartment = autoApproveDepartments[i];
+            let remarks = "";
+            if (role === autoDepartment) {
+              remarks = "";
+            } else {
+              remarks = "Auto-approved";
+            }
             const isLastDepartment = i === autoApproveDepartments.length - 1;
             const nextAutoDepartment = isLastDepartment
               ? null
@@ -269,10 +294,16 @@ const approveRequest = async (req, res) => {
             "Info Security",
             "Head of Finance",
           ];
-          const remarks = "Auto-approved";
+        
 
           for (let i = 0; i < autoApproveDepartments.length; i++) {
             const autoDepartment = autoApproveDepartments[i];
+            let remarks = "";
+            if (role === autoDepartment) {
+              remarks = "";
+            } else {
+              remarks = "Auto-approved";
+            }
             const isLastDepartment = i === autoApproveDepartments.length - 1;
             const nextAutoDepartment = isLastDepartment
               ? null
@@ -506,9 +537,9 @@ const approveRequest = async (req, res) => {
           approverName: approverData.full_name,
           approvalId: approverData.employee_id,
           approvalDate: new Date(),
-          remarks:"",
+          remarks: "",
           nextDepartment: "PO-Pending",
-          receivedOn:latestApproval?.approvalDate || new Date(),
+          receivedOn: latestApproval?.approvalDate || new Date(),
         };
         await CreateNewReq.updateOne(
           { _id: reqId },

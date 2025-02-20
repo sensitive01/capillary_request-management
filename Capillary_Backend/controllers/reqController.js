@@ -290,6 +290,7 @@ const getStatisticData = async (req, res) => {
       console.log("reqDataStatics", reqDataStatics);
 
       totalApprovals = reqDataStatics.length;
+
       reqData.forEach((request) => {
         console.log("request----", request);
 
@@ -298,7 +299,7 @@ const getStatisticData = async (req, res) => {
           return; // Skip this iteration if approvals are missing
         }
 
-        let count = 0; // Initialize count for each request
+        let count = 0;
 
         const pendingRequests = request.approvals.filter((app) => {
           const isForEmployeeDept = app.departmentName=== consolidatedData.department;
@@ -331,6 +332,8 @@ const getStatisticData = async (req, res) => {
 
         completedApprovals += approvalsForEmployee2.length; // Add to completedApprovals
       });
+
+     
 
       console.log("Total Completed Approvals:", completedApprovals);
       console.log("Total Pending Approvals:", pendingApprovals);
