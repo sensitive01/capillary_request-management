@@ -1532,19 +1532,26 @@ const isApproved = async (req, res) => {
       disable=false
 
     }
-   }else if (reqData.firstLevelApproval.approved===true&&role!=="HOD Department"){
+   }
+   else if (reqData.firstLevelApproval.approved===true&&role!=="HOD Department"){
+    console.log("1")
     console.log("lastlevalApproval", lastlevalApproval,role);
     if(lastlevalApproval.nextDepartment===role){
+      console.log("2")
       disable=false
     }
-    if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id){
+   else if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id&&role===lastlevalApproval.nextDepartment){
+      console.log("3")
       disable=false
     }
-   if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id){
+   else if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id && lastlevalApproval.status!=="Approved" ){
+    console.log("4")
+
     disable=false
    }
 
   }
+
 
 
 
