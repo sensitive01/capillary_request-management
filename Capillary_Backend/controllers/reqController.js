@@ -1526,7 +1526,7 @@ const isApproved = async (req, res) => {
     //   }
     // }
 
-   if(role==="HOD Department"){
+   if((role==="HOD Department"||role==="Admin")&&reqData.firstLevelApproval.hodEmail===empData.company_email_id){
     console.log("HOD Deparment")
     if( !reqData.firstLevelApproval.approved){
       disable=false
