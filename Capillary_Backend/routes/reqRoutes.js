@@ -37,6 +37,9 @@ router.post('/accept-request-info-security/:id', approvalController.approveReque
 router.post('/accept-request-po-team/:id', approvalController.approveRequest); 
 router.post('/accept-request-hof-team/:id', approvalController.approveRequest);
 
+router.post('/generate-request-pdf/:reqId', reqController.generateRequestPdfData);
+
+
 
 router.post('/save-commercial-data/:empId', reqController.saveCommercialData);
 router.put('/save-procurements-data/:newReqId', reqController.saveProcurementsData);

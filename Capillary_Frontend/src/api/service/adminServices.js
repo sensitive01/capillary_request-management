@@ -207,7 +207,7 @@ export const getPanelMenberData = async () => {
   }
 };
 
-export const createNewRequest = async (id, formData,reqId) => {
+export const createNewRequest = async (id, formData, reqId) => {
   try {
     const response = await adminServices.put(
       `/employees/create-newrequest/${id}/${reqId}`,
@@ -891,8 +891,7 @@ export const saveCommercialData = async (formData, empId) => {
   }
 };
 
-
-export const editCommercials = async (formData, empId,reqId) => {
+export const editCommercials = async (formData, empId, reqId) => {
   try {
     const response = await adminServices.post(
       `/request/edit-commercial-data/${empId}/${reqId}`,
@@ -904,12 +903,7 @@ export const editCommercials = async (formData, empId,reqId) => {
   }
 };
 
-
-
-
-
-
-export const savePocurementsData = async (formData,reqId) => {
+export const savePocurementsData = async (formData, reqId) => {
   try {
     const response = await adminServices.put(
       `/request/save-procurements-data/${reqId}`,
@@ -921,8 +915,7 @@ export const savePocurementsData = async (formData,reqId) => {
   }
 };
 
-
-export const saveSuppliesData = async (formData,reqId) => {
+export const saveSuppliesData = async (formData, reqId) => {
   try {
     const response = await adminServices.put(
       `/request/save-supplies-data/${reqId}`,
@@ -934,8 +927,7 @@ export const saveSuppliesData = async (formData,reqId) => {
   }
 };
 
-
-export const saveAggrementData = async (formData,reqId) => {
+export const saveAggrementData = async (formData, reqId) => {
   try {
     const response = await adminServices.put(
       `/request/save-aggrement-data/${reqId}`,
@@ -944,5 +936,23 @@ export const saveAggrementData = async (formData,reqId) => {
     return response;
   } catch (err) {
     return err;
+  }
+};
+
+export const generatePDF = async (reqId) => {
+  try {
+    const response = await adminServices.post(
+      `/request/generate-request-pdf/${reqId}`,
+      {},
+      {
+        responseType: "blob", // Important for receiving PDF data
+        headers: {
+          Accept: "application/pdf",
+        },
+      }
+    );
+    return response.data;
+  } catch (err) {
+    throw err;
   }
 };

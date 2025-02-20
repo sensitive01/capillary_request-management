@@ -2,7 +2,7 @@ import { FaFilePdf } from "react-icons/fa";
 import { formatDateToDDMMYY } from "../../../utils/dateFormat";
 
 const DocumentsDisplay = ({ request }) => {
-    const showDocuments = ["Invoice Pending", "Approved"].includes(
+    const showDocuments = ["Invoice-Pending", "Approved"].includes(
         request.status
     );
 

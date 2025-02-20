@@ -18,6 +18,7 @@ import {
     addPODocument,
     dispalyIsApproved,
     fetchIndividualReq,
+    generatePDF,
     releseReqStatus,
     sendReminder,
 } from "../../../api/service/adminServices";
@@ -69,7 +70,7 @@ const PreviewTheReq = () => {
         const fetchReq = async () => {
             try {
                 const response = await fetchIndividualReq(params.id);
-                console.log("response",response)
+                console.log("response", response);
 
                 if (response.status === 200) {
                     setRequest(response.data.data);
@@ -105,6 +106,35 @@ const PreviewTheReq = () => {
             maximumFractionDigits: 2,
         }).format(value);
     };
+
+    // const handleGeneratePDF = async () => {
+    //     try {
+    //         setIsLoading(true);
+            
+    //         // Get PDF blob from service
+    //         const pdfBlob = await generatePDF(params.id);
+            
+    //         // Create a Blob URL
+    //         const pdfURL = window.URL.createObjectURL(
+    //           new Blob([pdfBlob], { type: 'application/pdf' })
+    //         );
+            
+    //         // Create and trigger download
+    //         const a = document.createElement('a');
+    //         a.href = pdfURL;
+    //         a.download = `request_${params.id}.pdf`;
+    //         document.body.appendChild(a);
+    //         a.click();
+            
+    //         // Cleanup
+    //         document.body.removeChild(a);
+    //         window.URL.revokeObjectURL(pdfURL);
+    //       } catch (error) {
+    //         console.error('Error generating PDF:', error);
+    //         // You can add your error handling here (e.g., toast notification)
+    //       } 
+    // };
+
     const LoadingOverlay = () => (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
@@ -119,7 +149,7 @@ const PreviewTheReq = () => {
         if (!uploadedFiles || uploadedFiles.length === 0) {
             return null;
         }
-    
+
         // Transform the data structure
         const fileCategories = uploadedFiles.reduce((acc, fileGroup) => {
             // Get all keys (categories) from the file group
@@ -128,43 +158,47 @@ const PreviewTheReq = () => {
             });
             return acc;
         }, {});
-    
+
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(fileCategories).map(([category, files], index) => (
-                    <div
-                        key={index}
-                        className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
-                    >
-                        <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
-                            {category.replace(/_/g, ' ')}
-                        </h4>
-                        <div className="grid grid-cols-3 gap-2">
-                            {files.map((file, fileIndex) => (
-                                <div
-                                    key={fileIndex}
-                                    className="flex flex-col items-center bg-gray-50 rounded p-2"
-                                >
-                                    <a
-                                        href={file}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
+                {Object.entries(fileCategories).map(
+                    ([category, files], index) => (
+                        <div
+                            key={index}
+                            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                        >
+                            <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
+                                {category.replace(/_/g, " ")}
+                            </h4>
+                            <div className="grid grid-cols-3 gap-2">
+                                {files.map((file, fileIndex) => (
+                                    <div
+                                        key={fileIndex}
+                                        className="flex flex-col items-center bg-gray-50 rounded p-2"
                                     >
-                                        <img
-                                            src={pfdIcon}
-                                            alt={`${category} file ${fileIndex + 1}`}
-                                            className="w-10 h-10 object-cover mb-2"
-                                        />
-                                        <span className="block">
-                                            File {fileIndex + 1}
-                                        </span>
-                                    </a>
-                                </div>
-                            ))}
+                                        <a
+                                            href={file}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
+                                        >
+                                            <img
+                                                src={pfdIcon}
+                                                alt={`${category} file ${
+                                                    fileIndex + 1
+                                                }`}
+                                                className="w-10 h-10 object-cover mb-2"
+                                            />
+                                            <span className="block">
+                                                File {fileIndex + 1}
+                                            </span>
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                )}
             </div>
         );
     };
@@ -771,7 +805,7 @@ const PreviewTheReq = () => {
             } else if (response.status === 400) {
                 console.log("response", response.response);
                 toast.info(response.response.data.message);
-            }else if (response.status === 401) {
+            } else if (response.status === 401) {
                 console.log("response", response.response);
                 toast.info(response.response.data.message);
             }
@@ -1036,7 +1070,18 @@ const PreviewTheReq = () => {
                         <div className="flex items-center justify-between w-full">
                             {/* Left side - Preview Image */}
 
-                            <div></div>
+                            <div className="ml-5">
+                                <button
+                                    // onClick={handleGeneratePDF}
+                                    // disabled={!selectedImage || isUploading}
+                                    className="px-2 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-100"
+                                >
+                                    <FileText className="w-5 h-4 mr-2" />
+                                    {isUploading
+                                        ? "Generating..."
+                                        : "Generate PDF"}
+                                </button>
+                            </div>
                             <div className="flex items-center gap-4">
                                 {selectedImage && (
                                     <div className="h-10 w-10 rounded overflow-hidden">
@@ -1053,7 +1098,7 @@ const PreviewTheReq = () => {
                                 <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
                                     <Upload className="w-5 h-5 text-gray-500 mr-2" />
                                     <span className="text-sm text-gray-600">
-                                        Upload Image
+                                        Upload PO
                                     </span>
                                     <input
                                         type="file"
@@ -1075,7 +1120,7 @@ const PreviewTheReq = () => {
                                     className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-100 disabled:cursor-not-allowed"
                                 >
                                     <FileText className="w-5 h-5 mr-2" />
-                                    {isUploading ? "Uploading..." : "Upload PO"}
+                                    {isUploading ? "Uploading..." : "Submit"}
                                 </button>
                             </div>
                         </div>
@@ -1121,9 +1166,7 @@ const PreviewTheReq = () => {
                                 className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <FileText className="w-5 h-5 mr-2" />
-                                {isUploading
-                                    ? "Uploading..."
-                                    : "Upload Invoice"}
+                                {isUploading ? "Uploading..." : "Submit"}
                             </button>
 
                             {/* Release Button */}

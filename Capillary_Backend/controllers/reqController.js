@@ -9,6 +9,8 @@ const Approver = require("../models/approverSchema");
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 const entityModel = require("../models/entityModel");
 const vendorSchema = require("../models/vendorModel");
+const fs = require("fs");
+const path = require("path");
 
 const addReqForm = async (req, res) => {
   try {
@@ -302,7 +304,8 @@ const getStatisticData = async (req, res) => {
         let count = 0;
 
         const pendingRequests = request.approvals.filter((app) => {
-          const isForEmployeeDept = app.departmentName=== consolidatedData.department;
+          const isForEmployeeDept =
+            app.departmentName === consolidatedData.department;
 
           console.log("isForEmployeeDept", isForEmployeeDept);
 
@@ -332,8 +335,6 @@ const getStatisticData = async (req, res) => {
 
         completedApprovals += approvalsForEmployee2.length; // Add to completedApprovals
       });
-
-     
 
       console.log("Total Completed Approvals:", completedApprovals);
       console.log("Total Pending Approvals:", pendingApprovals);
@@ -1474,6 +1475,11 @@ const isApproved = async (req, res) => {
       { _id: reqId },
       { firstLevelApproval: 1, approvals: 1 }
     );
+    const { approvals } = reqData;
+    console.log("approvals", approvals);
+    const lastlevalApproval = approvals[approvals.length - 1];
+
+    console.log("lastlevalApproval", lastlevalApproval);
 
     if (
       reqData &&
@@ -1505,6 +1511,18 @@ const isApproved = async (req, res) => {
         empData.company_email_id !== reqData.firstLevelApproval.hodEmail
       ) {
         console.log("hi");
+        disable = true;
+      } else if (
+        !lastlevalApproval &&
+        lastlevalApproval.nextDepartment !== empData.role
+      ) {
+        console.log(
+          "I a checkingm",
+          !lastlevalApproval &&
+            lastlevalApproval.nextDepartment !== empData.role
+        );
+        disable = true;
+      } else if (lastlevalApproval.nextDepartment !== empData.role) {
         disable = true;
       }
     }
@@ -3000,7 +3018,290 @@ const saveAggrementData = async (req, res) => {
   }
 };
 
+
+
+
+
+
+const generateRequestPdfData = async (req, res) => {
+  try {
+    const reqData = await CreateNewReq.findById(req.params.reqId);
+    if (!reqData) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "attachment; filename=request_details.pdf");
+
+    // Create PDF with better margins
+    const doc = new PDFDocument({
+      margins: { top: 72, bottom: 72, left: 72, right: 72 },
+      size: 'A4',
+    });
+    doc.pipe(res);
+
+    let pageNumber = 1;
+
+    // Helper functions
+    const drawHeader = () => {
+      // Header background
+      doc.fillColor('#f6f6f6')
+         .rect(72, 72, doc.page.width - 144, 60)
+         .fill();
+
+      // Company name or logo placeholder
+      doc.fillColor('#2E5090')
+         .fontSize(24)
+         .font('Helvetica-Bold')
+         .text('COMPANY NAME', 92, 82);
+
+      // Request details in header
+      doc.fontSize(10)
+         .fillColor('#666666')
+         .font('Helvetica')
+         .text(`Request ID: ${reqData.reqid}`, doc.page.width - 200, 82)
+         .text(`Generated: ${new Date().toLocaleString()}`, doc.page.width - 200, 97);
+
+      // Divider line
+      doc.strokeColor('#e0e0e0')
+         .lineWidth(1)
+         .moveTo(72, 132)
+         .lineTo(doc.page.width - 72, 132)
+         .stroke();
+
+      // Page number at bottom
+      doc.fillColor('#666666')
+         .fontSize(8)
+         .text(
+           `Page ${pageNumber}`,
+           72,
+           doc.page.height - 50,
+           { align: 'center', width: doc.page.width - 144 }
+         );
+    };
+
+    const addSection = (title) => {
+      // Section title with background
+      doc.fillColor('#f6f6f6')
+         .rect(72, doc.y, doc.page.width - 144, 30)
+         .fill();
+
+      doc.fillColor('#2E5090')
+         .fontSize(14)
+         .font('Helvetica-Bold')
+         .text(title, 92, doc.y - 25);
+
+      doc.moveDown(1.5);
+    };
+
+    const addFieldGroup = (fields) => {
+      const startY = doc.y;
+      const boxHeight = (fields.length * 25) + 20;
+
+      // Draw box around fields
+      doc.strokeColor('#e0e0e0')
+         .lineWidth(1)
+         .rect(72, startY, doc.page.width - 144, boxHeight)
+         .stroke();
+
+      // Add fields
+      fields.forEach((field, index) => {
+        const yPos = startY + 15 + (index * 25);
+        
+        // Label
+        doc.fontSize(10)
+           .font('Helvetica-Bold')
+           .fillColor('#333333')
+           .text(field.label + ':', 92, yPos);
+
+        // Value
+        doc.font('Helvetica')
+           .fillColor('#666666')
+           .text(field.value || 'N/A', 92 + 150, yPos);
+      });
+
+      doc.moveDown(3);
+    };
+
+    const addTable = (headers, rows) => {
+      const startY = doc.y;
+      const rowHeight = 30;
+      const columnWidth = (doc.page.width - 144) / headers.length;
+
+      // Table header
+      doc.fillColor('#f6f6f6')
+         .rect(72, startY, doc.page.width - 144, rowHeight)
+         .fill();
+
+      headers.forEach((header, i) => {
+        doc.fillColor('#333333')
+           .fontSize(10)
+           .font('Helvetica-Bold')
+           .text(
+             header,
+             72 + (i * columnWidth) + 10,
+             startY + 10,
+             { width: columnWidth - 20 }
+           );
+      });
+
+      // Table rows
+      let currentY = startY + rowHeight;
+      rows.forEach((row, rowIndex) => {
+        // Check for page break
+        if (currentY > doc.page.height - 100) {
+          doc.addPage();
+          pageNumber++;
+          drawHeader();
+          currentY = 150;
+        }
+
+        // Alternate row background
+        if (rowIndex % 2 === 0) {
+          doc.fillColor('#fafafa')
+             .rect(72, currentY, doc.page.width - 144, rowHeight)
+             .fill();
+        }
+
+        row.forEach((cell, i) => {
+          doc.fillColor('#666666')
+             .fontSize(9)
+             .font('Helvetica')
+             .text(
+               cell,
+               72 + (i * columnWidth) + 10,
+               currentY + 10,
+               { width: columnWidth - 20 }
+             );
+        });
+
+        currentY += rowHeight;
+      });
+
+      doc.moveDown(4);
+    };
+
+    const checkNewPage = () => {
+      if (doc.y > doc.page.height - 150) {
+        doc.addPage();
+        pageNumber++;
+        drawHeader();
+      }
+    };
+
+    // Start building the PDF
+    drawHeader();
+
+    // Title
+    doc.fontSize(22)
+       .font('Helvetica-Bold')
+       .fillColor('#333333')
+       .text('REQUEST DETAILS', { align: 'center' });
+    doc.moveDown(2);
+
+    // Commercials Section
+    addSection('COMMERCIALS');
+    addFieldGroup([
+      { label: 'Bill To', value: reqData.commercials.billTo },
+      { label: 'Business Unit', value: reqData.commercials.businessUnit },
+      { label: 'Department', value: reqData.commercials.department },
+      { label: 'Entity', value: reqData.commercials.entity },
+      { label: 'Payment Mode', value: reqData.commercials.paymentMode }
+    ]);
+
+    // Payment Terms Table
+    if (reqData.commercials.paymentTerms?.length > 0) {
+      addTable(
+        ['Term', 'Percentage', 'Payment Type'],
+        reqData.commercials.paymentTerms.map(term => [
+          term.percentageTerm,
+          term.percentageAmount + '%',
+          term.paymentType
+        ])
+      );
+    }
+
+    checkNewPage();
+
+    // Procurement Section
+    addSection('PROCUREMENT DETAILS');
+    addFieldGroup([
+      { label: 'Vendor', value: reqData.procurements.vendor },
+      { label: 'Vendor Name', value: reqData.procurements.vendorName },
+      { label: 'Quotation Number', value: reqData.procurements.quotationNumber },
+      { label: 'Service Period', value: reqData.procurements.servicePeriod },
+      { label: 'Project Code', value: reqData.procurements.projectCode },
+      { label: 'Client Name', value: reqData.procurements.clientName },
+      { label: 'PO Valid From', value: new Date(reqData.procurements.poValidFrom).toLocaleDateString() },
+      { label: 'PO Valid To', value: new Date(reqData.procurements.poValidTo).toLocaleDateString() }
+    ]);
+
+    checkNewPage();
+
+    // Supplies Section
+    addSection('SUPPLIES');
+    addFieldGroup([
+      { label: 'Total Value', value: `${reqData.supplies.totalValue} ${reqData.supplies.selectedCurrency}` }
+    ]);
+
+    if (reqData.supplies.services?.length > 0) {
+      addTable(
+        ['Product', 'Description', 'Quantity', 'Price', 'Tax'],
+        reqData.supplies.services.map(service => [
+          service.productName,
+          service.productDescription,
+          service.quantity,
+          service.price,
+          service.tax
+        ])
+      );
+    }
+
+    checkNewPage();
+
+    // Compliances Section
+    if (reqData.complinces?.length > 0) {
+      addSection('COMPLIANCES');
+      reqData.complinces.forEach((compliance, index) => {
+        checkNewPage();
+        addFieldGroup([
+          { label: `Question ${index + 1}`, value: compliance.question },
+          { label: 'Answer', value: compliance.answer ? 'Yes' : 'No' },
+          ...(compliance.hasDeviations ? [{ label: 'Deviation', value: compliance.deviation }] : [])
+        ]);
+      });
+    }
+
+    checkNewPage();
+
+    // First Level Approval
+    addSection('FIRST LEVEL APPROVAL');
+    addFieldGroup([
+      { label: 'HOD Name', value: reqData.firstLevelApproval.hodName },
+      { label: 'HOD Email', value: reqData.firstLevelApproval.hodEmail },
+      { label: 'Department', value: reqData.firstLevelApproval.hodDepartment },
+      { label: 'Status', value: reqData.firstLevelApproval.status },
+      { label: 'Approved', value: reqData.firstLevelApproval.approved ? 'Yes' : 'No' }
+    ]);
+
+    doc.end();
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    res.status(500).json({ message: "Internal Server Error", error });
+  }
+};
+
+
+
+
+
+
+
+
+
+
 module.exports = {
+  generateRequestPdfData,
   editCommercialData,
   saveAggrementData,
   saveSuppliesData,
