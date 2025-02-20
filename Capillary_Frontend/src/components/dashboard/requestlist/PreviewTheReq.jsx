@@ -1032,7 +1032,7 @@ const PreviewTheReq = () => {
                 )}
 
                 {request.status === "PO-Pending" &&
-                    department === "Head of Finance" && (
+                    role === "Head of Finance" && (
                         <div className="flex items-center justify-between w-full">
                             {/* Left side - Preview Image */}
 
