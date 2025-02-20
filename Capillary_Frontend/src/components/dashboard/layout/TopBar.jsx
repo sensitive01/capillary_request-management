@@ -56,14 +56,14 @@ const TopBar = () => {
         <div className="flex items-center space-x-2 sm:space-x-4 ml-auto">
           <div className="relative" onClick={toggleNotifications}>
             <Bell className="text-gray-500 cursor-pointer" />
-            {reqData.length > 0 && (
+            {reqData?.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {reqData.length}
+                {reqData?.length}
               </span>
             )}
           </div>
           <div className="bg-gray-100 rounded-full px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700">
-            {`${user.name}`}
+            {`${user?.name}`}
           </div>
           <MoreVertical className="text-gray-500 cursor-pointer" />
           <button
@@ -87,19 +87,19 @@ const TopBar = () => {
               Clear All
             </button>
           </div>
-          {reqData.length === 0 ? (
+          {reqData?.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
               No notifications
             </div>
           ) : (
             <ul>
-              {reqData.map((notification) => (
+              {reqData?.map((notification) => (
                 <li
-                  key={notification.reqid}
+                  key={notification?.reqid}
                   className="px-4 py-3 hover:bg-gray-50 flex justify-between items-center"
                 >
                   <div>
-                    <p>{`New Request is created with Request ID: ${notification.reqid}`}</p>
+                    <p>{`New Request is created with Request ID: ${notification?.reqid}`}</p>
                   </div>
                   <button
                     onClick={() => setIsNotificationOpen(false)}
