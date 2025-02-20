@@ -444,10 +444,10 @@ export const fetchIndividualReq = async (id) => {
     return err;
   }
 };
-export const dispalyIsApproved = async (userId, reqId) => {
+export const dispalyIsApproved = async (userId, reqId,role) => {
   try {
     const response = await adminServices.get(
-      `/request/is-approved/${userId}/${reqId}`
+      `/request/is-approved/${userId}/${reqId}/${role}`
     );
     return response;
   } catch (err) {

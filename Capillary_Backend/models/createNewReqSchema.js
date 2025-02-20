@@ -84,6 +84,7 @@ const complianceItemSchema = new mongoose.Schema({
   questionId: { type: String },
   question: { type: String },
   answer: { type: Boolean },
+  expectedAnswer:{ type: Boolean },
   department: { type: String },
   deviation: { type: mongoose.Schema.Types.Mixed },
   hasDeviations: { type: Boolean, default: false },

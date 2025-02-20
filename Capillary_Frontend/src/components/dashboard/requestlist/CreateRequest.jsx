@@ -39,6 +39,8 @@ const CreateRequest = () => {
                         question: compliance.question,
                         answer: compliance.answer,
                         department: compliance.department,
+                        expectedAnswer: compliance.expectedAnswer,
+
                         deviation: compliance.deviation
                             ? {
                                   reason: compliance.deviation.reason,

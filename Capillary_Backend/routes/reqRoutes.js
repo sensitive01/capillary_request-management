@@ -16,7 +16,7 @@ router.get('/generate-po/:id', reqController.generatePo);
 router.get('/get-all-chats/:id', reqController.getAllChats); 
 router.get('/get-reports', reqController.getReports); 
 router.get('/invoice/download/:id', reqController.downloadInvoicePdf); 
-router.get('/is-approved/:userId/:reqId', reqController.isApproved); 
+router.get('/is-approved/:userId/:reqId/:role', reqController.isApproved); 
 
 
 

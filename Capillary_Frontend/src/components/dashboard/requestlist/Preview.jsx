@@ -43,7 +43,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
     };
 
     const renderUploadedFiles = (uploadedFiles) => {
-        if (!uploadedFiles || Object.keys(uploadedFiles).length === 0) {
+        if (!uploadedFiles || Object.keys(uploadedFiles)?.length === 0) {
             return <div className="text-gray-500">No files uploaded</div>;
         }
         return (

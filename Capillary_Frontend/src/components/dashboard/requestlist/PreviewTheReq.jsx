@@ -30,6 +30,7 @@ import pfdIcon from "../../../assets/images/pdfIcon.png";
 import uploadFiles from "../../../utils/s3BucketConfig";
 import { formatDateToDDMMYY } from "../../../utils/dateFormat";
 import DocumentsDisplay from "./DocumentsDisplay";
+import FilePreview from "./FilePreview";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -84,7 +85,7 @@ const PreviewTheReq = () => {
 
     useEffect(() => {
         const isApprove = async () => {
-            const response = await dispalyIsApproved(userId, params.id);
+            const response = await dispalyIsApproved(userId, params.id, role);
             if (response.status === 200) {
                 setIsDisable(response.data.isDisplay);
             }
@@ -110,29 +111,29 @@ const PreviewTheReq = () => {
     // const handleGeneratePDF = async () => {
     //     try {
     //         setIsLoading(true);
-            
+
     //         // Get PDF blob from service
     //         const pdfBlob = await generatePDF(params.id);
-            
+
     //         // Create a Blob URL
     //         const pdfURL = window.URL.createObjectURL(
     //           new Blob([pdfBlob], { type: 'application/pdf' })
     //         );
-            
+
     //         // Create and trigger download
     //         const a = document.createElement('a');
     //         a.href = pdfURL;
     //         a.download = `request_${params.id}.pdf`;
     //         document.body.appendChild(a);
     //         a.click();
-            
+
     //         // Cleanup
     //         document.body.removeChild(a);
     //         window.URL.revokeObjectURL(pdfURL);
     //       } catch (error) {
     //         console.error('Error generating PDF:', error);
     //         // You can add your error handling here (e.g., toast notification)
-    //       } 
+    //       }
     // };
 
     const LoadingOverlay = () => (
@@ -671,14 +672,14 @@ const PreviewTheReq = () => {
                                         <div
                                             key={questionId}
                                             className={`p-4 rounded-lg ${
-                                                compliance.deviation
+                                                compliance.expectedAnswer!==compliance.answer
                                                     ? "bg-red-50 border border-red-200"
                                                     : "bg-green-50 border border-green-200"
                                             }`}
                                         >
                                             <h3
                                                 className={`text-lg font-semibold ${
-                                                    compliance.deviation
+                                                    compliance.expectedAnswer!==compliance.answer
                                                         ? "text-red-800"
                                                         : "text-green-800"
                                                 }`}
@@ -687,7 +688,7 @@ const PreviewTheReq = () => {
                                             </h3>
                                             <p
                                                 className={`mt-2 font-medium ${
-                                                    compliance.deviation
+                                                    compliance.expectedAnswer!==compliance.answer
                                                         ? "text-red-600"
                                                         : "text-green-600"
                                                 }`}
@@ -702,7 +703,7 @@ const PreviewTheReq = () => {
                                                     {compliance.department}
                                                 </p>
                                             )}
-                                            {compliance.deviation && (
+                                            {compliance.deviation && compliance.expectedAnswer!==compliance.answer&&(
                                                 <div className="mt-2 p-3 bg-red-100 rounded">
                                                     <p className="text-sm text-red-700">
                                                         <strong>
@@ -1082,28 +1083,22 @@ const PreviewTheReq = () => {
                                         : "Generate PDF"}
                                 </button>
                             </div>
+                 
                             <div className="flex items-center gap-4">
-                                {selectedImage && (
-                                    <div className="h-10 w-10 rounded overflow-hidden">
-                                        <img
-                                            src={URL.createObjectURL(
-                                                selectedImage
-                                            )}
-                                            alt="Preview"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                )}
-                                {/* Upload Button */}
+                                <FilePreview
+                                    selectedFile={selectedImage}
+                                    onClear={() => setSelectedImage(null)}
+                                />
+
                                 <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
                                     <Upload className="w-5 h-5 text-gray-500 mr-2" />
                                     <span className="text-sm text-gray-600">
-                                        Upload PO
+                                        Select PO
                                     </span>
                                     <input
                                         type="file"
                                         className="hidden"
-                                        accept="image/*"
+                                        accept="image/*,.pdf,application/pdf"
                                         onChange={(e) => {
                                             const file = e.target.files[0];
                                             if (file) {
@@ -1113,11 +1108,10 @@ const PreviewTheReq = () => {
                                     />
                                 </label>
 
-                                {/* Upload PO Button */}
                                 <button
                                     onClick={handleUploadPo}
                                     disabled={!selectedImage || isUploading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-100 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <FileText className="w-5 h-5 mr-2" />
                                     {isUploading ? "Uploading..." : "Submit"}
@@ -1128,49 +1122,40 @@ const PreviewTheReq = () => {
 
                 {request.status === "Invoice-Pending" &&
                     (role === "Employee" || role === "HOD Department") && (
+                     
                         <div className="flex items-center gap-4">
-                            {/* Preview Image */}
-                            {selectedImage && (
-                                <div className="h-10 w-10 rounded overflow-hidden">
-                                    <img
-                                        src={URL.createObjectURL(selectedImage)}
-                                        alt="Preview"
-                                        className="h-full w-full object-cover"
-                                    />
-                                </div>
-                            )}
+                        <FilePreview
+                            selectedFile={selectedImage}
+                            onClear={() => setSelectedImage(null)}
+                        />
 
-                            {/* Upload Button */}
-                            <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-                                <Upload className="w-5 h-5 text-gray-500 mr-2" />
-                                <span className="text-sm text-gray-600">
-                                    Upload invoice
-                                </span>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            setSelectedImage(file);
-                                        }
-                                    }}
-                                />
-                            </label>
+                        <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+                            <Upload className="w-5 h-5 text-gray-500 mr-2" />
+                            <span className="text-sm text-gray-600">
+                                Select Invoice
+                            </span>
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*,.pdf,application/pdf"
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        setSelectedImage(file);
+                                    }
+                                }}
+                            />
+                        </label>
 
-                            {/* Upload PO Button with PDF icon */}
-                            <button
-                                onClick={handleUploadInvoice}
-                                disabled={!selectedImage || isUploading}
-                                className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <FileText className="w-5 h-5 mr-2" />
-                                {isUploading ? "Uploading..." : "Submit"}
-                            </button>
-
-                            {/* Release Button */}
-                        </div>
+                        <button
+                            onClick={handleUploadInvoice}
+                            disabled={!selectedImage || isUploading}
+                            className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <FileText className="w-5 h-5 mr-2" />
+                            {isUploading ? "Uploading..." : "Submit"}
+                        </button>
+                    </div>
                     )}
             </div>
         );

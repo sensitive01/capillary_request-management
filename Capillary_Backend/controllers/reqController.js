@@ -1453,7 +1453,7 @@ const getReports = async (req, res) => {
 const isApproved = async (req, res) => {
   try {
     console.log("is approve", req.params);
-    const { userId, reqId } = req.params;
+    const { userId, reqId ,role} = req.params;
 
     // Fetch employee data
     const empData =
@@ -1468,7 +1468,7 @@ const isApproved = async (req, res) => {
         .json({ success: false, message: "Employee not found" });
     }
 
-    let disable = false;
+    let disable = true;
 
     // Fetch request data
     const reqData = await CreateNewReq.findOne(
@@ -1476,56 +1476,80 @@ const isApproved = async (req, res) => {
       { firstLevelApproval: 1, approvals: 1 }
     );
     const { approvals } = reqData;
-    console.log("approvals", approvals);
+    console.log("approvals", approvals,reqData.firstLevelApproval);
     const lastlevalApproval = approvals[approvals.length - 1];
 
-    console.log("lastlevalApproval", lastlevalApproval);
 
-    if (
-      reqData &&
-      reqData.firstLevelApproval &&
-      empData.company_email_id === reqData.firstLevelApproval.hodEmail &&
-      reqData.firstLevelApproval.approved === true
-    ) {
-      console.log("IF ckhec");
-      if (reqData.firstLevelApproval.status === "Approved") {
-        disable = true;
-      }
-    } else if (
-      reqData?.approvals?.some(
-        (app) => app.approvalId === userId && app.status === "Approved"
-      )
-    ) {
-      console.log("Else if");
-      disable = true;
-    } else {
-      console.log("else");
-      const lastApproved = reqData.approvals;
-      console.log("lastApproved", lastApproved);
-      const lastApprovedDepartment = lastApproved[lastApproved.length - 1];
-      console.log("lastApprovedDepartment", lastApprovedDepartment);
-      if (
-        !lastApprovedDepartment &&
-        lastApprovedDepartment?.nextDepartment !== empData?.role &&
-        lastApprovedDepartment?.status !== "Approved" &&
-        empData.company_email_id !== reqData.firstLevelApproval.hodEmail
-      ) {
-        console.log("hi");
-        disable = true;
-      } else if (
-        !lastlevalApproval &&
-        lastlevalApproval.nextDepartment !== empData.role
-      ) {
-        console.log(
-          "I a checkingm",
-          !lastlevalApproval &&
-            lastlevalApproval.nextDepartment !== empData.role
-        );
-        disable = true;
-      } else if (lastlevalApproval.nextDepartment !== empData.role) {
-        disable = true;
-      }
+    // if (
+    //   reqData &&
+    //   reqData.firstLevelApproval &&
+    //   empData.company_email_id === reqData.firstLevelApproval.hodEmail &&
+    //   reqData.firstLevelApproval.approved === true
+    // ) {
+    //   console.log("IF ckhec");
+    //   if (reqData.firstLevelApproval.status === "Approved") {
+    //     disable = true;
+    //   }
+    // } else if (
+    //   reqData?.approvals?.some(
+    //     (app) => app.approvalId === userId && app.status === "Approved"
+    //   )
+    // ) {
+    //   console.log("Else if");
+    //   disable = true;
+    // } else {
+    //   console.log("else");
+    //   const lastApproved = reqData.approvals;
+    //   console.log("lastApproved", lastApproved);
+    //   const lastApprovedDepartment = lastApproved[lastApproved.length - 1];
+    //   console.log("lastApprovedDepartment", lastApprovedDepartment);
+    //   if (
+    //     !lastApprovedDepartment &&
+    //     lastApprovedDepartment?.nextDepartment !== empData?.role &&
+    //     lastApprovedDepartment?.status !== "Approved" &&
+    //     empData.company_email_id !== reqData.firstLevelApproval.hodEmail
+    //   ) {
+    //     console.log("hi");
+    //     disable = true;
+    //   } else if (
+    //     !lastlevalApproval &&
+    //     lastlevalApproval.nextDepartment !== empData.role
+    //   ) {
+    //     console.log(
+    //       "I a checkingm",
+    //       !lastlevalApproval &&
+    //         lastlevalApproval.nextDepartment !== empData.role
+    //     );
+    //     disable = true;
+    //   } else if (lastlevalApproval.nextDepartment !== empData.role&&reqData.status==="Pending") {
+    //     disable = true;
+    //   }
+    // }
+
+   if(role==="HOD Department"){
+    console.log("HOD Deparment")
+    if( !reqData.firstLevelApproval.approved){
+      disable=false
+
     }
+   }else if (reqData.firstLevelApproval.approved===true&&role!=="HOD Department"){
+    console.log("lastlevalApproval", lastlevalApproval,role);
+    if(lastlevalApproval.nextDepartment===role){
+      disable=false
+    }
+    if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id){
+      disable=false
+    }
+   if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id){
+    disable=false
+   }
+
+  }
+
+
+
+
+
 
     console.log("disable", disable);
 
@@ -1543,6 +1567,12 @@ const isApproved = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
 
 const editSendRequestMail = async (req, res) => {
   try {

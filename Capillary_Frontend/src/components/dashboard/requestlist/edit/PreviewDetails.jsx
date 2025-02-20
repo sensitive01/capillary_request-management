@@ -507,7 +507,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                         <div
                                             key={questionId}
                                             className={`p-4 rounded-lg ${
-                                                compliance.deviation
+                                                compliance.expectedAnswer!==compliance.answer
                                                     ? "bg-red-50 border border-red-200"
                                                     : "bg-green-50 border border-green-200"
                                             }`}

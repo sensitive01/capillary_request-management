@@ -213,7 +213,11 @@ const approveRequest = async (req, res) => {
         role === "Business Finance" &&
         !reqData.procurements.isNewVendor &&
         status === "Approved"
+        
       ) {
+        console.log(       role === "Business Finance" &&
+          !reqData.procurements.isNewVendor &&
+          status === "Approved")
         if (reqData.hasDeviations === 1) {
           const autoApproveDepartments = [
             "Business Finance",
@@ -286,7 +290,8 @@ const approveRequest = async (req, res) => {
               break;
             }
           }
-        } else {
+        } 
+        else {
           const autoApproveDepartments = [
             "Business Finance",
             "Vendor Management",
@@ -374,7 +379,10 @@ const approveRequest = async (req, res) => {
             }
           }
         }
-      } else if (
+      } 
+      
+      
+      else if (
         role === "Business Finance" &&
         reqData.procurements.isNewVendor
       ) {

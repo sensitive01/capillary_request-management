@@ -78,6 +78,8 @@ const AgreementCompliances = ({
                                     answer: q.expectedAnswer,
                                     department: q.createdBy.department,
                                     deviation: null,
+                                    expectedAnswer:q.expectedAnswer,
+
                                 },
                             },
                             hasDeviations: 0, // Initialize deviation flag
@@ -116,6 +118,9 @@ const AgreementCompliances = ({
                     answer: value,
                     department: question.createdBy.department,
                     deviation: isDeviation ? deviations[questionId] : null,
+
+                    
+
                 },
             },
         }));
