@@ -945,14 +945,28 @@ export const generatePDF = async (reqId) => {
       `/request/generate-request-pdf/${reqId}`,
       {},
       {
-        responseType: "blob", // Important for receiving PDF data
+        responseType: 'blob',
         headers: {
-          Accept: "application/pdf",
+          'Accept': 'application/pdf',
+          'Content-Type': 'application/json',
         },
+        validateStatus: (status) => status === 200,
+        timeout: 30000,
       }
     );
-    return response.data;
-  } catch (err) {
-    throw err;
+
+    // Check if the response is a valid PDF
+    const contentType = response.headers['content-type'];
+    if (!contentType || !contentType.includes('application/pdf')) {
+      throw new Error('Received invalid content type from server');
+    }
+
+    return response.data; // Return the blob directly
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error; // Rethrow to handle in the calling function
   }
 };
+
+
+

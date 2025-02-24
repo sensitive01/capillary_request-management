@@ -110,32 +110,34 @@ const PreviewTheReq = () => {
 
     // const handleGeneratePDF = async () => {
     //     try {
-    //         setIsLoading(true);
+    //       setIsLoading(true);
+    //       const pdfBlob = await generatePDF(params.id);
+      
+    //       // Create a URL for the blob
+    //       const pdfURL = window.URL.createObjectURL(pdfBlob);
+      
+    //       // Create a link element
+    //       const a = document.createElement('a');
+    //       a.href = pdfURL;
+    //       a.download = `PO-Request_${request.reqid}.pdf`; // Set the desired file name
+    //       document.body.appendChild(a); // Append to the body
+    //       a.click(); // Trigger the download
+    //       document.body.removeChild(a); // Remove the link after downloading
+      
+    //       // Cleanup
+    //       window.URL.revokeObjectURL(pdfURL);
+    //       setIsLoading(false);
+    //       toast.success('PDF generated successfully');
+    //     } catch (error) {
+    //       console.error('Error generating PDF:', error);
+    //       setIsLoading(false);
+    //       toast.error('Failed to generate PDF');
+    //     }
+    //   };
 
-    //         // Get PDF blob from service
-    //         const pdfBlob = await generatePDF(params.id);
-
-    //         // Create a Blob URL
-    //         const pdfURL = window.URL.createObjectURL(
-    //           new Blob([pdfBlob], { type: 'application/pdf' })
-    //         );
-
-    //         // Create and trigger download
-    //         const a = document.createElement('a');
-    //         a.href = pdfURL;
-    //         a.download = `request_${params.id}.pdf`;
-    //         document.body.appendChild(a);
-    //         a.click();
-
-    //         // Cleanup
-    //         document.body.removeChild(a);
-    //         window.URL.revokeObjectURL(pdfURL);
-    //       } catch (error) {
-    //         console.error('Error generating PDF:', error);
-    //         // You can add your error handling here (e.g., toast notification)
-    //       }
-    // };
-
+    
+    
+    
     const LoadingOverlay = () => (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
@@ -672,14 +674,16 @@ const PreviewTheReq = () => {
                                         <div
                                             key={questionId}
                                             className={`p-4 rounded-lg ${
-                                                compliance.expectedAnswer!==compliance.answer
+                                                compliance.expectedAnswer !==
+                                                compliance.answer
                                                     ? "bg-red-50 border border-red-200"
                                                     : "bg-green-50 border border-green-200"
                                             }`}
                                         >
                                             <h3
                                                 className={`text-lg font-semibold ${
-                                                    compliance.expectedAnswer!==compliance.answer
+                                                    compliance.expectedAnswer !==
+                                                    compliance.answer
                                                         ? "text-red-800"
                                                         : "text-green-800"
                                                 }`}
@@ -688,7 +692,8 @@ const PreviewTheReq = () => {
                                             </h3>
                                             <p
                                                 className={`mt-2 font-medium ${
-                                                    compliance.expectedAnswer!==compliance.answer
+                                                    compliance.expectedAnswer !==
+                                                    compliance.answer
                                                         ? "text-red-600"
                                                         : "text-green-600"
                                                 }`}
@@ -703,19 +708,23 @@ const PreviewTheReq = () => {
                                                     {compliance.department}
                                                 </p>
                                             )}
-                                            {compliance.deviation && compliance.expectedAnswer!==compliance.answer&&(
-                                                <div className="mt-2 p-3 bg-red-100 rounded">
-                                                    <p className="text-sm text-red-700">
-                                                        <strong>
-                                                            Deviation Reason:
-                                                        </strong>{" "}
-                                                        {
-                                                            compliance.deviation
-                                                                .reason
-                                                        }
-                                                    </p>
-                                                </div>
-                                            )}
+                                            {compliance.deviation &&
+                                                compliance.expectedAnswer !==
+                                                    compliance.answer && (
+                                                    <div className="mt-2 p-3 bg-red-100 rounded">
+                                                        <p className="text-sm text-red-700">
+                                                            <strong>
+                                                                Deviation
+                                                                Reason:
+                                                            </strong>{" "}
+                                                            {
+                                                                compliance
+                                                                    .deviation
+                                                                    .reason
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                )}
 
                                             {compliance?.deviation?.attachments
                                                 ?.length > 0 && (
@@ -1083,7 +1092,7 @@ const PreviewTheReq = () => {
                                         : "Generate PDF"}
                                 </button>
                             </div>
-                 
+
                             <div className="flex items-center gap-4">
                                 <FilePreview
                                     selectedFile={selectedImage}
@@ -1122,40 +1131,39 @@ const PreviewTheReq = () => {
 
                 {request.status === "Invoice-Pending" &&
                     (role === "Employee" || role === "HOD Department") && (
-                     
                         <div className="flex items-center gap-4">
-                        <FilePreview
-                            selectedFile={selectedImage}
-                            onClear={() => setSelectedImage(null)}
-                        />
-
-                        <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
-                            <Upload className="w-5 h-5 text-gray-500 mr-2" />
-                            <span className="text-sm text-gray-600">
-                                Select Invoice
-                            </span>
-                            <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*,.pdf,application/pdf"
-                                onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                        setSelectedImage(file);
-                                    }
-                                }}
+                            <FilePreview
+                                selectedFile={selectedImage}
+                                onClear={() => setSelectedImage(null)}
                             />
-                        </label>
 
-                        <button
-                            onClick={handleUploadInvoice}
-                            disabled={!selectedImage || isUploading}
-                            className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <FileText className="w-5 h-5 mr-2" />
-                            {isUploading ? "Uploading..." : "Submit"}
-                        </button>
-                    </div>
+                            <label className="flex items-center px-6 py-2 rounded-lg border border-gray-300 cursor-pointer bg-white hover:bg-gray-50">
+                                <Upload className="w-5 h-5 text-gray-500 mr-2" />
+                                <span className="text-sm text-gray-600">
+                                    Select Invoice
+                                </span>
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*,.pdf,application/pdf"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            setSelectedImage(file);
+                                        }
+                                    }}
+                                />
+                            </label>
+
+                            <button
+                                onClick={handleUploadInvoice}
+                                disabled={!selectedImage || isUploading}
+                                className="px-6 py-2 rounded-lg flex items-center bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <FileText className="w-5 h-5 mr-2" />
+                                {isUploading ? "Uploading..." : "Submit"}
+                            </button>
+                        </div>
                     )}
             </div>
         );

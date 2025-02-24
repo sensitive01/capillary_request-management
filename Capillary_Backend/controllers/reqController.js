@@ -11,6 +11,9 @@ const entityModel = require("../models/entityModel");
 const vendorSchema = require("../models/vendorModel");
 const fs = require("fs");
 const path = require("path");
+const { jsPDF } = require('jspdf');
+require('jspdf-autotable');
+
 
 const addReqForm = async (req, res) => {
   try {
@@ -1453,7 +1456,7 @@ const getReports = async (req, res) => {
 const isApproved = async (req, res) => {
   try {
     console.log("is approve", req.params);
-    const { userId, reqId ,role} = req.params;
+    const { userId, reqId, role } = req.params;
 
     // Fetch employee data
     const empData =
@@ -1476,9 +1479,8 @@ const isApproved = async (req, res) => {
       { firstLevelApproval: 1, approvals: 1 }
     );
     const { approvals } = reqData;
-    console.log("approvals", approvals,reqData.firstLevelApproval);
+    console.log("approvals", approvals, reqData.firstLevelApproval);
     const lastlevalApproval = approvals[approvals.length - 1];
-
 
     // if (
     //   reqData &&
@@ -1526,37 +1528,40 @@ const isApproved = async (req, res) => {
     //   }
     // }
 
-   if((role==="HOD Department"||role==="Admin")&&reqData.firstLevelApproval.hodEmail===empData.company_email_id){
-    console.log("HOD Deparment")
-    if( !reqData.firstLevelApproval.approved){
-      disable=false
+    if (
+      (role === "HOD Department" || role === "Admin") &&
+      reqData.firstLevelApproval.hodEmail === empData.company_email_id
+    ) {
+      console.log("HOD Deparment");
+      if (!reqData.firstLevelApproval.approved) {
+        disable = false;
+      }
+    } else if (
+      reqData.firstLevelApproval.approved === true &&
+      role !== "HOD Department"
+    ) {
+      console.log("1");
+      console.log("lastlevalApproval", lastlevalApproval, role);
+      if (lastlevalApproval.nextDepartment === role) {
+        console.log("2");
+        disable = false;
+      } else if (
+        reqData.status !== "Approved" &&
+        lastlevalApproval.approvalId === empData.employee_id &&
+        role === lastlevalApproval.nextDepartment
+      ) {
+        console.log("3");
+        disable = false;
+      } else if (
+        reqData.status !== "Approved" &&
+        lastlevalApproval.approvalId === empData.employee_id &&
+        lastlevalApproval.status !== "Approved"
+      ) {
+        console.log("4");
 
+        disable = false;
+      }
     }
-   }
-   else if (reqData.firstLevelApproval.approved===true&&role!=="HOD Department"){
-    console.log("1")
-    console.log("lastlevalApproval", lastlevalApproval,role);
-    if(lastlevalApproval.nextDepartment===role){
-      console.log("2")
-      disable=false
-    }
-   else if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id&&role===lastlevalApproval.nextDepartment){
-      console.log("3")
-      disable=false
-    }
-   else if(reqData.status!=="Approved" && lastlevalApproval.approvalId===empData.employee_id && lastlevalApproval.status!=="Approved" ){
-    console.log("4")
-
-    disable=false
-   }
-
-  }
-
-
-
-
-
-
 
     console.log("disable", disable);
 
@@ -1574,12 +1579,6 @@ const isApproved = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
 
 const editSendRequestMail = async (req, res) => {
   try {
@@ -3055,11 +3054,6 @@ const saveAggrementData = async (req, res) => {
   }
 };
 
-
-
-
-
-
 const generateRequestPdfData = async (req, res) => {
   try {
     const reqData = await CreateNewReq.findById(req.params.reqId);
@@ -3067,270 +3061,114 @@ const generateRequestPdfData = async (req, res) => {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "attachment; filename=request_details.pdf");
-
-    // Create PDF with better margins
-    const doc = new PDFDocument({
-      margins: { top: 72, bottom: 72, left: 72, right: 72 },
-      size: 'A4',
+    // Create new PDF document
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
-    doc.pipe(res);
 
-    let pageNumber = 1;
+    // Add fonts
+    doc.setFont('helvetica');
 
-    // Helper functions
-    const drawHeader = () => {
-      // Header background
-      doc.fillColor('#f6f6f6')
-         .rect(72, 72, doc.page.width - 144, 60)
-         .fill();
+    // Header function
+    const addHeader = (isFirstPage = false) => {
+      doc.setFontSize(16);
+      doc.setTextColor(128, 194, 66); // Capillary green
+      doc.text('Capillary Technologies', 20, 20);
 
-      // Company name or logo placeholder
-      doc.fillColor('#2E5090')
-         .fontSize(24)
-         .font('Helvetica-Bold')
-         .text('COMPANY NAME', 92, 82);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Request ID: ${reqData.reqid}`, 140, 15);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 140, 20);
 
-      // Request details in header
-      doc.fontSize(10)
-         .fillColor('#666666')
-         .font('Helvetica')
-         .text(`Request ID: ${reqData.reqid}`, doc.page.width - 200, 82)
-         .text(`Generated: ${new Date().toLocaleString()}`, doc.page.width - 200, 97);
-
-      // Divider line
-      doc.strokeColor('#e0e0e0')
-         .lineWidth(1)
-         .moveTo(72, 132)
-         .lineTo(doc.page.width - 72, 132)
-         .stroke();
-
-      // Page number at bottom
-      doc.fillColor('#666666')
-         .fontSize(8)
-         .text(
-           `Page ${pageNumber}`,
-           72,
-           doc.page.height - 50,
-           { align: 'center', width: doc.page.width - 144 }
-         );
+      doc.setDrawColor(128, 194, 66);
+      doc.line(20, 25, 190, 25);
     };
 
-    const addSection = (title) => {
-      // Section title with background
-      doc.fillColor('#f6f6f6')
-         .rect(72, doc.y, doc.page.width - 144, 30)
-         .fill();
-
-      doc.fillColor('#2E5090')
-         .fontSize(14)
-         .font('Helvetica-Bold')
-         .text(title, 92, doc.y - 25);
-
-      doc.moveDown(1.5);
-    };
-
-    const addFieldGroup = (fields) => {
-      const startY = doc.y;
-      const boxHeight = (fields.length * 25) + 20;
-
-      // Draw box around fields
-      doc.strokeColor('#e0e0e0')
-         .lineWidth(1)
-         .rect(72, startY, doc.page.width - 144, boxHeight)
-         .stroke();
-
-      // Add fields
-      fields.forEach((field, index) => {
-        const yPos = startY + 15 + (index * 25);
-        
-        // Label
-        doc.fontSize(10)
-           .font('Helvetica-Bold')
-           .fillColor('#333333')
-           .text(field.label + ':', 92, yPos);
-
-        // Value
-        doc.font('Helvetica')
-           .fillColor('#666666')
-           .text(field.value || 'N/A', 92 + 150, yPos);
-      });
-
-      doc.moveDown(3);
-    };
-
-    const addTable = (headers, rows) => {
-      const startY = doc.y;
-      const rowHeight = 30;
-      const columnWidth = (doc.page.width - 144) / headers.length;
-
-      // Table header
-      doc.fillColor('#f6f6f6')
-         .rect(72, startY, doc.page.width - 144, rowHeight)
-         .fill();
-
-      headers.forEach((header, i) => {
-        doc.fillColor('#333333')
-           .fontSize(10)
-           .font('Helvetica-Bold')
-           .text(
-             header,
-             72 + (i * columnWidth) + 10,
-             startY + 10,
-             { width: columnWidth - 20 }
-           );
-      });
-
-      // Table rows
-      let currentY = startY + rowHeight;
-      rows.forEach((row, rowIndex) => {
-        // Check for page break
-        if (currentY > doc.page.height - 100) {
-          doc.addPage();
-          pageNumber++;
-          drawHeader();
-          currentY = 150;
-        }
-
-        // Alternate row background
-        if (rowIndex % 2 === 0) {
-          doc.fillColor('#fafafa')
-             .rect(72, currentY, doc.page.width - 144, rowHeight)
-             .fill();
-        }
-
-        row.forEach((cell, i) => {
-          doc.fillColor('#666666')
-             .fontSize(9)
-             .font('Helvetica')
-             .text(
-               cell,
-               72 + (i * columnWidth) + 10,
-               currentY + 10,
-               { width: columnWidth - 20 }
-             );
-        });
-
-        currentY += rowHeight;
-      });
-
-      doc.moveDown(4);
-    };
-
-    const checkNewPage = () => {
-      if (doc.y > doc.page.height - 150) {
-        doc.addPage();
-        pageNumber++;
-        drawHeader();
-      }
-    };
-
-    // Start building the PDF
-    drawHeader();
+    // Add first header
+    addHeader(true);
+    let yPos = 35;
 
     // Title
-    doc.fontSize(22)
-       .font('Helvetica-Bold')
-       .fillColor('#333333')
-       .text('REQUEST DETAILS', { align: 'center' });
-    doc.moveDown(2);
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('Request Preview', 20, yPos);
+    yPos += 10;
 
-    // Commercials Section
-    addSection('COMMERCIALS');
-    addFieldGroup([
-      { label: 'Bill To', value: reqData.commercials.billTo },
-      { label: 'Business Unit', value: reqData.commercials.businessUnit },
-      { label: 'Department', value: reqData.commercials.department },
-      { label: 'Entity', value: reqData.commercials.entity },
-      { label: 'Payment Mode', value: reqData.commercials.paymentMode }
-    ]);
+    // Commercial Details
+    if (reqData.commercials) {
+      doc.setFontSize(12);
+      doc.setTextColor(128, 194, 66);
+      doc.text('Commercial Details', 20, yPos);
+      yPos += 8;
 
-    // Payment Terms Table
-    if (reqData.commercials.paymentTerms?.length > 0) {
-      addTable(
-        ['Term', 'Percentage', 'Payment Type'],
-        reqData.commercials.paymentTerms.map(term => [
-          term.percentageTerm,
-          term.percentageAmount + '%',
-          term.paymentType
-        ])
-      );
-    }
-
-    checkNewPage();
-
-    // Procurement Section
-    addSection('PROCUREMENT DETAILS');
-    addFieldGroup([
-      { label: 'Vendor', value: reqData.procurements.vendor },
-      { label: 'Vendor Name', value: reqData.procurements.vendorName },
-      { label: 'Quotation Number', value: reqData.procurements.quotationNumber },
-      { label: 'Service Period', value: reqData.procurements.servicePeriod },
-      { label: 'Project Code', value: reqData.procurements.projectCode },
-      { label: 'Client Name', value: reqData.procurements.clientName },
-      { label: 'PO Valid From', value: new Date(reqData.procurements.poValidFrom).toLocaleDateString() },
-      { label: 'PO Valid To', value: new Date(reqData.procurements.poValidTo).toLocaleDateString() }
-    ]);
-
-    checkNewPage();
-
-    // Supplies Section
-    addSection('SUPPLIES');
-    addFieldGroup([
-      { label: 'Total Value', value: `${reqData.supplies.totalValue} ${reqData.supplies.selectedCurrency}` }
-    ]);
-
-    if (reqData.supplies.services?.length > 0) {
-      addTable(
-        ['Product', 'Description', 'Quantity', 'Price', 'Tax'],
-        reqData.supplies.services.map(service => [
-          service.productName,
-          service.productDescription,
-          service.quantity,
-          service.price,
-          service.tax
-        ])
-      );
-    }
-
-    checkNewPage();
-
-    // Compliances Section
-    if (reqData.complinces?.length > 0) {
-      addSection('COMPLIANCES');
-      reqData.complinces.forEach((compliance, index) => {
-        checkNewPage();
-        addFieldGroup([
-          { label: `Question ${index + 1}`, value: compliance.question },
-          { label: 'Answer', value: compliance.answer ? 'Yes' : 'No' },
-          ...(compliance.hasDeviations ? [{ label: 'Deviation', value: compliance.deviation }] : [])
-        ]);
+      // Commercial Fields Table
+      autoTable(doc, {
+        startY: yPos,
+        head: [],
+        body: [
+          ['Bill To', reqData.commercials.billTo || 'N/A'],
+          ['Business Unit', reqData.commercials.businessUnit || 'N/A'],
+          ['Department', reqData.commercials.department || 'N/A'],
+          ['Entity', reqData.commercials.entity || 'N/A']
+        ],
+        theme: 'plain',
+        styles: {
+          fontSize: 10,
+          cellPadding: 4
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 40 },
+          1: { cellWidth: 130 }
+        }
       });
+
+      yPos = doc.lastAutoTable.finalY + 10;
+
+      // Payment Terms Table
+      if (reqData.commercials.paymentTerms?.length) {
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Term', 'Percentage', 'Payment Type']],
+          body: reqData.commercials.paymentTerms.map(term => [
+            term.paymentTerm,
+            `${term.percentageTerm}%`,
+            term.paymentType
+          ]),
+          theme: 'grid',
+          styles: {
+            fontSize: 10,
+            cellPadding: 5
+          },
+          headStyles: {
+            fillColor: [128, 194, 66],
+            textColor: [255, 255, 255]
+          }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+      }
     }
 
-    checkNewPage();
+    // Additional sections (Procurement Details, Supplies, etc.) go here...
 
-    // First Level Approval
-    addSection('FIRST LEVEL APPROVAL');
-    addFieldGroup([
-      { label: 'HOD Name', value: reqData.firstLevelApproval.hodName },
-      { label: 'HOD Email', value: reqData.firstLevelApproval.hodEmail },
-      { label: 'Department', value: reqData.firstLevelApproval.hodDepartment },
-      { label: 'Status', value: reqData.firstLevelApproval.status },
-      { label: 'Approved', value: reqData.firstLevelApproval.approved ? 'Yes' : 'No' }
-    ]);
+    // Send the PDF
+    const pdfBuffer = doc.output('arraybuffer');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=Request_Preview_${reqData.reqid}.pdf`
+    );
+    res.send(Buffer.from(pdfBuffer));
 
-    doc.end();
   } catch (error) {
     console.error("Error generating PDF:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error generating PDF", error: error.message });
+    }
   }
 };
-
-
-
-
 
 
 
