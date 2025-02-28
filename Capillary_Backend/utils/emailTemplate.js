@@ -61,7 +61,7 @@ const emailTemplates = {
             </div>
             <div style="padding: 20px; color: #333;">
               <p>Dear Team,</p>
-              <p>A new vendor, <strong>{{vendorName}}</strong>, <strong>{{email}}</strong>,has been added to the system for the PO-Request {{reqid}} and is awaiting onboarding.</p>
+              <p>A new vendor, <strong>{{vendorName}}</strong>, <strong>{{email}}</strong>,has been added to the system for the PO-Request {{reqId}} and is awaiting onboarding.</p>
               <p>Please review the vendor details and complete the necessary onboarding process. Ensure all details are accurate before proceeding.</p>
               <p>It is crucial to verify all the necessary information as soon as possible.</p>
               <p>Best Regards,<br>Capillary Finance Team</p>

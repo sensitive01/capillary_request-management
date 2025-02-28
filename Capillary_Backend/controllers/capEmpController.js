@@ -317,16 +317,12 @@ const createNewReq = async (req, res) => {
     const { id, reqId } = req.params;
     const { complinces, commercials, procurements, supplies, hasDeviations } =
       req.body;
-      const reqDatas = await CreateNewReq.findOne(
-        { reqid: reqId },
-        {procurements:1}
-    ).lean(); 
-    
-   
+    const reqDatas = await CreateNewReq.findOne(
+      { reqid: reqId },
+      { procurements: 1 }
+    ).lean();
 
-    console.log("reqDatas",reqDatas)
-    
-
+    console.log("reqDatas", reqDatas);
 
     if (!complinces || !commercials) {
       return res
@@ -343,11 +339,9 @@ const createNewReq = async (req, res) => {
     }
 
     if (!empData) {
-      return res
-        .status(404)
-        .json({
-          message: "Employee not found. Please provide a valid employee ID.",
-        });
+      return res.status(404).json({
+        message: "Employee not found. Please provide a valid employee ID.",
+      });
     }
 
     const panelMemberEmail = (
@@ -369,6 +363,50 @@ const createNewReq = async (req, res) => {
       existingRequest.isCompleted = true;
 
       await existingRequest.save();
+      try {
+        await sendBulkEmails(
+          panelMemberEmail,
+          empData.full_name,
+          empData.department,
+          reqId
+        );
+      } catch (emailError) {
+        console.error("Error sending bulk emails:", emailError);
+      }
+      let { vendorName, email, isNewVendor } = procurements;
+      console.log("vendorName, email, isNewVendor, reqId",vendorName, email, isNewVendor, reqId)
+
+      if (isNewVendor) {
+        console.log("Iaminside the vendor auti send mails")
+        try {
+          await sendEmail(email, "vendorOnboarding", { vendorName });
+
+          const vendorManagementEmails = await addPanelUsers
+            .find(
+              {
+                $or: [
+                  { department: "Vendor Management" },
+                  { role: "Vendor Management" },
+                ],
+              },
+              { company_email_id: 1 }
+            )
+            .lean();
+
+          await Promise.all(
+            vendorManagementEmails.map(
+              ({ company_email_id }) =>
+                sendEmail(company_email_id, "newVendorOnBoard", {
+                  vendorName: vendorName,
+                  email,
+                  reqId,
+                }) // Removed `await`
+            )
+          );
+        } catch (emailError) {
+          console.error("Error sending vendor emails:", emailError);
+        }
+      }
 
       return res.status(200).json({
         message: "Request updated successfully",
@@ -407,8 +445,11 @@ const createNewReq = async (req, res) => {
       } catch (emailError) {
         console.error("Error sending bulk emails:", emailError);
       }
+      let { vendorName, email, isNewVendor, reqId } = procurements;
+      console.log(vendorName, email, isNewVendor, reqId)
 
-      if (reqDatas.procurements.isNewVendor) {
+      if (isNewVendor) {
+        console.log("Iaminside the vendor auti send mails")
         try {
           await sendEmail(email, "vendorOnboarding", { vendorName });
 
@@ -428,8 +469,8 @@ const createNewReq = async (req, res) => {
             vendorManagementEmails.map(
               ({ company_email_id }) =>
                 sendEmail(company_email_id, "newVendorOnBoard", {
-                  vendorName:reqDatas.procurements.reqDatas,
-                  email:reqDatas.procurements.email,
+                  vendorName: reqDatas.procurements.reqDatas,
+                  email: reqDatas.procurements.email,
                   reqId,
                 }) // Removed `await`
             )
@@ -449,11 +490,9 @@ const createNewReq = async (req, res) => {
     console.error("Error processing request:", error);
 
     if (error.code === "ECONNRESET") {
-      return res
-        .status(503)
-        .json({
-          message: "Temporary connectivity issue, please try again later.",
-        });
+      return res.status(503).json({
+        message: "Temporary connectivity issue, please try again later.",
+      });
     }
 
     return res

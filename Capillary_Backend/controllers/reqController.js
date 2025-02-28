@@ -11,9 +11,7 @@ const entityModel = require("../models/entityModel");
 const vendorSchema = require("../models/vendorModel");
 const fs = require("fs");
 const path = require("path");
-const { jsPDF } = require('jspdf');
-require('jspdf-autotable');
-
+const pdfmake = require("pdfmake");
 
 const addReqForm = async (req, res) => {
   try {
@@ -142,9 +140,9 @@ const getNewNotifications = async (req, res) => {
       if (employeeData) {
         const isEmpHod =
           employeeData.company_email_id &&
-          (await empModel
-            .findOne({ hod_email_id: employeeData.company_email_id })
-            .lean());
+          (await CreateNewReq.findOne({
+            "firstLevelApproval.hodEmail": employeeData.company_email_id,
+          }).lean());
 
         consolidatedData = {
           ...employeeData,
@@ -166,6 +164,7 @@ const getNewNotifications = async (req, res) => {
         {
           "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
           "firstLevelApproval.status": "Pending",
+          isCompleted: true,
         },
         { _id: 1, reqid: 1 }
       );
@@ -328,7 +327,7 @@ const getStatisticData = async (req, res) => {
           return isForEmployeeDept && isPending;
         });
 
-        pendingApprovals = pendingRequests.length;
+        // pendingApprovals = pendingRequests.length;
 
         console.log("pendingRequests--", pendingRequests);
 
@@ -337,7 +336,9 @@ const getStatisticData = async (req, res) => {
         });
 
         completedApprovals += approvalsForEmployee2.length; // Add to completedApprovals
+        
       });
+      pendingApprovals = totalApprovals-completedApprovals;
 
       console.log("Total Completed Approvals:", completedApprovals);
       console.log("Total Pending Approvals:", pendingApprovals);
@@ -909,9 +910,12 @@ const getApprovedReqData = async (req, res) => {
       ) {
         departmentInfo.cDepartment = latestLevelApproval.departmentName;
       }
+      console.log("latestLevelApproval", departmentInfo);
+
 
       return { ...request, ...departmentInfo };
     });
+
 
     console.log("Processed Request Data", processedReqData);
     res.status(200).json({ reqData: processedReqData });
@@ -987,64 +991,223 @@ const generatePo = async (req, res) => {
   }
 };
 
+// const updateRequest = async (req, res) => {
+//   try {
+//     console.log("Welcome to update the request", req.body);
+
+//     const {
+//       reqid,
+//       userId,
+//       commercials,
+//       procurements,
+//       supplies,
+//       complinces,
+//       status,
+//     } = req.body;
+
+//     console.log("complinces", complinces);
+
+//     // Check if any compliance has `hasDeviations: true`
+//     const hasDeviations = complinces?.some(
+//       (item) => item.hasDeviations === true
+//     )
+//       ? 1
+//       : 0;
+
+//     const updatedRequest = await CreateNewReq.findOneAndUpdate(
+//       { reqid: reqid },
+//       {
+//         $set: {
+//           userId: userId || null,
+//           commercials: commercials || {},
+//           procurements: procurements || {},
+//           supplies: supplies || {},
+//           complinces: complinces || [],
+//           status: status || "Pending",
+//           hasDeviations: hasDeviations,
+//           isCompleted: true,
+//         },
+//       },
+//       { new: true }
+//     );
+
+//     if (!updatedRequest) {
+//       return res.status(404).json({
+//         message: "Request not found",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       message: "Request updated successfully",
+//       data: updatedRequest,
+//     });
+//   } catch (err) {
+//     console.error("Error in updating request:", err);
+//     return res.status(500).json({
+//       message: "Error updating request",
+//       error: err.message,
+//     });
+//   }
+// };
+
 const updateRequest = async (req, res) => {
   try {
-    console.log("Welcome to update the request", req.body);
+    console.log("Welcome to req.body", req.body);
 
-    const {
-      reqid,
-      userId,
-      commercials,
-      procurements,
-      supplies,
-      complinces,
-      status,
-    } = req.body;
+    const { id } = req.params;
+    const { complinces, commercials, procurements, supplies, reqid } = req.body;
+    const reqId = reqid;
 
-    console.log("complinces", complinces);
+    let hasDeviation = 0;
 
-    // Check if any compliance has `hasDeviations: true`
-    const hasDeviations = complinces?.some(
-      (item) => item.hasDeviations === true
-    )
-      ? 1
-      : 0;
-
-    const updatedRequest = await CreateNewReq.findOneAndUpdate(
-      { reqid: reqid },
-      {
-        $set: {
-          userId: userId || null,
-          commercials: commercials || {},
-          procurements: procurements || {},
-          supplies: supplies || {},
-          complinces: complinces || [],
-          status: status || "Pending",
-          hasDeviations: hasDeviations,
-          isCompleted: true,
-        },
-      },
-      { new: true }
-    );
-
-    if (!updatedRequest) {
-      return res.status(404).json({
-        message: "Request not found",
-      });
+    if (complinces) {
+      for (const key in complinces) {
+        if (complinces[key].expectedAnswer !== complinces[key].answer) {
+          hasDeviation = 1;
+          break;
+        }
+      }
     }
 
-    return res.status(200).json({
-      message: "Request updated successfully",
-      data: updatedRequest,
-    });
-  } catch (err) {
-    console.error("Error in updating request:", err);
-    return res.status(500).json({
-      message: "Error updating request",
-      error: err.message,
-    });
+    let reqDatas =
+      (await CreateNewReq.findOne({ reqid: reqId }, { procurements: 1 }).lean()) || {};
+
+    console.log("reqDatas", reqDatas);
+
+    if (!complinces || !commercials) {
+      return res.status(400).json({ message: "Missing required compliance or commercial data." });
+    }
+
+    let empData = await empModel.findOne(
+      { employee_id: id },
+      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+    ).lean();
+
+    if (!empData) {
+      empData = await addPanelUsers.findOne({ employee_id: id }).lean();
+    }
+
+    if (!empData) {
+      return res.status(404).json({ message: "Employee not found. Please provide a valid employee ID." });
+    }
+
+    const panelMemberEmail = (
+      await addPanelUsers.find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 }).lean()
+    ).map((member) => member.company_email_id);
+
+    if (commercials.hodEmail) {
+      panelMemberEmail.push(commercials.hodEmail);
+    }
+
+    let existingRequest = await CreateNewReq.findOne({ reqid: reqId });
+
+    if (existingRequest) {
+      let firstLevelApprovalUpdateNeeded = false;
+      const existingFirstLevelApproval = existingRequest.firstLevelApproval || {};
+
+      if (
+        existingFirstLevelApproval.hodName !== commercials.hod &&
+        existingFirstLevelApproval.hodEmail !== commercials.hodEmail 
+      ) {
+        firstLevelApprovalUpdateNeeded = true;
+      }
+
+      if (firstLevelApprovalUpdateNeeded) {
+        existingRequest.firstLevelApproval = {
+          hodName: commercials.hod,
+          hodEmail: commercials.hodEmail,
+          hodDepartment: commercials.department,
+          approved:false,
+          status:"Pending"
+        };
+      }
+
+      Object.assign(existingRequest, {
+        commercials,
+        procurements,
+        supplies,
+        complinces,
+        hasDeviations: hasDeviation,
+        isCompleted: true,
+      });
+
+      await existingRequest.save();
+
+      try {
+        await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
+      } catch (emailError) {
+        console.error("Error sending bulk emails:", emailError);
+      }
+
+      let { vendorName, email, isNewVendor } = procurements || {};
+      if (isNewVendor) {
+        try {
+          await sendEmail(email, "vendorOnboarding", { vendorName });
+
+          const vendorManagementEmails = await addPanelUsers
+            .find(
+              {
+                $or: [
+                  { department: "Vendor Management" },
+                  { role: "Vendor Management" },
+                ],
+              },
+              { company_email_id: 1 }
+            )
+            .lean();
+
+          await Promise.all(
+            vendorManagementEmails.map(
+              async ({ company_email_id }) =>
+                await sendEmail(company_email_id, "newVendorOnBoard", {
+                  vendorName: reqDatas.procurements?.vendorName,
+                  email: reqDatas.procurements?.email,
+                  reqId,
+                })
+            )
+          );
+        } catch (emailError) {
+          console.error("Error sending vendor emails:", emailError);
+        }
+      }
+
+      return res.status(200).json({ message: "Request updated successfully", data: existingRequest });
+    } else {
+      const newRequest = new CreateNewReq({
+        reqid: reqId,
+        userId: id,
+        userName: empData.full_name,
+        commercials,
+        procurements,
+        supplies,
+        complinces,
+        hasDeviations: hasDeviation ? 1 : 0,
+        firstLevelApproval: {
+          hodName: commercials.hod,
+          hodEmail: commercials.hodEmail,
+          hodDepartment: commercials.department,
+          status: "Pending",
+          approved: false,
+        },
+        isCompleted: true,
+      });
+
+      await newRequest.save();
+
+      try {
+        await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
+      } catch (emailError) {
+        console.error("Error sending bulk emails:", emailError);
+      }
+
+      return res.status(201).json({ message: "Request created successfully", data: newRequest });
+    }
+  } catch (error) {
+    console.error("Error processing request:", error);
+    return res.status(500).json({ message: "Error processing request", error: error.message });
   }
 };
+
 
 const downloadInvoicePdf = async (req, res) => {
   try {
@@ -2957,6 +3120,7 @@ const saveProcurementsData = async (req, res) => {
     if (vendorData) {
       updateData.procurements.email = "";
       updateData.procurements.isNewVendor = false;
+    } else {
     }
 
     await updateData.save();
@@ -3056,124 +3220,78 @@ const saveAggrementData = async (req, res) => {
 
 const generateRequestPdfData = async (req, res) => {
   try {
-    const reqData = await CreateNewReq.findById(req.params.reqId);
-    if (!reqData) {
+    const requestData = await CreateNewReq.findById(req.params.reqId)
+      .select("commercials procurements supplies complinces")
+      .lean();
+
+    if (!requestData) {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    // Create new PDF document
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    // Add fonts
-    doc.setFont('helvetica');
-
-    // Header function
-    const addHeader = (isFirstPage = false) => {
-      doc.setFontSize(16);
-      doc.setTextColor(128, 194, 66); // Capillary green
-      doc.text('Capillary Technologies', 20, 20);
-
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Request ID: ${reqData.reqid}`, 140, 15);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 140, 20);
-
-      doc.setDrawColor(128, 194, 66);
-      doc.line(20, 25, 190, 25);
+    // Define fonts
+    const fonts = {
+      Roboto: {
+        normal: "node_modules/pdfmake/fonts/Roboto-Regular.ttf",
+        bold: "node_modules/pdfmake/fonts/Roboto-Medium.ttf",
+      },
     };
 
-    // Add first header
-    addHeader(true);
-    let yPos = 35;
+    const printer = new pdfmake(fonts);
 
-    // Title
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text('Request Preview', 20, yPos);
-    yPos += 10;
-
-    // Commercial Details
-    if (reqData.commercials) {
-      doc.setFontSize(12);
-      doc.setTextColor(128, 194, 66);
-      doc.text('Commercial Details', 20, yPos);
-      yPos += 8;
-
-      // Commercial Fields Table
-      autoTable(doc, {
-        startY: yPos,
-        head: [],
-        body: [
-          ['Bill To', reqData.commercials.billTo || 'N/A'],
-          ['Business Unit', reqData.commercials.businessUnit || 'N/A'],
-          ['Department', reqData.commercials.department || 'N/A'],
-          ['Entity', reqData.commercials.entity || 'N/A']
-        ],
-        theme: 'plain',
-        styles: {
-          fontSize: 10,
-          cellPadding: 4
+    // Create PDF Content
+    const docDefinition = {
+      content: [
+        { text: "Procurement Request Details", style: "header" },
+        { text: "Commercials", style: "subheader" },
+        { text: `Bill To: ${requestData.commercials?.billTo || "N/A"}` },
+        {
+          text: `Business Unit: ${
+            requestData.commercials?.businessUnit || "N/A"
+          }`,
         },
-        columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 40 },
-          1: { cellWidth: 130 }
-        }
+
+        { text: "Procurements", style: "subheader" },
+        { text: `Vendor: ${requestData.procurements?.vendorName || "N/A"}` },
+        {
+          text: `Quotation Date: ${
+            requestData.procurements?.quotationDate || "N/A"
+          }`,
+        },
+
+        { text: "Supplies", style: "subheader" },
+        {
+          text: `Total Value: ${requestData.supplies?.totalValue || "N/A"} ${
+            requestData.supplies?.selectedCurrency || ""
+          }`,
+        },
+
+        { text: "Compliance", style: "subheader" },
+        ...requestData.complinces.map((c, index) => ({
+          text: `${index + 1}. ${c.question}: ${c.answer ? "Yes" : "No"}`,
+        })),
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] },
+      },
+    };
+
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const pdfPath = path.join(__dirname, "output.pdf");
+
+    pdfDoc.pipe(fs.createWriteStream(pdfPath));
+    pdfDoc.end();
+
+    pdfDoc.on("end", () => {
+      res.download(pdfPath, "request-details.pdf", () => {
+        fs.unlinkSync(pdfPath); // Delete file after download
       });
-
-      yPos = doc.lastAutoTable.finalY + 10;
-
-      // Payment Terms Table
-      if (reqData.commercials.paymentTerms?.length) {
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Term', 'Percentage', 'Payment Type']],
-          body: reqData.commercials.paymentTerms.map(term => [
-            term.paymentTerm,
-            `${term.percentageTerm}%`,
-            term.paymentType
-          ]),
-          theme: 'grid',
-          styles: {
-            fontSize: 10,
-            cellPadding: 5
-          },
-          headStyles: {
-            fillColor: [128, 194, 66],
-            textColor: [255, 255, 255]
-          }
-        });
-
-        yPos = doc.lastAutoTable.finalY + 10;
-      }
-    }
-
-    // Additional sections (Procurement Details, Supplies, etc.) go here...
-
-    // Send the PDF
-    const pdfBuffer = doc.output('arraybuffer');
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename=Request_Preview_${reqData.reqid}.pdf`
-    );
-    res.send(Buffer.from(pdfBuffer));
-
+    });
   } catch (error) {
     console.error("Error generating PDF:", error);
-    if (!res.headersSent) {
-      res.status(500).json({ message: "Error generating PDF", error: error.message });
-    }
+    res.status(500).json({ message: "Error generating PDF" });
   }
 };
-
-
-
-
-
 
 module.exports = {
   generateRequestPdfData,

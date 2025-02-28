@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Truck, CreditCard, Check } from "lucide-react";
+import { FileText, Truck, CreditCard, Check,Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import {
@@ -14,14 +14,13 @@ import PreviewDetails from "./PreviewDetails";
 
 const EditRequestForm = () => {
     const { id } = useParams();
-   
 
     const navigate = useNavigate();
-    const empId = localStorage.getItem("userId");
+    const empId = localStorage.getItem("capEmpId");
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState([]);
     const [formData, setFormData] = useState({});
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchResponse = async () => {
@@ -37,10 +36,12 @@ const EditRequestForm = () => {
     const [submittedData, setSubmittedData] = useState(null);
 
     const handleSubmit = async () => {
+        setIsSubmitting(true);
+
         try {
             setSubmittedData(formData);
             console.log("Form Submitted:", formData);
-            const response = await updateRequest(id, formData);
+            const response = await updateRequest(empId, formData);
             console.log("response updated", response);
             if (response.status === 200) {
                 toast.success(" Request is updated");
@@ -50,6 +51,8 @@ const EditRequestForm = () => {
             }
         } catch (err) {
             console.log("Error in submit req", err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -70,9 +73,7 @@ const EditRequestForm = () => {
                         }))
                     }
                     onNext={() => handleStepComplete(0)}
-                    reqId = {id}
-
-                    
+                    reqId={id}
                 />
             ),
         },
@@ -93,7 +94,7 @@ const EditRequestForm = () => {
                     }
                     onNext={() => handleStepComplete(1)}
                     onBack={() => setCurrentStep(0)}
-                    reqId = {formData.reqid}
+                    reqId={formData.reqid}
                 />
             ),
         },
@@ -115,7 +116,7 @@ const EditRequestForm = () => {
                     remarks={formData?.remarks}
                     onBack={() => setCurrentStep(1)}
                     onNext={() => handleStepComplete(2)}
-                    reqId = {formData.reqid}
+                    reqId={formData.reqid}
                 />
             ),
         },
@@ -143,7 +144,7 @@ const EditRequestForm = () => {
                     onSubmit={handleSubmit}
                     onBack={() => setCurrentStep(2)}
                     onNext={() => handleStepComplete(3)}
-                    reqId = {formData.reqid}
+                    reqId={formData.reqid}
                 />
             ),
         },
@@ -155,6 +156,7 @@ const EditRequestForm = () => {
                     formData={formData}
                     onSubmit={handleSubmit}
                     onBack={() => setCurrentStep(3)}
+                    isSubmitting={isSubmitting}
                 />
             ),
         },
@@ -173,6 +175,16 @@ const EditRequestForm = () => {
 
     return (
         <div className="w-full mx-auto bg-gray-50 p-6">
+            {isSubmitting && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-4 rounded-lg flex items-center gap-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <span className="text-gray-700">
+                            Updating request...
+                        </span>
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between items-center mb-6">
                 {steps.map((step, index) => {
                     const StepIcon = step.icon;

@@ -248,12 +248,24 @@ const ReqListTable = () => {
                                 Request Edit
                             </button>
                         ) : (
-                            <button
-                                className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-                                onClick={(e) => handleEdit(e, user._id)}
-                            >
-                                Complete Request
-                            </button>
+                            <div className="flex space-x-2">
+                                <button
+                                    className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                    onClick={(e) => handleEdit(e, user._id)}
+                                >
+                                    Complete Request
+                                </button>
+                                <button
+                                    className="text-red-500 hover:text-red-700"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setReqId(user._id);
+                                        setIsDelete(true);
+                                    }}
+                                >
+                                    <Trash2 className="h-5 w-5" />
+                                </button>
+                            </div>
                         )}
                     </div>
                 </td>
@@ -405,7 +417,7 @@ const ReqListTable = () => {
                                             >
                                                 ReqId
                                             </th>
-                           
+
                                             <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
@@ -420,18 +432,18 @@ const ReqListTable = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
                                             >
                                                 Amount
                                             </th>
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[13%]"
                                             >
                                                 Status
                                             </th>
-                                    
+
                                             <th
                                                 scope="col"
                                                 className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
@@ -477,12 +489,6 @@ const ReqListTable = () => {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    {/* 
-                                                    <td className="px-4 py-4 text-sm text-gray-500">
-                                                        {user.commercials
-                                                            ?.businessUnit ||
-                                                            "NA"}
-                                                    </td> */}
 
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         <div>
@@ -556,8 +562,6 @@ const ReqListTable = () => {
                                                             </span>
                                                         )}
                                                     </td>
-
-                                                 
 
                                                     {user.status !==
                                                         "Approved" &&

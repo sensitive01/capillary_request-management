@@ -61,7 +61,8 @@ const CreateRequest = () => {
             }
         } catch (err) {
             console.log("Error in submit req", err);
-        } finally {
+        }
+         finally {
             setIsSubmitting(false);
         }
     };
@@ -153,7 +154,6 @@ const CreateRequest = () => {
                     formData={formData}
                     onSubmit={handleSubmit}
                     onBack={() => setCurrentStep(3)}
-                    isSubmitting={isSubmitting}
                 />
             ),
         },

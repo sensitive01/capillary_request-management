@@ -381,18 +381,7 @@ const RequestStatistcsTable = () => {
                                                 >
                                                     Status
                                                 </th>
-                                                {/* <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
-                                                >
-                                                    PO Document
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider]"
-                                                >
-                                                    Invoice_Document
-                                                </th> */}
+                                   
                                                 <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -404,7 +393,7 @@ const RequestStatistcsTable = () => {
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {users.map((user, index) => (
                                                 <tr
-                                                    key={user.sno}
+                                                    key={user._id}
                                                     className="hover:bg-gray-100 cursor-pointer"
                                                     onClick={() =>
                                                         navigate(

@@ -65,7 +65,9 @@ router.post('/filter-by-date/:empId/:role',reqController.filterByDateStatitics)
 
 
 router.put('/relese-status/:empId/:reqId', reqController.releaseReqStatus); 
+// router.put('/update-request/:id', reqController.updateRequest); 
 router.put('/update-request/:id', reqController.updateRequest); 
+
 router.put('/chats/:id', reqController.postComments); 
 router.put('/upload-po-documents/:empId/:reqId', reqController.uploadPoDocuments); 
 router.put('/upload-invoice-documents/:empId/:reqId', reqController.uploadInvoiceDocuments); 
