@@ -215,9 +215,7 @@ const approveRequest = async (req, res) => {
         status === "Approved"
         
       ) {
-        console.log(       role === "Business Finance" &&
-          !reqData.procurements.isNewVendor &&
-          status === "Approved")
+     console.log("From business finance auto appropved")
         if (reqData.hasDeviations === 1) {
           const autoApproveDepartments = [
             "Business Finance",
@@ -226,6 +224,9 @@ const approveRequest = async (req, res) => {
           ];
 
           for (let i = 0; i < autoApproveDepartments.length - 1; i++) {
+            const newRequestData = await CreateNewReq.findOne({ _id: reqId},{approvals:1})
+            const {approvals}=newRequestData
+            const lastLeveLApprovals= approvals[approvals.length-1]
             const autoDepartment = autoApproveDepartments[i];
             let remarks = "";
             if (role === autoDepartment) {
@@ -252,7 +253,7 @@ const approveRequest = async (req, res) => {
                 approvalDate: new Date(),
                 remarks: remarks,
                 nextDepartment: nextAutoDepartment,
-                receivedOn: new Date(),
+                receivedOn: lastLeveLApprovals.approvalDate,
               };
 
               await CreateNewReq.updateOne(
@@ -302,6 +303,9 @@ const approveRequest = async (req, res) => {
         
 
           for (let i = 0; i < autoApproveDepartments.length; i++) {
+            const newRequestData = await CreateNewReq.findOne({ _id: reqId},{approvals:1})
+            const {approvals}=newRequestData
+            const lastLeveLApprovals= approvals[approvals.length-1]
             const autoDepartment = autoApproveDepartments[i];
             let remarks = "";
             if (role === autoDepartment) {
@@ -328,7 +332,7 @@ const approveRequest = async (req, res) => {
                 approvalDate: new Date(),
                 remarks: remarks,
                 nextDepartment: nextAutoDepartment,
-                receivedOn: new Date(),
+                receivedOn: lastLeveLApprovals.approvalDate,
               };
 
               await CreateNewReq.updateOne(
@@ -360,15 +364,17 @@ const approveRequest = async (req, res) => {
                 autoApprovalRecord
               );
 
+              console.log("autoDepartment",autoDepartment)
+
               if (autoDepartment === "Info Security") {
-                await CreateNewReq.updateOne(
-                  { _id: reqId },
-                  {
-                    $set: {
-                      currentDepartment: "Head of Finance",
-                    },
-                  }
-                );
+                // await CreateNewReq.updateOne(
+                //   { _id: reqId },
+                //   {
+                //     $set: {
+                //       currentDepartment: "Head of Finance",
+                //     },
+                //   }
+                // );
                 break;
               }
             } else {
@@ -387,6 +393,9 @@ const approveRequest = async (req, res) => {
         reqData.procurements.isNewVendor
       ) {
         console.log("nextDepartment--->", nextDepartment);
+        const newRequestData = await CreateNewReq.findOne({ _id: reqId},{approvals:1})
+        const {approvals}=newRequestData
+        const lastLeveLApprovals= approvals[approvals.length-1]
         const autoApprovalRecord = {
           departmentName: approverData.department,
           status: "Approved",
@@ -395,7 +404,7 @@ const approveRequest = async (req, res) => {
           approvalDate: new Date(),
           remarks: remarks,
           nextDepartment: nextDepartment,
-          receivedOn: new Date(),
+          receivedOn:lastLeveLApprovals.approvalDate,
         };
 
         await CreateNewReq.updateOne(
@@ -426,6 +435,9 @@ const approveRequest = async (req, res) => {
         }
 
         for (let i = 0; i < autoApproveDepartments.length; i++) {
+          const newRequestData = await CreateNewReq.findOne({ _id: reqId},{approvals:1})
+          const {approvals}=newRequestData
+          const lastLeveLApprovals= approvals[approvals.length-1]
           const autoDepartment = autoApproveDepartments[i];
           const isLastDepartment = i === autoApproveDepartments.length - 1;
           const nextAutoDepartment = isLastDepartment
@@ -446,7 +458,7 @@ const approveRequest = async (req, res) => {
               approvalDate: new Date(),
               remarks: remarks,
               nextDepartment: nextAutoDepartment,
-              receivedOn: new Date(),
+              receivedOn: lastLeveLApprovals.approvalDate,
             };
 
             await CreateNewReq.updateOne(
@@ -501,6 +513,9 @@ const approveRequest = async (req, res) => {
         reqData.hasDeviations === 1 &&
         status === "Approved"
       ) {
+        const newRequestData = await CreateNewReq.findOne({ _id: reqId},{approvals:1})
+        const {approvals}=newRequestData
+        const lastLeveLApprovals= approvals[approvals.length-1]
         const autoApprovalRecord = {
           departmentName: approverData.department,
           status: "Approved",
@@ -509,7 +524,7 @@ const approveRequest = async (req, res) => {
           approvalDate: new Date(),
           remarks: remarks,
           nextDepartment: nextDepartment,
-          receivedOn: new Date(),
+          receivedOn: lastLeveLApprovals.approvalDate,
         };
 
         await CreateNewReq.updateOne(

@@ -2,16 +2,15 @@ const CreateNewReq = require("../models/createNewReqSchema");
 const empModel = require("../models/empModel");
 const reqModel = require("../models/reqModel");
 // const { createNewReq } = require("./empController");
-const PDFDocument = require("pdfkit");
 const addPanelUsers = require("../models/addPanelUsers");
 const sendEmail = require("../utils/sendEmail");
 const Approver = require("../models/approverSchema");
 const { sendIndividualEmail } = require("../utils/otherTestEmail");
 const entityModel = require("../models/entityModel");
 const vendorSchema = require("../models/vendorModel");
+const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
-const pdfmake = require("pdfmake");
 
 const addReqForm = async (req, res) => {
   try {
@@ -3218,80 +3217,431 @@ const saveAggrementData = async (req, res) => {
   }
 };
 
-const generateRequestPdfData = async (req, res) => {
+
+ const generateRequestPdfData = async (request, res) => {
   try {
-    const requestData = await CreateNewReq.findById(req.params.reqId)
-      .select("commercials procurements supplies complinces")
-      .lean();
-
-    if (!requestData) {
-      return res.status(404).json({ message: "Request not found" });
-    }
-
-    // Define fonts
-    const fonts = {
-      Roboto: {
-        normal: "node_modules/pdfmake/fonts/Roboto-Regular.ttf",
-        bold: "node_modules/pdfmake/fonts/Roboto-Medium.ttf",
-      },
-    };
-
-    const printer = new pdfmake(fonts);
-
-    // Create PDF Content
-    const docDefinition = {
-      content: [
-        { text: "Procurement Request Details", style: "header" },
-        { text: "Commercials", style: "subheader" },
-        { text: `Bill To: ${requestData.commercials?.billTo || "N/A"}` },
-        {
-          text: `Business Unit: ${
-            requestData.commercials?.businessUnit || "N/A"
-          }`,
-        },
-
-        { text: "Procurements", style: "subheader" },
-        { text: `Vendor: ${requestData.procurements?.vendorName || "N/A"}` },
-        {
-          text: `Quotation Date: ${
-            requestData.procurements?.quotationDate || "N/A"
-          }`,
-        },
-
-        { text: "Supplies", style: "subheader" },
-        {
-          text: `Total Value: ${requestData.supplies?.totalValue || "N/A"} ${
-            requestData.supplies?.selectedCurrency || ""
-          }`,
-        },
-
-        { text: "Compliance", style: "subheader" },
-        ...requestData.complinces.map((c, index) => ({
-          text: `${index + 1}. ${c.question}: ${c.answer ? "Yes" : "No"}`,
-        })),
-      ],
-      styles: {
-        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
-        subheader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] },
-      },
-    };
-
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    const pdfPath = path.join(__dirname, "output.pdf");
-
-    pdfDoc.pipe(fs.createWriteStream(pdfPath));
-    pdfDoc.end();
-
-    pdfDoc.on("end", () => {
-      res.download(pdfPath, "request-details.pdf", () => {
-        fs.unlinkSync(pdfPath); // Delete file after download
-      });
+    // Create a new PDF document
+    const doc = new PDFDocument({
+      margins: { top: 50, bottom: 50, left: 50, right: 50 },
+      size: 'A4',
+      bufferPages: true // Enable page buffering for page numbers
     });
+    
+    const fileName = `Request_${request.reqid || 'Unknown'}.pdf`;
+
+    // Set response headers for download
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/pdf");
+
+    // Pipe the PDF to the response
+    doc.pipe(res);
+
+    // Helper function to format currency
+    const formatCurrency = (value) => {
+      if (!value) return 'N/A';
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(value);
+    };
+
+    // Helper function to format dates
+    const formatDate = (dateString) => {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+    };
+
+    // Helper function to extract date and time
+    const extractDateAndTime = (dateString) => {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleString('en-GB');
+    };
+
+    // Add header
+    doc.fontSize(22)
+      .fillColor('#003366')
+      .text('REQUEST DETAILS', { align: 'center' })
+      .moveDown(0.5);
+    
+    doc.fontSize(14)
+      .fillColor('#666666')
+      .text(`Request ID: ${request.reqid || 'Unknown'}`, { align: 'center' })
+      .moveDown(1);
+
+    // Add divider
+    doc.strokeColor('#003366').lineWidth(1).moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke();
+    doc.moveDown(1);
+
+    // COMMERCIAL DETAILS SECTION
+    doc.fontSize(16).fillColor('#003366').text('Commercial Details', { underline: true }).moveDown(0.5);
+    
+    if (request.commercials && Object.values(request.commercials).some(value => value)) {
+      // First row
+      const firstRowY = doc.y;
+      const colWidth = (doc.page.width - 100) / 3;
+      
+      // Request ID
+      doc.fontSize(11).fillColor('#666666').text('Request ID', 50, firstRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.reqid || 'N/A', 50, firstRowY + 15);
+      
+      // Business Unit
+      doc.fontSize(11).fillColor('#666666').text('Business Unit', 50 + colWidth, firstRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.businessUnit || 'N/A', 50 + colWidth, firstRowY + 15);
+      
+      // Created At
+      doc.fontSize(11).fillColor('#666666').text('Created At', 50 + colWidth * 2, firstRowY);
+      doc.fontSize(11).fillColor('#333333').text(extractDateAndTime(request.createdAt) || 'N/A', 50 + colWidth * 2, firstRowY + 15);
+      
+      // Move down for next row
+      doc.y = firstRowY + 40;
+      
+      // Second row
+      const secondRowY = doc.y;
+      
+      // Entity
+      doc.fontSize(11).fillColor('#666666').text('Entity', 50, secondRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.entity || 'N/A', 50, secondRowY + 15);
+      
+      // City
+      doc.fontSize(11).fillColor('#666666').text('City', 50 + colWidth, secondRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.city || 'N/A', 50 + colWidth, secondRowY + 15);
+      
+      // Site
+      doc.fontSize(11).fillColor('#666666').text('Site', 50 + colWidth * 2, secondRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.site || 'N/A', 50 + colWidth * 2, secondRowY + 15);
+      
+      // Move down for next row
+      doc.y = secondRowY + 40;
+      
+      // Third row - two columns
+      const thirdRowY = doc.y;
+      const wideColWidth = (doc.page.width - 100) / 2;
+      
+      // Department
+      doc.fontSize(11).fillColor('#666666').text('Department', 50, thirdRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.department || 'N/A', 50, thirdRowY + 15);
+      
+      // Head of Department
+      doc.fontSize(11).fillColor('#666666').text('Head of Department', 50 + wideColWidth, thirdRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.hod || 'N/A', 50 + wideColWidth, thirdRowY + 15);
+      
+      // Move down for Bill To and Ship To
+      doc.y = thirdRowY + 40;
+      
+      // Fourth row - two columns for Bill To and Ship To
+      const fourthRowY = doc.y;
+      
+      // Bill To
+      doc.fontSize(11).fillColor('#666666').text('Bill To', 50, fourthRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.billTo || 'N/A', 50, fourthRowY + 15);
+      
+      // Ship To
+      doc.fontSize(11).fillColor('#666666').text('Ship To', 50 + wideColWidth, fourthRowY);
+      doc.fontSize(11).fillColor('#333333').text(request.commercials.shipTo || 'N/A', 50 + wideColWidth, fourthRowY + 15);
+      
+      // Move down past this section
+      doc.y = fourthRowY + 40;
+      
+      // Payment Terms Section if available
+      if (request.commercials.paymentTerms && request.commercials.paymentTerms.length > 0) {
+        doc.fontSize(14).fillColor('#003366').text('Payment Terms', { underline: false }).moveDown(0.5);
+        
+        // Table header
+        const tableTop = doc.y;
+        const tableColWidth = (doc.page.width - 100) / 3;
+        
+        doc.rect(50, tableTop, doc.page.width - 100, 20).fill('#e6eef7');
+        
+        doc.fontSize(11).fillColor('#003366')
+          .text('Percentage', 60, tableTop + 5)
+          .text('Payment Term', 60 + tableColWidth, tableTop + 5)
+          .text('Type', 60 + tableColWidth * 2, tableTop + 5);
+        
+        // Table rows
+        let currentY = tableTop + 20;
+        
+        request.commercials.paymentTerms.forEach((term, index) => {
+          const isEven = index % 2 === 0;
+          
+          if (isEven) {
+            doc.rect(50, currentY, doc.page.width - 100, 20).fill('#f7f7f7');
+          }
+          
+          doc.fontSize(10).fillColor('#333333')
+            .text(`${term.percentageTerm}%`, 60, currentY + 5)
+            .text(term.paymentTerm?.toLowerCase() || 'N/A', 60 + tableColWidth, currentY + 5)
+            .text(term.paymentType?.toLowerCase() || 'N/A', 60 + tableColWidth * 2, currentY + 5);
+          
+          currentY += 20;
+        });
+        
+        // Move past the table
+        doc.y = currentY + 20;
+      }
+    } else {
+      doc.fontSize(11).fillColor('#666666').text('No commercial details available').moveDown(1);
+    }
+    
+    // Check if we need a page break
+    if (doc.y > 650) doc.addPage();
+    
+    // PROCUREMENT DETAILS SECTION
+    doc.fontSize(16).fillColor('#003366').text('Procurement Details', { underline: true }).moveDown(0.5);
+    
+    if (request.procurements && Object.values(request.procurements).some(value => value)) {
+      const procFields = [
+        { label: 'Vendor ID', value: request.procurements.vendor },
+        { label: 'Vendor Name', value: request.procurements.vendorName },
+        { label: 'Quotation Number', value: request.procurements.quotationNumber },
+        { label: 'Quotation Date', value: request.procurements.quotationDate ? formatDate(request.procurements.quotationDate) : null },
+        { label: 'Service Period', value: request.procurements.servicePeriod },
+        { label: 'PO Valid From', value: request.procurements.poValidFrom ? formatDate(request.procurements.poValidFrom) : null },
+        { label: 'PO Valid To', value: request.procurements.poValidTo ? formatDate(request.procurements.poValidTo) : null }
+      ].filter(item => item.value);
+      
+      // Arrange in 2 columns
+      const procColWidth = (doc.page.width - 100) / 2;
+      let procRowY = doc.y;
+      
+      procFields.forEach((item, index) => {
+        const colIndex = index % 2;
+        const rowOffset = Math.floor(index / 2) * 40;
+        
+        doc.fontSize(11).fillColor('#666666')
+          .text(item.label, 50 + (colIndex * procColWidth), procRowY + rowOffset);
+        
+        doc.fontSize(11).fillColor('#333333')
+          .text(item.value, 50 + (colIndex * procColWidth), procRowY + rowOffset + 15);
+        
+        // Adjust Y position based on rows
+        if (index === procFields.length - 1 || index === procFields.length - 2) {
+          doc.y = procRowY + rowOffset + 40;
+        }
+      });
+      
+      // Uploaded Files Section
+      if (request.procurements.uploadedFiles) {
+        doc.fontSize(14).fillColor('#003366').text('Uploaded Files', { underline: false }).moveDown(0.5);
+        
+        if (Object.keys(request.procurements.uploadedFiles).length > 0) {
+          doc.fontSize(11).fillColor('#007700').text('Files uploaded successfully').moveDown(0.5);
+          
+          // List the files
+          Object.keys(request.procurements.uploadedFiles).forEach(fileKey => {
+            doc.fontSize(10).fillColor('#333333')
+              .text(`• ${fileKey}`, { indent: 10 }).moveDown(0.2);
+          });
+        } else {
+          doc.fontSize(11).fillColor('#666666').text('No files uploaded').moveDown(0.5);
+        }
+      }
+    } else {
+      doc.fontSize(11).fillColor('#666666').text('No procurement details available').moveDown(1);
+    }
+    
+    // Check if we need a page break
+    if (doc.y > 600) doc.addPage();
+    
+    // PRODUCT/SERVICES SECTION
+    doc.fontSize(16).fillColor('#003366').text('Product/Services Details', { underline: true }).moveDown(0.5);
+    
+    if (request.supplies?.services?.length > 0) {
+      // Table header
+      const servicesTableTop = doc.y;
+      doc.rect(50, servicesTableTop, doc.page.width - 100, 20).fill('#e6eef7');
+      
+      const serviceColCount = 7;
+      const serviceColWidth = (doc.page.width - 100) / serviceColCount;
+      
+      // Define column positions
+      const serviceColPositions = Array.from({ length: serviceColCount }, (_, i) => 50 + (i * serviceColWidth));
+      
+      doc.fontSize(9).fillColor('#003366')
+        .text('Product Names', serviceColPositions[0] + 3, servicesTableTop + 5)
+        .text('Description', serviceColPositions[1] + 3, servicesTableTop + 5)
+        .text('Purpose', serviceColPositions[2] + 3, servicesTableTop + 5)
+        .text('Quantity', serviceColPositions[3] + 3, servicesTableTop + 5)
+        .text('Price', serviceColPositions[4] + 3, servicesTableTop + 5)
+        .text('Tax (%)', serviceColPositions[5] + 3, servicesTableTop + 5)
+        .text('Total', serviceColPositions[6] + 3, servicesTableTop + 5);
+      
+      // Table rows
+      let serviceRowY = servicesTableTop + 20;
+      
+      request.supplies.services.forEach((service, index) => {
+        // Check if we need a page break
+        if (serviceRowY > doc.page.height - 100) {
+          doc.addPage();
+          serviceRowY = 50;
+          
+          // Redraw header on new page
+          doc.rect(50, serviceRowY, doc.page.width - 100, 20).fill('#e6eef7');
+          
+          doc.fontSize(9).fillColor('#003366')
+            .text('Product Names', serviceColPositions[0] + 3, serviceRowY + 5)
+            .text('Description', serviceColPositions[1] + 3, serviceRowY + 5)
+            .text('Purpose', serviceColPositions[2] + 3, serviceRowY + 5)
+            .text('Quantity', serviceColPositions[3] + 3, serviceRowY + 5)
+            .text('Price', serviceColPositions[4] + 3, serviceRowY + 5)
+            .text('Tax (%)', serviceColPositions[5] + 3, serviceRowY + 5)
+            .text('Total', serviceColPositions[6] + 3, serviceRowY + 5);
+            
+          serviceRowY += 20;
+        }
+        
+        const isEven = index % 2 === 0;
+        if (isEven) {
+          doc.rect(50, serviceRowY, doc.page.width - 100, 20).fill('#f7f7f7');
+        }
+        
+        // Calculate the total
+        const quantity = parseFloat(service.quantity) || 0;
+        const price = parseFloat(service.price) || 0;
+        const tax = parseFloat(service.tax) || 0;
+        const total = quantity * price * (1 + tax / 100);
+        
+        // Truncate text that's too long
+        const truncateText = (text, maxLength = 15) => {
+          return text && text.length > maxLength ? text.substring(0, maxLength) + '...' : (text || 'N/A');
+        };
+        
+        doc.fontSize(8).fillColor('#333333')
+          .text(truncateText(service.productName), serviceColPositions[0] + 3, serviceRowY + 5, { width: serviceColWidth - 6 })
+          .text(truncateText(service.productDescription), serviceColPositions[1] + 3, serviceRowY + 5, { width: serviceColWidth - 6 })
+          .text(truncateText(service.productPurpose), serviceColPositions[2] + 3, serviceRowY + 5, { width: serviceColWidth - 6 })
+          .text(service.quantity || 'N/A', serviceColPositions[3] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'center' })
+          .text(formatCurrency(service.price), serviceColPositions[4] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'right' })
+          .text(service.tax || 'N/A', serviceColPositions[5] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'right' })
+          .text(formatCurrency(total), serviceColPositions[6] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'right' });
+        
+        serviceRowY += 20;
+      });
+      
+      // Total Value
+      if (request.supplies?.totalValue !== undefined) {
+        doc.y = serviceRowY + 20;
+        
+        doc.fontSize(11).fillColor('#666666').text('Total Value', 50);
+        doc.fontSize(11).fillColor('#333333').text(formatCurrency(request.supplies.totalValue), { align: 'right' });
+      }
+      
+      // Remarks
+      if (request.supplies?.remarks) {
+        doc.y += 20;
+        doc.fontSize(14).fillColor('#003366').text('Remarks', { underline: false }).moveDown(0.5);
+        doc.fontSize(10).fillColor('#333333').text(request.supplies.remarks).moveDown(1);
+      }
+    } else {
+      doc.fontSize(11).fillColor('#666666').text('No products or services details available').moveDown(1);
+    }
+    
+    // Check if we need a page break
+    if (doc.y > 600) doc.addPage();
+    
+    // COMPLIANCE DETAILS SECTION
+    doc.fontSize(16).fillColor('#003366').text('Compliance Details', { underline: true }).moveDown(0.5);
+    
+    if (request.complinces && Object.keys(request.complinces).length > 0) {
+      // Create a grid layout for compliance items
+      let compRowY = doc.y;
+      const compColWidth = (doc.page.width - 100) / 2;
+      let colIndex = 0;
+      
+      Object.entries(request.complinces).forEach(([questionId, compliance], index) => {
+        // Check if we need a page break
+        if (compRowY > doc.page.height - 200) {
+          doc.addPage();
+          compRowY = 50;
+          colIndex = 0;
+        }
+        
+        // Determine colors based on compliance status
+        const bgColor = compliance.expectedAnswer !== compliance.answer ? '#ffebee' : '#e8f5e9';
+        const textColor = compliance.expectedAnswer !== compliance.answer ? '#c62828' : '#2e7d32';
+        
+        // Calculate position
+        const xPosition = 50 + (colIndex * compColWidth);
+        const boxHeight = 100; // Fixed height for all boxes
+        
+        // Draw box
+        doc.rect(xPosition, compRowY, compColWidth - 10, boxHeight)
+           .fillAndStroke(bgColor, bgColor);
+        
+        // Question text
+        doc.fontSize(10).fillColor(textColor)
+           .text(compliance.question, xPosition + 10, compRowY + 10, { width: compColWidth - 30 });
+        
+        // Answer
+        doc.fontSize(10).fillColor(textColor)
+           .text(`Answer: ${compliance.answer ? "Yes" : "No"}`, xPosition + 10, compRowY + 40);
+        
+        // Department if available
+        if (compliance.department) {
+          doc.fontSize(9).fillColor('#666666')
+             .text(`Department: ${compliance.department}`, xPosition + 10, compRowY + 60);
+        }
+        
+        // Deviation reason if applicable
+        if (compliance.deviation && compliance.expectedAnswer !== compliance.answer) {
+          doc.fontSize(9).fillColor(textColor)
+             .text(`Deviation Reason: ${compliance.deviation.reason}`, xPosition + 10, compRowY + 75, { width: compColWidth - 30 });
+        }
+        
+        // Increment column index or move to next row
+        colIndex = (colIndex + 1) % 2;
+        if (colIndex === 0) {
+          compRowY += boxHeight + 10; // Move to next row
+        }
+      });
+      
+      // Adjust final Y position
+      if (colIndex !== 0) {
+        compRowY += boxHeight + 10;
+      }
+      doc.y = compRowY;
+    } else {
+      doc.fontSize(11).fillColor('#666666').text('No compliance details available').moveDown(1);
+    }
+    
+    // Add footer with page numbers
+    const range = doc.bufferedPageRange();
+    for (let i = 0; i < range.count; i++) {
+      doc.switchToPage(i);
+      
+      // Add page number
+      doc.fontSize(10).fillColor('#666666');
+      doc.text(
+        `Page ${i + 1} of ${range.count}`,
+        50,
+        doc.page.height - 50,
+        { align: 'center', width: doc.page.width - 100 }
+      );
+      
+      // Add timestamp
+      const dateStr = new Date().toLocaleDateString();
+      doc.text(
+        `Generated on: ${dateStr}`,
+        50,
+        doc.page.height - 35,
+        { align: 'center', width: doc.page.width - 100 }
+      );
+    }
+    
+    // Finalize the PDF
+    doc.end();
+    
+    return { success: true };
   } catch (error) {
     console.error("Error generating PDF:", error);
-    res.status(500).json({ message: "Error generating PDF" });
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error generating PDF", error: error.message });
+    }
+    return { success: false, error: error.message };
   }
 };
+
 
 module.exports = {
   generateRequestPdfData,

@@ -947,26 +947,26 @@ export const generatePDF = async (reqId) => {
       {
         responseType: 'blob',
         headers: {
-          'Accept': 'application/pdf',
+          Accept: 'application/pdf',
           'Content-Type': 'application/json',
         },
-        validateStatus: (status) => status === 200,
-        timeout: 30000,
+        timeout: 30000, // 30 seconds timeout
       }
     );
 
     // Check if the response is a valid PDF
-    const contentType = response.headers['content-type'];
+    const contentType = response.headers?.['content-type'] || response.headers?.get('content-type');
     if (!contentType || !contentType.includes('application/pdf')) {
       throw new Error('Received invalid content type from server');
     }
 
-    return response.data; // Return the blob directly
+    return response; // Return the full response, not just `data`
   } catch (error) {
     console.error('Error generating PDF:', error);
-    throw error; // Rethrow to handle in the calling function
+    throw error; // Rethrow for handling in the calling function
   }
 };
+
 
 
 
