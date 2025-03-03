@@ -1782,7 +1782,7 @@ const PreviewTheReq = () => {
                     </div>
                 )}
 
-                {request.status === "PO-Pending"||request.status === "Approved" &&
+                {(request.status === "PO-Pending"||request.status === "Approved") &&
                     role === "Head of Finance" && (
                         <div className="flex items-center justify-between w-full">
                             {/* Left side - Preview Image */}
