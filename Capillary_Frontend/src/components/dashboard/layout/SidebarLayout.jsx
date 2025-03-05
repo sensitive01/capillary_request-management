@@ -58,7 +58,9 @@ const SidebarLayout = () => {
     Admin: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: "My Department Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: `${role} Approvals`, path: "/role-based-approvals-list" },
+
 
       { icon: FileEdit, title: "Entities", path: "/entity-list-table" },
       { icon: Users, title: "Employees", path: "/employee-list-table" },
@@ -76,31 +78,41 @@ const SidebarLayout = () => {
     "Legal Team": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: "My Department Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: `${role} Approvals`, path: "/role-based-approvals-list" },
+
       { icon: HelpCircle, title: "Questions", path: "/questions" },
     ],
     "Info Security": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: "My Department Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: `${role} Approvals`, path: "/role-based-approvals-list" },
+
       { icon: HelpCircle, title: "Questions", path: "/questions" },
     ],
     "Vendor Management": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: "My Department Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: `${role} Approvals`, path: "/role-based-approvals-list" },
+
       { icon: Building2, title: "Vendors", path: "/vendor-list-table" },
     ],
     "Head of Finance": [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: "My Department Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: `${role} Approvals`, path: "/role-based-approvals-list" },
+
       { icon: Flag, title: "Reports", path: "/genarate-report-page" },
     ],
     default: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
       { icon: MonitorSmartphone, title: "Requests", path: "/req-list-table" },
-      { icon: CheckCircle, title: "Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: "My Department Approvals", path: "/approval-request-list" },
+      { icon: CheckCircle, title: `${role} Approvals`, path: "/role-based-approvals-list" },
+
     ],
   };
 

@@ -1691,7 +1691,7 @@ const isApproved = async (req, res) => {
     // }
 
     if (
-      (role === "HOD Department" || role === "Admin") &&
+      (role === "HOD Department" || role === "Admin"||reqData.firstLevelApproval.hodEmail === empData.company_email_id) &&
       reqData.firstLevelApproval.hodEmail === empData.company_email_id
     ) {
       console.log("HOD Deparment");
@@ -3642,8 +3642,41 @@ const saveAggrementData = async (req, res) => {
   }
 };
 
+const getRoleBasedApprovals = async (req, res) => {
+  try {
+    const { role, userId } = req.params;
+    
+    // Fetch data based on the role
+    const roleApprovalData = await CreateNewReq.find({ "approvals.nextDepartment": role });
+
+    console.log("roleApprovalData", roleApprovalData);
+
+    // Check if data exists
+    if (!roleApprovalData || roleApprovalData.length === 0) {
+      return res.status(404).json({ success: false, message: "No approvals found for this role" });
+    }
+
+    // Send response
+    res.status(200).json({
+      success: true,
+      message: "Role-based approvals fetched successfully",
+     roleApprovalData
+    });
+
+  } catch (err) {
+    console.error("Error in getting the role-based approvals", err);
+    res.status(500).json({ success: false, message: "Internal server error", error: err.message });
+  }
+};
+
+
+
+
+
+
 
 module.exports = {
+  getRoleBasedApprovals,
   generateRequestPdfData,
   editCommercialData,
   saveAggrementData,

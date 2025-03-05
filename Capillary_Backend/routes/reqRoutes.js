@@ -18,6 +18,9 @@ router.get('/get-reports', reqController.getReports);
 router.get('/invoice/download/:id', reqController.downloadInvoicePdf); 
 router.get('/is-approved/:userId/:reqId/:role', reqController.isApproved); 
 
+router.get('/get-role-based-approvals/:userId/:role', reqController.getRoleBasedApprovals); 
+
+
 
 
 // router.post('/accept-request-hod/:id', reqController.approveRequest); 

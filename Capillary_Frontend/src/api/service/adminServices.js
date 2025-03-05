@@ -970,3 +970,28 @@ export const generatePDF = async (reqId) => {
 
 
 
+export const getRoleBasedApprovals = async (userId, role) => {
+  try {
+    const response = await adminServices.get(
+      `/request/get-role-based-approvals/${userId}/${role}`,
+
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+export const addNewVendorsExcel = async (data) => {
+  try {
+    const response = await adminServices.post(
+      `/vendors/create-new-vendors`,{data}
+
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};

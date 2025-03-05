@@ -1,10 +1,20 @@
-import { Search, Download, Filter, Plus, Edit, Trash2, Upload, X } from "lucide-react";
+import {
+  Search,
+  Download,
+  Filter,
+  Plus,
+  Edit,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import * as XLSX from "xlsx";
 import Pagination from "./Pagination";
 import {
+  addNewVendorsExcel,
   deleteVendor,
   getVendorList,
 } from "../../../api/service/adminServices";
@@ -16,6 +26,7 @@ const VendorListTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showImportModal, setShowImportModal] = useState(false);
+  const [newVendors, setNewVendors] = useState([]);
   const fileInputRef = useRef(null);
   const itemsPerPage = 10;
 
@@ -32,7 +43,6 @@ const VendorListTable = () => {
     fetchVendor();
   }, []);
 
-  // Search and Filter Logic
   const filteredData = personalData?.filter((person) => {
     const matchesSearch = Object.values(person).some((value) =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
@@ -71,32 +81,57 @@ const VendorListTable = () => {
     }
   };
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          const workbook = XLSX.read(e.target.result, { type: 'array' });
+          const workbook = XLSX.read(e.target.result, { type: "array" });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const data = XLSX.utils.sheet_to_json(worksheet);
-          
-          // Here you would typically send this data to your API
-          console.log('Imported data:', data);
-          toast.success('File imported successfully');
-          setShowImportModal(false);
-          
-          // Reset file input
+
+          console.log("Imported data:", data);
+          setNewVendors(data);
+
+          toast.info('File imported. Click "Upload File" to proceed.');
+
           if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+            fileInputRef.current.value = "";
           }
         } catch (error) {
-          console.error('Import error:', error);
-          toast.error('Error importing file');
+          console.error("Complete Import Error:", error);
+          toast.error(`Error importing file: ${error.message}`);
         }
       };
       reader.readAsArrayBuffer(file);
+    }
+  };
+
+  const uploadVendorData = async () => {
+    try {
+      if (newVendors.length === 0) {
+        toast.error("No vendors to upload. Please import a file first.");
+        return;
+      }
+
+      const response = await addNewVendorsExcel(newVendors);
+
+      if (response.status === 201) {
+        toast.success("Vendors uploaded successfully");
+
+        const updatedVendorList = await getVendorList();
+        setPersonalData(updatedVendorList.data);
+
+        setNewVendors([]);
+        setShowImportModal(false);
+      } else {
+        toast.error(response.data.message || "Failed to upload vendors");
+      }
+    } catch (error) {
+      console.error("Upload Error:", error);
+      toast.error("Error uploading vendors");
     }
   };
 
@@ -115,7 +150,7 @@ const VendorListTable = () => {
               <X className="h-5 w-5" />
             </button>
           </div>
-          
+
           <div className="space-y-4">
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
               <input
@@ -128,8 +163,13 @@ const VendorListTable = () => {
               <p className="text-sm text-gray-500 mt-2">
                 Supported formats: .xlsx, .xls, .csv
               </p>
+              {newVendors.length > 0 && (
+                <p className="text-sm text-green-600 mt-2">
+                  {newVendors.length} vendors ready to upload
+                </p>
+              )}
             </div>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowImportModal(false)}
@@ -138,8 +178,14 @@ const VendorListTable = () => {
                 Cancel
               </button>
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90"
+                onClick={uploadVendorData}
+                disabled={newVendors.length === 0}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg 
+                  ${
+                    newVendors.length > 0
+                      ? "bg-primary hover:bg-primary/90"
+                      : "bg-gray-400 cursor-not-allowed"
+                  }`}
               >
                 Upload File
               </button>
@@ -208,7 +254,6 @@ const VendorListTable = () => {
       <div className="border border-gray-200 rounded-lg">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            {/* Table header and body remain the same */}
             <thead className="bg-primary">
               <tr>
                 <th className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -265,7 +310,9 @@ const VendorListTable = () => {
                         className="text-primary hover:text-primary/80"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/vendor-list-table/edit-vendor/${person._id}`);
+                          navigate(
+                            `/vendor-list-table/edit-vendor/${person._id}`
+                          );
                         }}
                       >
                         <Edit className="h-5 w-5" />

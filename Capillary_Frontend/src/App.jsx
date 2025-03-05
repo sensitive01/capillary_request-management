@@ -50,6 +50,7 @@ import PaymentTermsPage from "./components/dashboard/settings/business-settings/
 import PaymentType from "./components/dashboard/settings/business-settings/PaymentType";
 import SystemLogs from "./components/dashboard/settings/logs/SystemLogs";
 import ApproverType from "./components/dashboard/settings/business-settings/ApproverType";
+import RoleBasedApprovals from "./components/dashboard/rolebasedapprovals/RoleBasedApprovals";
 
 
 function App() {
@@ -73,6 +74,8 @@ function App() {
           <Route path="/req-list-table/show-request-statistcs/:action" element={<MyRequestStatistics/>} />
 
           <Route path="/approval-request-list" element={<Approvals/>} />
+          <Route path="/role-based-approvals-list" element={<RoleBasedApprovals/>} />
+
           <Route path="/approval-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
 
           <Route path="/approval-request-list/preview-one-req/:id" element={<PreviewTheReq/>} />

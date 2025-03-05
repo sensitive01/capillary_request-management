@@ -12,17 +12,16 @@ import { toast, ToastContainer } from "react-toastify";
 const validationSchema = Yup.object({
   vendorId: Yup.string().required("Vendor ID is required"),
   vendorName: Yup.string().required("Vendor Name is required"),
-  phone: Yup.string().required("Phone Number is required"),
-  email: Yup.string()
-    .email("Invalid email format")
-    .required("Email is required"),
-  gstin: Yup.string().required("GSTIN is required"),
+
+
   billingAddress: Yup.string().required("Billing Address is required"),
 });
 
 const EditVendor = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [isLoading, setIsLoading] = useState(true);
+
   const [formData, setFormData] = useState({
     vendorId: "",
     vendorName: "",
@@ -39,17 +38,26 @@ const EditVendor = () => {
   useEffect(() => {
     const fetchVendorData = async () => {
       try {
+        setIsLoading(true);
         const vendorData = await getVendorData(id);
-        console.log("response vendor",vendorData)
-        console.log(vendorData);
+        console.log("Response Vendor Data:", vendorData);
+
         if (vendorData.status === 200) {
           setFormData(vendorData.data);
+        } else {
+          toast.error("Failed to fetch vendor data");
         }
       } catch (error) {
         console.error("Failed to fetch Vendor Data:", error);
+        toast.error("Error fetching vendor data");
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchVendorData();
+
+    if (id) {
+      fetchVendorData();
+    }
   }, [id]);
 
   const formik = useFormik({
@@ -58,30 +66,41 @@ const EditVendor = () => {
     enableReinitialize: true,
     onSubmit: async (values) => {
       try {
-        console.log(values);
+        console.log("Update values", values);
         const response = await updateVendorData(id, values);
-        console.log(response);
+        console.log("Update response", response);
+
         if (response.status === 200) {
-          toast.success(response.data.message);
+          toast.success(response.data.message || "Vendor updated successfully");
           setTimeout(() => {
             navigate("/vendor-list-table");
           }, 1500);
+        } else {
+          toast.error("Update failed. Please try again.");
         }
       } catch (error) {
         console.error("Update failed:", error);
-        alert("Update failed. Please try again.");
+        toast.error(
+          error.response?.data?.message || "Update failed. Please try again."
+        );
       }
     },
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <form
       onSubmit={formik.handleSubmit}
       className="max-w-6xl bg-white mx-auto p-6 space-y-6"
     >
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        Edit Vendor
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Vendor</h2>
 
       <div className="p-4 border rounded-lg border-primary">
         <label htmlFor="vendorId">
@@ -202,7 +221,6 @@ const EditVendor = () => {
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-         
         </div>
       </div>
 
@@ -222,11 +240,12 @@ const EditVendor = () => {
                 onBlur={formik.handleBlur}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {formik.touched.billingAddress && formik.errors.billingAddress && (
-                <span className="text-red-500 text-sm">
-                  {formik.errors.billingAddress}
-                </span>
-              )}
+              {formik.touched.billingAddress &&
+                formik.errors.billingAddress && (
+                  <span className="text-red-500 text-sm">
+                    {formik.errors.billingAddress}
+                  </span>
+                )}
             </div>
             <div>
               <label htmlFor="shippingAddress">Shipping Address</label>

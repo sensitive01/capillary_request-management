@@ -14,6 +14,67 @@ exports.createVendor = async (req, res) => {
   }
 };
 
+exports.createNewVendor = async (req, res) => {
+  try {
+    console.log("Received Vendor Data:", req.body);
+
+    const vendorDataArray = req.body.data.map(async (vendor) => {
+      const vendorId = vendor.ID;
+
+      const existingVendor = await Vendor.findOne({ vendorId });
+
+      if (existingVendor) {
+        // Update existing vendor
+        return await Vendor.findOneAndUpdate(
+          { vendorId },
+          {
+            vendorName: vendor.Name,
+            primarySubsidiary: vendor["Primary Subsidiary"],
+            taxNumber: vendor["Tax Number"],
+            gstin: vendor.GSTIN,
+            billingAddress: vendor["Billing Address"],
+            shippingAddress: vendor["Shipping Address"],
+            phone: vendor.Phone,
+            status: vendor.Status || "Active",
+            email: vendor.Email || "",
+          },
+          { new: true, runValidators: true }
+        );
+      } else {
+        // Create new vendor
+        return await Vendor.create({
+          vendorId,
+          vendorName: vendor.Name,
+          primarySubsidiary: vendor["Primary Subsidiary"],
+          taxNumber: vendor["Tax Number"],
+          gstin: vendor.GSTIN,
+          billingAddress: vendor["Billing Address"],
+          shippingAddress: vendor["Shipping Address"],
+          phone: vendor.Phone,
+          status: vendor.Status || "Active",
+          email: vendor.Email || "",
+        });
+      }
+    });
+
+    const insertedOrUpdatedVendors = await Promise.all(vendorDataArray);
+
+    res.status(201).json({
+      success: true,
+      message: "Vendors processed successfully",
+      data: insertedOrUpdatedVendors,
+    });
+  } catch (error) {
+    console.error("Error processing vendors:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
 // Read all vendors
 exports.getAllVendors = async (req, res) => {
   try {
@@ -27,10 +88,10 @@ exports.getAllVendors = async (req, res) => {
 // Read a single vendor by ID
 exports.getVendorById = async (req, res) => {
   try {
-    console.log("Welcome to vendor data")
-    console.log(req.params.id)
+    console.log("Welcome to vendor data");
+    console.log(req.params.id);
     const vendor = await Vendor.findOne({ _id: req.params.id });
-    console.log(vendor)
+    console.log(vendor);
     if (!vendor) return res.status(404).json({ message: "Vendor not found" });
     res.status(200).json(vendor);
   } catch (error) {
@@ -41,18 +102,44 @@ exports.getVendorById = async (req, res) => {
 // Update a vendor by ID
 exports.updateVendor = async (req, res) => {
   try {
+    console.log("Welcome to update the vendor data", req.body);
+    console.log("Updating vendor with ID:", req.params.id);
+
+    const data = {
+      vendorId: req.body.vendorId,
+      vendorName: req.body.vendorName,
+      primarySubsidiary: req.body.primarySubsidiary,
+      taxNumber: req.body.taxNumber,
+      gstin: req.body.gstin,
+      billingAddress: req.body.billingAddress,
+      shippingAddress: req.body.shippingAddress,
+      phone: req.body.phone, // ✅ Fixed this line
+      email: req.body.email,
+    };
+
+    console.log("Update data:", data);
+
     const vendor = await Vendor.findOneAndUpdate(
       { _id: req.params.id },
-      req.body,
+      { $set: data }, // ✅ Use `$set` to update only specified fields
       {
         new: true,
         runValidators: true,
       }
     );
-    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
-    res.status(200).json({ message: "Vendor updated successfully", vendor });
+
+    if (!vendor) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Vendor not found" });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Vendor updated successfully", vendor });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Error updating vendor:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -104,7 +191,6 @@ exports.getNewVendorId = async (req, res) => {
 
     console.log(`Unique Employee ID generated: ${vendorId}`);
     res.status(200).json({ vendorId });
-
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error" });
   }

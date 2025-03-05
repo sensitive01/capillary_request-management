@@ -16,7 +16,6 @@ const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email format")
     .required("Email is required"),
-  gstin: Yup.string().required("GSTIN is required"),
   billingAddress: Yup.string().required("Billing Address is required"),
 });
 
@@ -40,10 +39,10 @@ const VendorRegistration = () => {
       try {
         const response = await getNewVendorId();
         if (response.status === 200) {
-          console.log(response.data.vendorId);
+          // Only update vendorId if it's not already set
           setFormData((prevState) => ({
             ...prevState,
-            vendorId: response.data.vendorId,
+            vendorId: prevState.vendorId || response.data.vendorId,
           }));
         }
       } catch (error) {
@@ -82,10 +81,20 @@ const VendorRegistration = () => {
         });
       } catch (error) {
         console.error("Registration failed:", error);
-        alert("Registration failed. Please try again.");
+        toast.error("Registration failed. Please try again.");
       }
     },
   });
+
+  // Function to handle manual vendor ID input
+  const handleVendorIdChange = (e) => {
+    const newVendorId = e.target.value;
+    setFormData((prevState) => ({
+      ...prevState,
+      vendorId: newVendorId,
+    }));
+    formik.handleChange(e);
+  };
 
   return (
     <form
@@ -105,10 +114,9 @@ const VendorRegistration = () => {
           name="vendorId"
           placeholder="Vendor ID"
           value={formik.values.vendorId}
-          onChange={formik.handleChange}
+          onChange={handleVendorIdChange}
           onBlur={formik.handleBlur}
           className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-          readOnly
         />
         {formik.touched.vendorId && formik.errors.vendorId && (
           <span className="text-red-500 text-sm">{formik.errors.vendorId}</span>
@@ -187,7 +195,7 @@ const VendorRegistration = () => {
           </div>
           <div>
             <label htmlFor="gstin">
-              GSTIN <span className="text-red-500">*</span>
+              GSTIN 
             </label>
             <input
               type="text"
@@ -215,7 +223,6 @@ const VendorRegistration = () => {
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-         
         </div>
       </div>
 

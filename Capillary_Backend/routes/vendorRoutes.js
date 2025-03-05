@@ -7,6 +7,7 @@ const {
   deleteVendor,
   updateManyVendors,
   getNewVendorId,
+  createNewVendor
 } = require("../controllers/vendorController");
 const router = express.Router();
 
@@ -14,6 +15,8 @@ const router = express.Router();
 router.get("/get-new-vendorid", getNewVendorId);
 
 router.post("/create", createVendor);
+router.post("/create-new-vendors", createNewVendor);
+
 router.get("/get-all", getAllVendors);
 router.get("/get-vendor-data/:id", getVendorById);
 router.put("/update/:id", updateVendor);
