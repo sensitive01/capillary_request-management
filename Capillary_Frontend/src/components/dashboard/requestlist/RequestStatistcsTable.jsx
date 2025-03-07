@@ -96,6 +96,7 @@ const EmptyState = ({ action }) => {
 
 const RequestStatistcsTable = () => {
     const { action } = useParams();
+    console.log("Action", action);
     const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
     const department = localStorage.getItem("department");
@@ -183,21 +184,33 @@ const RequestStatistcsTable = () => {
                                 } else {
                                     const filteredData =
                                         response.data.reqData.filter((items) =>
-                                            items.approvals.some((app) => {
-                                                return (
-                                                    app.nextDepartment === role
-                                                );
-                                            })
-                                        ) ||
-                                        response.data.filter((items) =>
-                                            items.firstLevelApproval.some(
-                                                (app) => {
+                                            items.approvals.some(
+                                                (app, index, arr) => {
+                                                    // Check if the current approval's nextDepartment matches the role
+                                                    const isPending =
+                                                        app.nextDepartment ===
+                                                        role;
+
+                                                    // Check if this is the last approval entry in the array
+                                                    const isLatestApproval =
+                                                        index ===
+                                                        arr.length - 1;
+
                                                     return (
-                                                        app.hodEmail === email
+                                                        isPending &&
+                                                        isLatestApproval
                                                     );
                                                 }
                                             )
+                                        ) ||
+                                        response.data.filter((items) =>
+                                            items.firstLevelApproval.some(
+                                                (app) =>
+                                                    app.hodEmail === email &&
+                                                    !app.approved
+                                            )
                                         );
+
                                     setUsers(filteredData);
                                 }
                             } else if (action === "Total-Approvals") {
@@ -381,7 +394,7 @@ const RequestStatistcsTable = () => {
                                                 >
                                                     Status
                                                 </th>
-                                   
+
                                                 <th
                                                     scope="col"
                                                     className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"

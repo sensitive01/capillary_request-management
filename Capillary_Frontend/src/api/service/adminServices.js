@@ -283,10 +283,10 @@ export const updateRequest = async (id, formData) => {
   }
 };
 
-export const addNewQuestion = async (userId, newQuestion) => {
+export const addNewQuestion = async (userId, newQuestion,role) => {
   try {
     const response = await adminServices.post(
-      `/questions/create-new-question/${userId}`,
+      `/questions/create-new-question/${userId}/${role}`,
       newQuestion
     );
     return response;
@@ -295,10 +295,10 @@ export const addNewQuestion = async (userId, newQuestion) => {
   }
 };
 
-export const fetchMyQuestions = async (userId) => {
+export const fetchMyQuestions = async (userId,role) => {
   try {
     const response = await adminServices.get(
-      `/questions/get-my-question/${userId}`
+      `/questions/get-my-question/${userId}/${role}`
     );
     return response;
   } catch (err) {

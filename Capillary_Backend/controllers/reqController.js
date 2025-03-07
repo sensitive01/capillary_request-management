@@ -334,7 +334,7 @@ const getStatisticData = async (req, res) => {
           return app.approvalId === empId && app.status === "Approved";
         });
 
-        completedApprovals += approvalsForEmployee2.length; // Add to completedApprovals
+        completedApprovals += approvalsForEmployee2.length; 
         
       });
       pendingApprovals = totalApprovals-completedApprovals;

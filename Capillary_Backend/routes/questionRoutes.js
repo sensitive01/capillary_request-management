@@ -6,8 +6,8 @@ const router = express.Router(); // Use Router() for modular routing
 
 
 // Define routes
-router.post('/create-new-question/:id', questionController.createQuestion);
-router.get('/get-my-question/:empId', questionController.getMyQuestion);
+router.post('/create-new-question/:id/:role', questionController.createQuestion);
+router.get('/get-my-question/:empId/:role', questionController.getMyQuestion);
 router.get('/get-all-question', questionController.getAllQuestions);
 
 router.put('/update-question-visibility/:questionId', questionController.updateQuestionVisibility);

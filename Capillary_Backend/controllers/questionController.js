@@ -6,13 +6,21 @@ const createQuestion = async (req, res) => {
   try {
     console.log("Create Question Request:", req.body);
 
-    const { id } = req.params;
+    const { id,role } = req.params;
 
     let empData =
-    (await employeeSchema.findOne(
-      { _id: id},
-      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
-    ).lean()) || (await addPanelUsers.findOne({ _id:id }).lean());
+      (await employeeSchema
+        .findOne(
+          { _id: id },
+          {
+            full_name: 1,
+            employee_id: 1,
+            department: 1,
+            hod: 1,
+            hod_email_id: 1,
+          }
+        )
+        .lean()) || (await addPanelUsers.findOne({ _id: id }).lean());
 
     if (!empData) {
       return res.status(404).json({ message: "Employee not found" });
@@ -24,7 +32,7 @@ const createQuestion = async (req, res) => {
       ...req.body,
       createdBy: {
         empName: empData.name,
-        department: empData.department,
+        department: role,
       },
     };
 
@@ -41,9 +49,10 @@ const createQuestion = async (req, res) => {
   }
 };
 
+
 const getMyQuestion = async (req, res) => {
   try {
-    const { empId } = req.params;
+    const { empId, role } = req.params;
     console.log("Employee ID:", empId);
 
     let empData = await employeeSchema.findOne(
@@ -60,15 +69,15 @@ const getMyQuestion = async (req, res) => {
         .lean();
       if (!panelUsers) {
         return res.status(404).json({ message: "Employee not found" });
-      }else{
-        empData = panelUsers
+      } else {
+        empData = panelUsers;
       }
     }
 
     console.log("Employee Department:", empData.department);
 
     const questionData = await Question.find({
-      "createdBy.department": empData.department,
+      "createdBy.department": role
     });
 
     if (questionData.length === 0) {

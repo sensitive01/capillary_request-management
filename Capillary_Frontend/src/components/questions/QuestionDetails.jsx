@@ -182,7 +182,7 @@ const LegalQuestions = () => {
       if (role === "Admin") {
         response = await fetchAllQuestions();
       } else {
-        response = await fetchMyQuestions(userId);
+        response = await fetchMyQuestions(userId,role);
       }
 
       if (response?.status === 200 && response?.data?.data) {
@@ -206,7 +206,7 @@ const LegalQuestions = () => {
   const handleAddQuestion = async (newQuestion) => {
     try {
       setQuestions((prevQuestions) => [...prevQuestions, newQuestion]);
-      const response = await addNewQuestion(userId, newQuestion);
+      const response = await addNewQuestion(userId, newQuestion,role);
       if (response?.status === 200) {
         toast.success("Question added successfully");
       }
