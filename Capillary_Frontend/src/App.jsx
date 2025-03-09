@@ -51,6 +51,7 @@ import PaymentType from "./components/dashboard/settings/business-settings/Payme
 import SystemLogs from "./components/dashboard/settings/logs/SystemLogs";
 import ApproverType from "./components/dashboard/settings/business-settings/ApproverType";
 import RoleBasedApprovals from "./components/dashboard/rolebasedapprovals/RoleBasedApprovals";
+import EmployeeProfileCard from "./components/dashboard/employeeProfile/EmployeeProfileCard";
 
 
 function App() {
@@ -65,6 +66,8 @@ function App() {
           <Route path="/" element={<SidebarLayout />}>
 
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/employee-profile" element={<EmployeeProfileCard />} />
+
 
           <Route path="/req-list-table" element={<ReqListTable/>} />
           <Route path="/req-list-table/create-request" element={<CreateRequest/>} />

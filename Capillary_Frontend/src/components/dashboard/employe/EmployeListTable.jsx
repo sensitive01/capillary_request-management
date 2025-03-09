@@ -166,212 +166,266 @@ const EmployeeListTable = () => {
   };
 
   return (
-    <div className="p-8 bg-white rounded-lg shadow-sm h-full">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Employee List</h2>
+    <div className="p-4 md:p-8 bg-white rounded-lg shadow-sm h-full">
+    <div className="mb-6 md:mb-8">
+      <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Employee List</h2>
 
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div className="relative flex-1 min-w-[300px] max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search employees..."
-              className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+      {/* Mobile Add Employee Button - Full Width */}
+      <div className="block md:hidden mb-4">
+        <button
+          className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
+          onClick={() => navigate("/employee-list-table/employee-reg")}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Employee
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-between gap-4 md:gap-6">
+        {/* Search Bar */}
+        <div className="relative flex-1 w-full md:min-w-[300px] md:max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search employees..."
+            className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+        </div>
+
+        {/* Desktop Action Buttons - Hidden on mobile */}
+        <div className="hidden md:flex items-center gap-4">
+          <button
+            className={`inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium ${
+              isSyncing
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : "text-gray-700 bg-white hover:bg-gray-50"
+            }`}
+            onClick={syncEmpData}
+            disabled={isSyncing}
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+            />
+            {isSyncing ? "Syncing..." : "Sync"}
+          </button>
+
+          <div className="relative">
+            <button
+              className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </button>
+
+            <FilterComponent
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              departments={departments}
+              hods={hods}
+              onFilter={handleFilter}
             />
           </div>
 
-          <div className="flex items-center gap-4">
+          <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </button>
+          
+          <button
+            className="inline-flex items-center px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
+            onClick={() => navigate("/employee-list-table/employee-reg")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Employee
+          </button>
+        </div>
+
+        {/* Mobile Action Buttons - Displayed as a row */}
+        <div className="flex md:hidden items-center w-full gap-2">
+          <button
+            className={`flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${
+              isSyncing
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : "text-gray-700 bg-white hover:bg-gray-50"
+            }`}
+            onClick={syncEmpData}
+            disabled={isSyncing}
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-1 ${isSyncing ? "animate-spin" : ""}`}
+            />
+            {isSyncing ? "Sync" : "Sync"}
+          </button>
+
+          <div className="relative flex-1">
             <button
-              className={`inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium ${
-                isSyncing
-                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                  : "text-gray-700 bg-white hover:bg-gray-50"
-              }`}
-              onClick={syncEmpData}
-              disabled={isSyncing}
+              className="w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
-              />
-              {isSyncing ? "Syncing..." : "Sync"}
+              <Filter className="h-4 w-4 mr-1" />
+              Filter
             </button>
 
-            <div className="relative">
-              <button
-                className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </button>
-
-              <FilterComponent
-                isOpen={isFilterOpen}
-                onClose={() => setIsFilterOpen(false)}
-                departments={departments}
-                hods={hods}
-                onFilter={handleFilter}
-              />
-            </div>
-
-            <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </button>
-            <button
-              className="inline-flex items-center px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
-              onClick={() => navigate("/employee-list-table/employee-reg")}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Employee
-            </button>
+            <FilterComponent
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              departments={departments}
+              hods={hods}
+              onFilter={handleFilter}
+            />
           </div>
+
+          <button className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <Download className="h-4 w-4 mr-1" />
+            Export
+          </button>
         </div>
       </div>
+    </div>
 
-      <div className="bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-primary">
-              <tr>
-                {[
-                  "SNO",
-                  "Employee",
-                  "Sync",
-                  "Bus_Unit",
-                  "Head Of Department",
-                  "Direct Manager",
-                  "Actions",
-                ].map((header) => (
-                  <th
-                    key={header}
-                    className="sticky top-0 px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider"
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {currentEmployees?.map((employee, index) => (
-                <tr
-                  key={employee._id}
-                  className="hover:bg-blue-50 transition duration-200 ease-in-out"
+    <div className="bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-primary">
+            <tr>
+              {[
+                "SNO",
+                "Employee",
+                "Sync",
+                "Bus_Unit",
+                "Head Of Department",
+                "Direct Manager",
+                "Actions",
+              ].map((header) => (
+                <th
+                  key={header}
+                  className="sticky top-0 px-3 md:px-6 py-3 md:py-4 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap"
                 >
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {index + 1}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <span className="block font-semibold text-gray-900">
-                        {employee.employee_id || "NA"}
-                      </span>
-                      <span className="block font-medium text-gray-800">
-                        {employee.full_name || "NA"}
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        {employee.company_email_id || "NA"}
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        {employee.department || "NA"}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      {employeeSyncStates[employee.employee_id] ? (
-                        <ToggleRight
-                          className="h-8 w-8 text-green-500 hover:text-green-600 cursor-pointer transition"
-                          onClick={() =>
-                            handleIndividualSyncToggle(employee.employee_id)
-                          }
-                        />
-                      ) : (
-                        <ToggleLeft
-                          className="h-8 w-8 text-gray-400 hover:text-gray-500 cursor-pointer transition"
-                          onClick={() =>
-                            handleIndividualSyncToggle(employee.employee_id)
-                          }
-                        />
-                      )}
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {employee.business_unit}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <span className="block font-semibold text-gray-900">
-                        {employee.hod || "NA"}
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        {employee.hod_email_id || "NA"}
-                      </span>
-                      
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <span className="block font-semibold text-gray-900">
-                        {employee.direct_manager || "NA"}
-                      </span>
-                      <span className="block text-sm text-gray-500">
-                        {employee.direct_manager_email || "NA"}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex space-x-4">
-                      <button
-                        className="text-primary hover:text-blue-800 transition"
-                        onClick={() =>
-                          navigate(
-                            `/employee-list-table/edit-employee/${employee._id}`
-                          )
-                        }
-                      >
-                        <Edit className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(employee._id)}
-                        className="text-red-600 hover:text-red-800 transition"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  {header}
+                </th>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {currentEmployees?.map((employee, index) => (
+              <tr
+                key={employee._id}
+                className="hover:bg-blue-50 transition duration-200 ease-in-out"
+              >
+                <td className="px-3 md:px-6 py-3 md:py-4 text-sm text-gray-700">
+                  {index + 1}
+                </td>
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          handlePageChange={handlePageChange}
-          itemsPerPage={itemsPerPage}
-          totalItems={filteredEmployees.length}
-        />
+                <td className="px-3 md:px-6 py-3 md:py-4">
+                  <div className="space-y-1">
+                    <span className="block font-semibold text-gray-900">
+                      {employee.employee_id || "NA"}
+                    </span>
+                    <span className="block font-medium text-gray-800">
+                      {employee.full_name || "NA"}
+                    </span>
+                    <span className="block text-xs md:text-sm text-gray-500">
+                      {employee.company_email_id || "NA"}
+                    </span>
+                    <span className="block text-xs md:text-sm text-gray-500">
+                      {employee.department || "NA"}
+                    </span>
+                  </div>
+                </td>
+
+                <td className="px-3 md:px-6 py-3 md:py-4">
+                  <div className="flex items-center">
+                    {employeeSyncStates[employee.employee_id] ? (
+                      <ToggleRight
+                        className="h-6 w-6 md:h-8 md:w-8 text-green-500 hover:text-green-600 cursor-pointer transition"
+                        onClick={() =>
+                          handleIndividualSyncToggle(employee.employee_id)
+                        }
+                      />
+                    ) : (
+                      <ToggleLeft
+                        className="h-6 w-6 md:h-8 md:w-8 text-gray-400 hover:text-gray-500 cursor-pointer transition"
+                        onClick={() =>
+                          handleIndividualSyncToggle(employee.employee_id)
+                        }
+                      />
+                    )}
+                  </div>
+                </td>
+
+                <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-700">
+                  {employee.business_unit}
+                </td>
+
+                <td className="px-3 md:px-6 py-3 md:py-4">
+                  <div className="space-y-1">
+                    <span className="block font-semibold text-gray-900">
+                      {employee.hod || "NA"}
+                    </span>
+                    <span className="block text-xs md:text-sm text-gray-500">
+                      {employee.hod_email_id || "NA"}
+                    </span>
+                  </div>
+                </td>
+
+                <td className="px-3 md:px-6 py-3 md:py-4">
+                  <div className="space-y-1">
+                    <span className="block font-semibold text-gray-900">
+                      {employee.direct_manager || "NA"}
+                    </span>
+                    <span className="block text-xs md:text-sm text-gray-500">
+                      {employee.direct_manager_email || "NA"}
+                    </span>
+                  </div>
+                </td>
+
+                <td className="px-3 md:px-6 py-3 md:py-4">
+                  <div className="flex space-x-3 md:space-x-4">
+                    <button
+                      className="text-primary hover:text-blue-800 transition"
+                      onClick={() =>
+                        navigate(
+                          `/employee-list-table/edit-employee/${employee._id}`
+                        )
+                      }
+                    >
+                      <Edit className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(employee._id)}
+                      className="text-red-600 hover:text-red-800 transition"
+                    >
+                      <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        pauseOnFocusLoss
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        handlePageChange={handlePageChange}
+        itemsPerPage={itemsPerPage}
+        totalItems={filteredEmployees.length}
       />
     </div>
+    <ToastContainer
+      position="top-right"
+      autoClose={5000}
+      hideProgressBar={false}
+      closeOnClick
+      pauseOnHover
+      draggable
+      pauseOnFocusLoss
+    />
+  </div>
   );
 };
 

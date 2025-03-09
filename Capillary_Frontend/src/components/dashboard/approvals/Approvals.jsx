@@ -168,6 +168,90 @@ const Approvals = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
+  const renderActionColumn = (user) => {
+    // If status is Approved, don't show any actions
+    if (user.status === "Approved") {
+        return (
+            <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
+                <span className="text-xs text-gray-400">No actions</span>
+            </td>
+        );
+    }
+
+    // If request is not completed (Draft), show edit and delete options for all users
+    if (!user.isCompleted) {
+        return (
+            <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
+                <div className="flex justify-center items-center space-x-2">
+                    <button
+                        className="text-blue-500 hover:text-blue-700"
+                        onClick={(e) => handleEdit(e, user._id)}
+                    >
+                        <Edit className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                    <button
+                        className="text-red-500 hover:text-red-700"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setReqId(user._id);
+                            setIsDelete(true);
+                        }}
+                    >
+                        <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                </div>
+            </td>
+        );
+    }
+
+    // Role-specific actions for completed requests
+    if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
+        return (
+            <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
+                <div className="flex justify-center items-center space-x-2">
+                    {/* Both Admin and Head of Finance can edit */}
+                    <button
+                        className="text-blue-500 hover:text-blue-700"
+                        onClick={(e) => handleEdit(e, user._id)}
+                    >
+                        <Edit className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+
+                    {/* Only Admin can delete completed requests */}
+                    {role === "Admin" && (
+                        <button
+                            className="text-red-500 hover:text-red-700"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setReqId(user._id);
+                                setIsDelete(true);
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                        </button>
+                    )}
+                </div>
+            </td>
+        );
+    } else {
+        // For regular employees with completed requests
+        return (
+            <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
+                <button
+                    className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary text-xs md:text-sm"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsShowModal(true);
+                        setReqId(user._id);
+                    }}
+                >
+                    Request Edit
+                </button>
+            </td>
+        );
+    }
+};
+
   return (
     <>
       {isLoading && <LoadingSpinner />}
@@ -308,7 +392,7 @@ const Approvals = () => {
                       >
                         Status
                       </th>
-                     
+
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
@@ -383,7 +467,9 @@ const Approvals = () => {
                               <>
                                 {user.status !== "Approved" && (
                                   <>
-                                    {user.nextDepartment} <br />
+                                    {user.nextDepartment || user.cDepartment}{" "}
+                                    <br />
+                                    {" : "}
                                   </>
                                 )}
                                 {user.status || "Pending"}
@@ -393,7 +479,7 @@ const Approvals = () => {
                             )}
                           </td>
 
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          {/* <td className="px-6 py-4 text-sm text-gray-500">
                             {user.status !== "Approved" && (
                               <div className="flex justify-center items-center space-x-2">
                                 <button
@@ -414,7 +500,8 @@ const Approvals = () => {
                                 </button>
                               </div>
                             )}
-                          </td>
+                          </td> */}
+                          {renderActionColumn(user)}
                         </tr>
                       ))
                     ) : (

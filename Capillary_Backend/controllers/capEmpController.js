@@ -11,9 +11,11 @@ console.log(CAPILLARY_JWT_SECRET);
 
 const verifyUser = async (req, res) => {
   try {
+    console.log("Verify user")
     console.log(req.body);
     const { email } = req.body;
     console.log("Email", email);
+    let multiRole = 0;
 
     let consolidatedData;
 
@@ -35,7 +37,10 @@ const verifyUser = async (req, res) => {
       (await Approver.findOne({
         "departments.approvers.approverEmail": email,
       }).lean()) || (await Employee.findOne({ hod_email_id: email }).lean());
-    console.log("isEmpHod", isEmpHod);
+    console.log("isEmpHod", isEmpHod,"isEmpHod && panelUserData",isEmpHod && panelUserData);
+    if (isEmpHod && panelUserData) {
+      multiRole = 1;
+    }
 
     if (panelUserData) {
       consolidatedData = panelUserData;
@@ -64,12 +69,14 @@ const verifyUser = async (req, res) => {
       );
 
       await sendEmail(email, "login", { full_name });
+      console.log("multiRole",multiRole)
 
       return res.status(200).json({
         success: true,
         message: "Employee verified successfully.",
         data: consolidatedData,
         token,
+        multiRole
       });
     } else {
       console.log("else");
@@ -374,10 +381,16 @@ const createNewReq = async (req, res) => {
         console.error("Error sending bulk emails:", emailError);
       }
       let { vendorName, email, isNewVendor } = procurements;
-      console.log("vendorName, email, isNewVendor, reqId",vendorName, email, isNewVendor, reqId)
+      console.log(
+        "vendorName, email, isNewVendor, reqId",
+        vendorName,
+        email,
+        isNewVendor,
+        reqId
+      );
 
       if (isNewVendor) {
-        console.log("Iaminside the vendor auti send mails")
+        console.log("Iaminside the vendor auti send mails");
         try {
           await sendEmail(email, "vendorOnboarding", { vendorName });
 
@@ -446,10 +459,10 @@ const createNewReq = async (req, res) => {
         console.error("Error sending bulk emails:", emailError);
       }
       let { vendorName, email, isNewVendor, reqId } = procurements;
-      console.log(vendorName, email, isNewVendor, reqId)
+      console.log(vendorName, email, isNewVendor, reqId);
 
       if (isNewVendor) {
-        console.log("Iaminside the vendor auti send mails")
+        console.log("Iaminside the vendor auti send mails");
         try {
           await sendEmail(email, "vendorOnboarding", { vendorName });
 

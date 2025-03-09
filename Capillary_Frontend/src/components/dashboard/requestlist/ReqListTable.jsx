@@ -8,6 +8,7 @@ import {
     Filter,
     FileText,
     X,
+    Menu,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -39,13 +40,14 @@ const ReqListTable = () => {
 
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [isShowModal, setIsShowModal] = useState(false);
-    const [isReminderNotification, setReminderNotification] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isDelete, setIsDelete] = useState(false);
+    const [showMobileActions, setShowMobileActions] = useState(false);
+    const [isReminderNotification, setReminderNotification] = useState(false);
 
     const [reqId, setReqId] = useState(null);
     const [dateFilters, setDateFilters] = useState({
@@ -232,53 +234,25 @@ const ReqListTable = () => {
     };
 
     const renderActionColumn = (user) => {
-        if (role === "Employee") {
+        // If status is Approved, don't show any actions
+        if (user.status === "Approved") {
             return (
-                <td className="text-sm text-gray-500 text-center">
-                    <div className="flex flex-col items-center space-y-2">
-                        {user.isCompleted ? (
-                            <button
-                                className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsShowModal(true);
-                                    setReqId(user._id);
-                                }}
-                            >
-                                Request Edit
-                            </button>
-                        ) : (
-                            <div className="flex space-x-2">
-                                <button
-                                    className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-                                    onClick={(e) => handleEdit(e, user._id)}
-                                >
-                                    Complete Request
-                                </button>
-                                <button
-                                    className="text-red-500 hover:text-red-700"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setReqId(user._id);
-                                        setIsDelete(true);
-                                    }}
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
+                    <span className="text-xs text-gray-400">No actions</span>
                 </td>
             );
-        } else {
+        }
+
+        // If request is not completed (Draft), show edit and delete options for all users
+        if (!user.isCompleted) {
             return (
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
                     <div className="flex justify-center items-center space-x-2">
                         <button
                             className="text-blue-500 hover:text-blue-700"
                             onClick={(e) => handleEdit(e, user._id)}
                         >
-                            <Edit className="h-5 w-5" />
+                            <Edit className="h-4 w-4 md:h-5 md:w-5" />
                         </button>
                         <button
                             className="text-red-500 hover:text-red-700"
@@ -288,9 +262,56 @@ const ReqListTable = () => {
                                 setIsDelete(true);
                             }}
                         >
-                            <Trash2 className="h-5 w-5" />
+                            <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
                         </button>
                     </div>
+                </td>
+            );
+        }
+
+        // Role-specific actions for completed requests
+        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
+            return (
+                <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
+                    <div className="flex justify-center items-center space-x-2">
+                        {/* Both Admin and Head of Finance can edit */}
+                        <button
+                            className="text-blue-500 hover:text-blue-700"
+                            onClick={(e) => handleEdit(e, user._id)}
+                        >
+                            <Edit className="h-4 w-4 md:h-5 md:w-5" />
+                        </button>
+
+                        {/* Only Admin can delete completed requests */}
+                        {role === "Admin" && (
+                            <button
+                                className="text-red-500 hover:text-red-700"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setReqId(user._id);
+                                    setIsDelete(true);
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                            </button>
+                        )}
+                    </div>
+                </td>
+            );
+        } else {
+            // For regular employees with completed requests
+            return (
+                <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
+                    <button
+                        className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary text-xs md:text-sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsShowModal(true);
+                            setReqId(user._id);
+                        }}
+                    >
+                        Request Edit
+                    </button>
                 </td>
             );
         }
@@ -309,27 +330,57 @@ const ReqListTable = () => {
     return (
         <>
             {isLoading && <LoadingSpinner />}
-            <div className="p-8 bg-white rounded-lg shadow-sm h-full">
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <div className="p-3 md:p-4 bg-white rounded-lg shadow-sm h-full">
+                <div className="mb-4">
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
                         Request List
                     </h2>
 
-                    <div className="flex flex-wrap items-center justify-between gap-6">
-                        <div className="relative flex-1 min-w-[300px] max-w-md">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-400" />
+                    {/* Mobile View Top Buttons */}
+                    <div className="block lg:hidden mb-4">
+                        <button
+                            className="w-full flex justify-center items-center px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 mb-2"
+                            onClick={() =>
+                                navigate("/req-list-table/create-request")
+                            }
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Request
+                        </button>
+                        <div className="flex justify-between">
+                            <button
+                                className="flex-1 mr-2 flex justify-center items-center px-2 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                onClick={() => setShowFilters(!showFilters)}
+                            >
+                                <Filter className="h-3 w-3 mr-1" />
+                                Filter
+                            </button>
+                            <button
+                                className="flex-1 flex justify-center items-center px-2 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                onClick={exportToExcel}
+                            >
+                                <Download className="h-3 w-3 mr-1" />
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-6">
+                        <div className="relative w-full lg:flex-1 lg:min-w-[300px] lg:max-w-md">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <Search className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
                             </div>
                             <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={handleSearchChange}
                                 placeholder="Search by ID, name, or employee..."
-                                className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                className="w-full pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                             />
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        {/* Desktop View Buttons */}
+                        <div className="hidden lg:flex items-center gap-4">
                             <button
                                 className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 onClick={() => setShowFilters(!showFilters)}
@@ -357,7 +408,7 @@ const ReqListTable = () => {
                     </div>
 
                     {showFilters && (
-                        <div className="mt-4 w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-8 top-32 z-10">
+                        <div className="mt-4 w-full md:w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-0 md:right-8 z-10">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-xs font-medium text-gray-700">
                                     Date Range
@@ -407,46 +458,46 @@ const ReqListTable = () => {
                                         <tr>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[5%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[5%]"
                                             >
                                                 SNo
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
                                             >
                                                 ReqId
                                             </th>
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%] hidden md:table-cell"
                                             >
                                                 Entity
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%] hidden md:table-cell"
                                             >
                                                 Vendor
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
                                             >
                                                 Amount
                                             </th>
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[13%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[13%]"
                                             >
                                                 Status
                                             </th>
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
                                             >
                                                 Actions
                                             </th>
@@ -464,14 +515,14 @@ const ReqListTable = () => {
                                                         )
                                                     }
                                                 >
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                                    <td className="px-2 py-2 md:px-6 md:py-4 text-xs md:text-sm font-medium text-gray-900">
                                                         {(currentPage - 1) *
                                                             itemsPerPage +
                                                             index +
                                                             1}
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                    <td className="px-2 py-2 md:px-6 md:py-4 text-xs md:text-sm text-gray-500">
                                                         <div>
                                                             <span className="block font-medium">
                                                                 {user.reqid}
@@ -480,7 +531,7 @@ const ReqListTable = () => {
                                                                 {user.userName ||
                                                                     "Employee"}
                                                             </span>
-                                                            <span className="block">
+                                                            <span className="block text-xs md:text-sm">
                                                                 {
                                                                     user
                                                                         .commercials
@@ -490,7 +541,7 @@ const ReqListTable = () => {
                                                         </div>
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                    <td className="px-2 py-2 md:px-6 md:py-4 text-xs md:text-sm text-gray-500 hidden md:table-cell">
                                                         <div>
                                                             <span className="block">
                                                                 {user
@@ -513,7 +564,7 @@ const ReqListTable = () => {
                                                         </div>
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                    <td className="px-2 py-2 md:px-6 md:py-4 text-xs md:text-sm text-gray-500 hidden md:table-cell">
                                                         <div>
                                                             <span className="block font-medium">
                                                                 {
@@ -532,7 +583,7 @@ const ReqListTable = () => {
                                                         </div>
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                    <td className="px-2 py-2 md:px-6 md:py-4 text-xs md:text-sm text-gray-500">
                                                         {formatCurrency(
                                                             user.supplies
                                                                 ?.totalValue,
@@ -541,7 +592,7 @@ const ReqListTable = () => {
                                                         )}
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                    <td className="px-2 py-2 md:px-6 md:py-4 text-xs md:text-sm text-gray-500">
                                                         {user.isCompleted ? (
                                                             <>
                                                                 {user.status !==
@@ -563,18 +614,14 @@ const ReqListTable = () => {
                                                         )}
                                                     </td>
 
-                                                    {user.status !==
-                                                        "Approved" &&
-                                                        renderActionColumn(
-                                                            user
-                                                        )}
+                                                    {renderActionColumn(user)}
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
                                                 <td
                                                     colSpan="13"
-                                                    className="px-6 py-4 text-center text-gray-500"
+                                                    className="px-2 py-2 md:px-6 md:py-4 text-center text-xs md:text-sm text-gray-500"
                                                 >
                                                     No matching results found.
                                                 </td>
@@ -582,7 +629,7 @@ const ReqListTable = () => {
                                         )}
                                     </tbody>
                                 </table>
-                                <div className="mt-4">
+                                <div className="mt-4 px-2 md:px-0">
                                     <Pagination
                                         currentPage={currentPage}
                                         totalPages={totalPages}
@@ -598,12 +645,12 @@ const ReqListTable = () => {
 
                 {/* Modal for Edit Request */}
                 {isShowModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                            <h3 className="text-xl font-semibold mb-4">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-sm md:max-w-md">
+                            <h3 className="text-lg md:text-xl font-semibold mb-4">
                                 Send Edit Request
                             </h3>
-                            <p className="mb-6">
+                            <p className="mb-6 text-sm md:text-base">
                                 Do you want to send a edit request email to the
                                 Head of Department?
                             </p>
@@ -611,7 +658,7 @@ const ReqListTable = () => {
                             <div className="flex justify-end gap-4">
                                 <button
                                     onClick={() => setIsShowModal(false)}
-                                    className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                                    className="px-3 py-1.5 md:px-4 md:py-2 border rounded-lg text-sm hover:bg-gray-100"
                                 >
                                     Cancel
                                 </button>
@@ -620,7 +667,7 @@ const ReqListTable = () => {
                                         setIsShowModal(false);
                                         sendEditMail();
                                     }}
-                                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+                                    className="bg-primary text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-sm hover:bg-primary/90"
                                 >
                                     Send Request
                                 </button>
@@ -629,26 +676,26 @@ const ReqListTable = () => {
                     </div>
                 )}
 
-                {/* Modal for Reminder Notification */}
+                {/* Modal for Delete Confirmation */}
                 {isDelete && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg w-auto">
-                            <h3 className="text-xl font-semibold mb-4">
-                                Do you really want to delete this request
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-sm md:max-w-md">
+                            <h3 className="text-lg md:text-xl font-semibold mb-4">
+                                Do you really want to delete this request?
                             </h3>
 
                             <div className="flex justify-end gap-4">
                                 <button
                                     onClick={() => setIsDelete(false)}
-                                    className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                                    className="px-3 py-1.5 md:px-4 md:py-2 border rounded-lg text-sm hover:bg-gray-100"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={() => handleDelete(reqId)}
-                                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+                                    className="bg-primary text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-sm hover:bg-primary/90"
                                 >
-                                    Yes Delete
+                                    Yes, Delete
                                 </button>
                             </div>
                         </div>

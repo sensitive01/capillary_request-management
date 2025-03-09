@@ -194,7 +194,7 @@ const getNewNotifications = async (req, res) => {
 
 const getStatisticData = async (req, res) => {
   try {
-    const { empId, role, email } = req.params;
+    const { empId, role, email, multipartRole } = req.params;
     console.log("ROLE", role);
 
     let consolidatedData;
@@ -202,7 +202,14 @@ const getStatisticData = async (req, res) => {
     const panelUserData = await addPanelUsers
       .findOne(
         { employee_id: empId },
-        { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
+        {
+          _id: 1,
+          full_name: 1,
+          department: 1,
+          role: 1,
+          employee_id: 1,
+          company_email_id: 1,
+        }
       )
       .lean();
 
@@ -278,18 +285,25 @@ const getStatisticData = async (req, res) => {
         return acc;
       }, {});
     } else if (
-      role === "Business Finance" ||
-      role === "Head of Finance" ||
-      role === "Vendor Management" ||
-      role === "Info Security" ||
-      role === "Legal Team"
+      (role === "Business Finance" ||
+        role === "Head of Finance" ||
+        role === "Vendor Management" ||
+        role === "Info Security" ||
+        role === "Legal Team") &&
+      multipartRole != 1
     ) {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
+      pendingRequest = myRequestData.filter(
+        (req) => req.status === "Pending"
+      ).length;
 
-      const reqDataStatics = reqData.filter((req) =>
-        req.approvals.some((app) => app.nextDepartment === role)
+      const reqDataStatics = reqData.filter(
+        (req) =>
+          req.approvals.some((app) => app.nextDepartment === role) ||
+          req.firstLevelApproval?.hodEmail === consolidatedData.company_email_id
       );
+
       console.log("reqDataStatics", reqDataStatics);
 
       totalApprovals = reqDataStatics.length;
@@ -331,16 +345,24 @@ const getStatisticData = async (req, res) => {
         console.log("pendingRequests--", pendingRequests);
 
         const approvalsForEmployee2 = request.approvals.filter((app) => {
-          return app.approvalId === empId && app.status === "Approved";
+          const isApprovedByEmp =
+            app.approvalId === empId && app.status === "Approved";
+          const isFirstLevelApproved =
+            request.firstLevelApproval?.hodEmail ===
+              consolidatedData.company_email_id &&
+            request.firstLevelApproval?.approved;
+
+          return isApprovedByEmp || isFirstLevelApproved;
         });
 
-        completedApprovals += approvalsForEmployee2.length; 
-        
+        completedApprovals += approvalsForEmployee2.length;
       });
-      pendingApprovals = totalApprovals-completedApprovals;
+      pendingApprovals = totalApprovals - completedApprovals;
 
-      console.log("Total Completed Approvals:", completedApprovals);
-      console.log("Total Pending Approvals:", pendingApprovals);
+      console.log("totalApprovals:", totalApprovals);
+      console.log("pendingApprovals:", pendingApprovals);
+      console.log("completedApprovals:", completedApprovals);
+
       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
         if (
           req.supplies?.totalValue &&
@@ -402,6 +424,130 @@ const getStatisticData = async (req, res) => {
           req.supplies?.selectedCurrency &&
           req.firstLevelApproval?.hodEmail === email &&
           req.isCompleted
+        ) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+        }
+        return acc;
+      }, {});
+    } else if (
+      (role === "Business Finance" ||
+        role === "Head of Finance" ||
+        role === "Vendor Management" ||
+        role === "Info Security" ||
+        role === "Legal Team") &&
+      multipartRole == 1
+    ) {
+      console.log("I am in multirole");
+
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
+
+      pendingRequest = myRequestData.filter(
+        (req) => req.status === "Pending"
+      ).length;
+
+      console.log(
+        "role-consolidatedData.company_email_id",
+        role,
+        consolidatedData.company_email_id
+      );
+      const reqDataStatics = await CreateNewReq.find({
+        $or: [
+          { "approvals.nextDepartment": role },
+          { "firstLevelApproval.hodEmail": consolidatedData.company_email_id },
+        ],
+        isCompleted: true,
+      });
+
+      console.log("reqDataStatics", reqDataStatics);
+
+      totalApprovals = reqDataStatics.length;
+      completedApprovals = 0;
+
+      // reqData.forEach((request) => {
+      //   console.log("request----", request);
+
+      //   if (!request.approvals || request.approvals.length === 0) {
+      //     console.log("No approvals found for request ID:", request.reqid);
+      //     return;
+      //   }
+
+      //   let count = 0;
+
+      //   const pendingRequests = request.approvals.filter((app) => {
+      //     const isForEmployeeDept =
+      //       app.departmentName === consolidatedData.department;
+      //     console.log("isForEmployeeDept", isForEmployeeDept);
+
+      //     const isPending =
+      //       app.status === "Approved" && app.approvalId !== empId;
+
+      //     if (isForEmployeeDept && isPending) {
+      //       count++;
+      //     }
+
+      //     return isForEmployeeDept && isPending;
+      //   });
+
+      //   console.log("pendingRequests--", pendingRequests);
+
+      //   const approvalsForEmployee2 = request.approvals.filter((app) => {
+      //     const isApprovedByEmp =
+      //       app.approvalId === empId && app.status === "Approved";
+      //     const isFirstLevelApproved =
+      //       request.firstLevelApproval?.hodEmail ===
+      //         consolidatedData.company_email_id &&
+      //       request.firstLevelApproval?.approved;
+
+      //     return isApprovedByEmp || isFirstLevelApproved;
+      //   });
+      //   console.log("completedApprovals", completedApprovals);
+
+      //   completedApprovals += approvalsForEmployee2.length;
+      // });
+
+      const pendingApprovalData = await CreateNewReq.find({
+        $or: [
+          { 
+            "firstLevelApproval.hodEmail": consolidatedData.company_email_id, 
+            "firstLevelApproval.approved": false 
+          },
+          { 
+            "approvals.nextDepartment": { $ne: role }, 
+            "approvals.status": { $ne: "Approved" },
+          }
+        ],
+        isCompleted:true
+      });
+      
+      console.log('pendingApprovals', pendingApprovals);
+      
+      const completedApprovalData = await CreateNewReq.find({
+        $or: [
+          {
+            "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+            "firstLevelApproval.approved": true,
+          },
+          { "approvals.nextDepartment": role },
+        ],
+        isCompleted:true
+      });
+
+      pendingApprovals = pendingApprovalData.length;
+      completedApprovals = completedApprovalData.length;
+
+      // pendingApprovals = Math.max(0, totalApprovals - completedApprovals);
+
+      console.log("totalApprovals:", totalApprovals);
+      console.log("pendingApprovals:", pendingApprovals);
+      console.log("completedApprovals:", completedApprovals);
+
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (
+          req.supplies?.totalValue &&
+          req.isCompleted &&
+          req.supplies?.selectedCurrency
         ) {
           const { selectedCurrency, totalValue } = req.supplies;
           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
@@ -558,15 +704,31 @@ const filterByDateStatitics = async (req, res) => {
           return isForEmployeeDept && isPending;
         });
 
-        pendingApprovals = pendingRequests.length;
+        pendingApprovals += pendingRequests.length;
 
-        const approvalsForEmployee2 = request.approvals.filter(
-          (app) =>
+        let hasCountedApproval = false;
+
+        request.approvals.forEach((app, index, approvals) => {
+          if (hasCountedApproval) return;
+
+          const isApproved =
             app.departmentName === consolidatedData.department &&
-            app.status === "Approved"
-        );
-        completedApprovals = approvalsForEmployee2.length;
+            app.status === "Approved";
+
+          const hasMatchingPrevDept = approvals.some(
+            (prevApp, prevIndex) =>
+              prevIndex < index && prevApp.nextDepartment === role
+          );
+
+          if (isApproved && hasMatchingPrevDept) {
+            completedApprovals += 1;
+            hasCountedApproval = true;
+          }
+        });
       });
+
+      console.log("Total Pending Approvals:", pendingApprovals);
+      console.log("Total Completed Approvals:", completedApprovals);
 
       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
         if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
@@ -879,6 +1041,119 @@ const getApprovedReqData = async (req, res) => {
       consolidatedData.role !== "Employee"
     ) {
       console.log("Fetching all requests as no matching records found.");
+      reqData = await CreateNewReq.find({
+        isCompleted: true,
+        $or: [
+          { "approvals.nextDepartment": consolidatedData.role },
+          { "firstLevelApproval.hodEmail": consolidatedData.company_email_id },
+        ],
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+
+    // Process reqData to extract department details based on status
+    const processedReqData = reqData.map((request) => {
+      const { approvals, firstLevelApproval } = request;
+      const latestLevelApproval = approvals?.[approvals.length - 1]; // Avoids error if approvals array is empty
+      console.log("latestLevelApproval", latestLevelApproval);
+      let departmentInfo = {};
+
+      if (!latestLevelApproval) {
+        if (firstLevelApproval.approved) {
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        } else {
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        }
+
+        return { ...request, ...departmentInfo }; // This return was missing a closing brace
+      }
+
+      if (latestLevelApproval.status === "Approved") {
+        departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+      } else if (
+        latestLevelApproval.status === "Hold" ||
+        latestLevelApproval.status === "Rejected"
+      ) {
+        departmentInfo.cDepartment = latestLevelApproval.departmentName;
+      }
+      console.log("latestLevelApproval", departmentInfo);
+
+      return { ...request, ...departmentInfo };
+    });
+
+    console.log("Processed Request Data", processedReqData);
+    res.status(200).json({ reqData: processedReqData });
+  } catch (err) {
+    console.error("Error in fetching new notifications", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const getFilteredRequest = async (req, res) => {
+  try {
+    const { id, action } = req.params;
+
+    let consolidatedData;
+
+    const panelUserData = await addPanelUsers
+      .findOne(
+        { employee_id: id },
+        { _id: 1, full_name: 1, department: 1, role: 1, company_email_id: 1 }
+      )
+      .lean();
+
+    console.log("panelUserData", panelUserData);
+
+    const employeeData = await empModel
+      .findOne(
+        { employee_id: id },
+        {
+          _id: 1,
+          full_name: 1,
+          department: 1,
+          hod_email_id: 1,
+          company_email_id: 1,
+        }
+      )
+      .lean();
+
+    if (panelUserData) {
+      consolidatedData = panelUserData;
+    } else if (employeeData) {
+      const isEmpHod = await CreateNewReq.findOne({
+        "firstLevelApproval.hodEmail": employeeData.company_email_id,
+      }).lean();
+
+      consolidatedData = {
+        ...employeeData,
+        role: isEmpHod ? "HOD Department" : "Employee",
+      };
+    }
+
+    console.log("consolidatedData", consolidatedData);
+
+    if (!consolidatedData || !consolidatedData.company_email_id) {
+      return res
+        .status(404)
+        .json({ message: "User not found or invalid data" });
+    }
+
+    let reqData = await CreateNewReq.find({
+      "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+      isCompleted: true,
+    })
+      .sort({ createdAt: -1 })
+      .lean(); // Added .lean() for better performance
+
+    console.log("reqData", reqData, consolidatedData.role);
+
+    if (
+      reqData.length === 0 &&
+      consolidatedData.role !== "HOD Department" &&
+      consolidatedData.role !== "Employee"
+    ) {
+      console.log("Fetching all requests as no matching records found.");
       reqData = await CreateNewReq.find({ isCompleted: true })
         .sort({ createdAt: -1 })
         .lean();
@@ -911,10 +1186,8 @@ const getApprovedReqData = async (req, res) => {
       }
       console.log("latestLevelApproval", departmentInfo);
 
-
       return { ...request, ...departmentInfo };
     });
-
 
     console.log("Processed Request Data", processedReqData);
     res.status(200).json({ reqData: processedReqData });
@@ -1069,29 +1342,40 @@ const updateRequest = async (req, res) => {
     }
 
     let reqDatas =
-      (await CreateNewReq.findOne({ reqid: reqId }, { procurements: 1 }).lean()) || {};
+      (await CreateNewReq.findOne(
+        { reqid: reqId },
+        { procurements: 1 }
+      ).lean()) || {};
 
     console.log("reqDatas", reqDatas);
 
     if (!complinces || !commercials) {
-      return res.status(400).json({ message: "Missing required compliance or commercial data." });
+      return res
+        .status(400)
+        .json({ message: "Missing required compliance or commercial data." });
     }
 
-    let empData = await empModel.findOne(
-      { employee_id: id },
-      { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
-    ).lean();
+    let empData = await empModel
+      .findOne(
+        { employee_id: id },
+        { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
+      )
+      .lean();
 
     if (!empData) {
       empData = await addPanelUsers.findOne({ employee_id: id }).lean();
     }
 
     if (!empData) {
-      return res.status(404).json({ message: "Employee not found. Please provide a valid employee ID." });
+      return res.status(404).json({
+        message: "Employee not found. Please provide a valid employee ID.",
+      });
     }
 
     const panelMemberEmail = (
-      await addPanelUsers.find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 }).lean()
+      await addPanelUsers
+        .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
+        .lean()
     ).map((member) => member.company_email_id);
 
     if (commercials.hodEmail) {
@@ -1102,11 +1386,12 @@ const updateRequest = async (req, res) => {
 
     if (existingRequest) {
       let firstLevelApprovalUpdateNeeded = false;
-      const existingFirstLevelApproval = existingRequest.firstLevelApproval || {};
+      const existingFirstLevelApproval =
+        existingRequest.firstLevelApproval || {};
 
       if (
         existingFirstLevelApproval.hodName !== commercials.hod &&
-        existingFirstLevelApproval.hodEmail !== commercials.hodEmail 
+        existingFirstLevelApproval.hodEmail !== commercials.hodEmail
       ) {
         firstLevelApprovalUpdateNeeded = true;
       }
@@ -1116,8 +1401,8 @@ const updateRequest = async (req, res) => {
           hodName: commercials.hod,
           hodEmail: commercials.hodEmail,
           hodDepartment: commercials.department,
-          approved:false,
-          status:"Pending"
+          approved: false,
+          status: "Pending",
         };
       }
 
@@ -1133,7 +1418,12 @@ const updateRequest = async (req, res) => {
       await existingRequest.save();
 
       try {
-        await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
+        await sendBulkEmails(
+          panelMemberEmail,
+          empData.full_name,
+          empData.department,
+          reqId
+        );
       } catch (emailError) {
         console.error("Error sending bulk emails:", emailError);
       }
@@ -1170,7 +1460,10 @@ const updateRequest = async (req, res) => {
         }
       }
 
-      return res.status(200).json({ message: "Request updated successfully", data: existingRequest });
+      return res.status(200).json({
+        message: "Request updated successfully",
+        data: existingRequest,
+      });
     } else {
       const newRequest = new CreateNewReq({
         reqid: reqId,
@@ -1194,19 +1487,27 @@ const updateRequest = async (req, res) => {
       await newRequest.save();
 
       try {
-        await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
+        await sendBulkEmails(
+          panelMemberEmail,
+          empData.full_name,
+          empData.department,
+          reqId
+        );
       } catch (emailError) {
         console.error("Error sending bulk emails:", emailError);
       }
 
-      return res.status(201).json({ message: "Request created successfully", data: newRequest });
+      return res
+        .status(201)
+        .json({ message: "Request created successfully", data: newRequest });
     }
   } catch (error) {
     console.error("Error processing request:", error);
-    return res.status(500).json({ message: "Error processing request", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Error processing request", error: error.message });
   }
 };
-
 
 const downloadInvoicePdf = async (req, res) => {
   try {
@@ -1691,7 +1992,9 @@ const isApproved = async (req, res) => {
     // }
 
     if (
-      (role === "HOD Department" || role === "Admin"||reqData.firstLevelApproval.hodEmail === empData.company_email_id) &&
+      (role === "HOD Department" ||
+        role === "Admin" ||
+        reqData.firstLevelApproval.hodEmail === empData.company_email_id) &&
       reqData.firstLevelApproval.hodEmail === empData.company_email_id
     ) {
       console.log("HOD Deparment");
@@ -3217,17 +3520,16 @@ const saveAggrementData = async (req, res) => {
   }
 };
 
-
- const generateRequestPdfData = async (request, res) => {
+const generateRequestPdfData = async (request, res) => {
   try {
     // Create a new PDF document
     const doc = new PDFDocument({
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
-      size: 'A4',
-      bufferPages: true // Enable page buffering for page numbers
+      size: "A4",
+      bufferPages: true, // Enable page buffering for page numbers
     });
-    
-    const fileName = `Request_${request.reqid || 'Unknown'}.pdf`;
+
+    const fileName = `Request_${request.reqid || "Unknown"}.pdf`;
 
     // Set response headers for download
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
@@ -3238,405 +3540,677 @@ const saveAggrementData = async (req, res) => {
 
     // Helper function to format currency
     const formatCurrency = (value) => {
-      if (!value) return 'N/A';
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
+      if (!value) return "N/A";
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
       }).format(value);
     };
 
     // Helper function to format dates
     const formatDate = (dateString) => {
-      if (!dateString) return 'N/A';
+      if (!dateString) return "N/A";
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+      return date.toLocaleDateString("en-GB"); // DD/MM/YYYY format
     };
 
     // Helper function to extract date and time
     const extractDateAndTime = (dateString) => {
-      if (!dateString) return 'N/A';
+      if (!dateString) return "N/A";
       const date = new Date(dateString);
-      return date.toLocaleString('en-GB');
+      return date.toLocaleString("en-GB");
     };
 
     // Add header
-    doc.fontSize(22)
-      .fillColor('#003366')
-      .text('REQUEST DETAILS', { align: 'center' })
+    doc
+      .fontSize(22)
+      .fillColor("#003366")
+      .text("REQUEST DETAILS", { align: "center" })
       .moveDown(0.5);
-    
-    doc.fontSize(14)
-      .fillColor('#666666')
-      .text(`Request ID: ${request.reqid || 'Unknown'}`, { align: 'center' })
+
+    doc
+      .fontSize(14)
+      .fillColor("#666666")
+      .text(`Request ID: ${request.reqid || "Unknown"}`, { align: "center" })
       .moveDown(1);
 
     // Add divider
-    doc.strokeColor('#003366').lineWidth(1).moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke();
+    doc
+      .strokeColor("#003366")
+      .lineWidth(1)
+      .moveTo(50, doc.y)
+      .lineTo(doc.page.width - 50, doc.y)
+      .stroke();
     doc.moveDown(1);
 
     // COMMERCIAL DETAILS SECTION
-    doc.fontSize(16).fillColor('#003366').text('Commercial Details', { underline: true }).moveDown(0.5);
-    
-    if (request.commercials && Object.values(request.commercials).some(value => value)) {
+    doc
+      .fontSize(16)
+      .fillColor("#003366")
+      .text("Commercial Details", { underline: true })
+      .moveDown(0.5);
+
+    if (
+      request.commercials &&
+      Object.values(request.commercials).some((value) => value)
+    ) {
       // First row
       const firstRowY = doc.y;
       const colWidth = (doc.page.width - 100) / 3;
-      
+
       // Request ID
-      doc.fontSize(11).fillColor('#666666').text('Request ID', 50, firstRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.reqid || 'N/A', 50, firstRowY + 15);
-      
+      doc.fontSize(11).fillColor("#666666").text("Request ID", 50, firstRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(request.reqid || "N/A", 50, firstRowY + 15);
+
       // Business Unit
-      doc.fontSize(11).fillColor('#666666').text('Business Unit', 50 + colWidth, firstRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.businessUnit || 'N/A', 50 + colWidth, firstRowY + 15);
-      
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("Business Unit", 50 + colWidth, firstRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(
+          request.commercials.businessUnit || "N/A",
+          50 + colWidth,
+          firstRowY + 15
+        );
+
       // Created At
-      doc.fontSize(11).fillColor('#666666').text('Created At', 50 + colWidth * 2, firstRowY);
-      doc.fontSize(11).fillColor('#333333').text(extractDateAndTime(request.createdAt) || 'N/A', 50 + colWidth * 2, firstRowY + 15);
-      
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("Created At", 50 + colWidth * 2, firstRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(
+          extractDateAndTime(request.createdAt) || "N/A",
+          50 + colWidth * 2,
+          firstRowY + 15
+        );
+
       // Move down for next row
       doc.y = firstRowY + 40;
-      
+
       // Second row
       const secondRowY = doc.y;
-      
+
       // Entity
-      doc.fontSize(11).fillColor('#666666').text('Entity', 50, secondRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.entity || 'N/A', 50, secondRowY + 15);
-      
+      doc.fontSize(11).fillColor("#666666").text("Entity", 50, secondRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(request.commercials.entity || "N/A", 50, secondRowY + 15);
+
       // City
-      doc.fontSize(11).fillColor('#666666').text('City', 50 + colWidth, secondRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.city || 'N/A', 50 + colWidth, secondRowY + 15);
-      
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("City", 50 + colWidth, secondRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(
+          request.commercials.city || "N/A",
+          50 + colWidth,
+          secondRowY + 15
+        );
+
       // Site
-      doc.fontSize(11).fillColor('#666666').text('Site', 50 + colWidth * 2, secondRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.site || 'N/A', 50 + colWidth * 2, secondRowY + 15);
-      
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("Site", 50 + colWidth * 2, secondRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(
+          request.commercials.site || "N/A",
+          50 + colWidth * 2,
+          secondRowY + 15
+        );
+
       // Move down for next row
       doc.y = secondRowY + 40;
-      
+
       // Third row - two columns
       const thirdRowY = doc.y;
       const wideColWidth = (doc.page.width - 100) / 2;
-      
+
       // Department
-      doc.fontSize(11).fillColor('#666666').text('Department', 50, thirdRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.department || 'N/A', 50, thirdRowY + 15);
-      
+      doc.fontSize(11).fillColor("#666666").text("Department", 50, thirdRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(request.commercials.department || "N/A", 50, thirdRowY + 15);
+
       // Head of Department
-      doc.fontSize(11).fillColor('#666666').text('Head of Department', 50 + wideColWidth, thirdRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.hod || 'N/A', 50 + wideColWidth, thirdRowY + 15);
-      
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("Head of Department", 50 + wideColWidth, thirdRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(
+          request.commercials.hod || "N/A",
+          50 + wideColWidth,
+          thirdRowY + 15
+        );
+
       // Move down for Bill To and Ship To
       doc.y = thirdRowY + 40;
-      
+
       // Fourth row - two columns for Bill To and Ship To
       const fourthRowY = doc.y;
-      
+
       // Bill To
-      doc.fontSize(11).fillColor('#666666').text('Bill To', 50, fourthRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.billTo || 'N/A', 50, fourthRowY + 15);
-      
+      doc.fontSize(11).fillColor("#666666").text("Bill To", 50, fourthRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(request.commercials.billTo || "N/A", 50, fourthRowY + 15);
+
       // Ship To
-      doc.fontSize(11).fillColor('#666666').text('Ship To', 50 + wideColWidth, fourthRowY);
-      doc.fontSize(11).fillColor('#333333').text(request.commercials.shipTo || 'N/A', 50 + wideColWidth, fourthRowY + 15);
-      
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("Ship To", 50 + wideColWidth, fourthRowY);
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(
+          request.commercials.shipTo || "N/A",
+          50 + wideColWidth,
+          fourthRowY + 15
+        );
+
       // Move down past this section
       doc.y = fourthRowY + 40;
-      
+
       // Payment Terms Section if available
-      if (request.commercials.paymentTerms && request.commercials.paymentTerms.length > 0) {
-        doc.fontSize(14).fillColor('#003366').text('Payment Terms', { underline: false }).moveDown(0.5);
-        
+      if (
+        request.commercials.paymentTerms &&
+        request.commercials.paymentTerms.length > 0
+      ) {
+        doc
+          .fontSize(14)
+          .fillColor("#003366")
+          .text("Payment Terms", { underline: false })
+          .moveDown(0.5);
+
         // Table header
         const tableTop = doc.y;
         const tableColWidth = (doc.page.width - 100) / 3;
-        
-        doc.rect(50, tableTop, doc.page.width - 100, 20).fill('#e6eef7');
-        
-        doc.fontSize(11).fillColor('#003366')
-          .text('Percentage', 60, tableTop + 5)
-          .text('Payment Term', 60 + tableColWidth, tableTop + 5)
-          .text('Type', 60 + tableColWidth * 2, tableTop + 5);
-        
+
+        doc.rect(50, tableTop, doc.page.width - 100, 20).fill("#e6eef7");
+
+        doc
+          .fontSize(11)
+          .fillColor("#003366")
+          .text("Percentage", 60, tableTop + 5)
+          .text("Payment Term", 60 + tableColWidth, tableTop + 5)
+          .text("Type", 60 + tableColWidth * 2, tableTop + 5);
+
         // Table rows
         let currentY = tableTop + 20;
-        
+
         request.commercials.paymentTerms.forEach((term, index) => {
           const isEven = index % 2 === 0;
-          
+
           if (isEven) {
-            doc.rect(50, currentY, doc.page.width - 100, 20).fill('#f7f7f7');
+            doc.rect(50, currentY, doc.page.width - 100, 20).fill("#f7f7f7");
           }
-          
-          doc.fontSize(10).fillColor('#333333')
+
+          doc
+            .fontSize(10)
+            .fillColor("#333333")
             .text(`${term.percentageTerm}%`, 60, currentY + 5)
-            .text(term.paymentTerm?.toLowerCase() || 'N/A', 60 + tableColWidth, currentY + 5)
-            .text(term.paymentType?.toLowerCase() || 'N/A', 60 + tableColWidth * 2, currentY + 5);
-          
+            .text(
+              term.paymentTerm?.toLowerCase() || "N/A",
+              60 + tableColWidth,
+              currentY + 5
+            )
+            .text(
+              term.paymentType?.toLowerCase() || "N/A",
+              60 + tableColWidth * 2,
+              currentY + 5
+            );
+
           currentY += 20;
         });
-        
+
         // Move past the table
         doc.y = currentY + 20;
       }
     } else {
-      doc.fontSize(11).fillColor('#666666').text('No commercial details available').moveDown(1);
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("No commercial details available")
+        .moveDown(1);
     }
-    
+
     // Check if we need a page break
     if (doc.y > 650) doc.addPage();
-    
+
     // PROCUREMENT DETAILS SECTION
-    doc.fontSize(16).fillColor('#003366').text('Procurement Details', { underline: true }).moveDown(0.5);
-    
-    if (request.procurements && Object.values(request.procurements).some(value => value)) {
+    doc
+      .fontSize(16)
+      .fillColor("#003366")
+      .text("Procurement Details", { underline: true })
+      .moveDown(0.5);
+
+    if (
+      request.procurements &&
+      Object.values(request.procurements).some((value) => value)
+    ) {
       const procFields = [
-        { label: 'Vendor ID', value: request.procurements.vendor },
-        { label: 'Vendor Name', value: request.procurements.vendorName },
-        { label: 'Quotation Number', value: request.procurements.quotationNumber },
-        { label: 'Quotation Date', value: request.procurements.quotationDate ? formatDate(request.procurements.quotationDate) : null },
-        { label: 'Service Period', value: request.procurements.servicePeriod },
-        { label: 'PO Valid From', value: request.procurements.poValidFrom ? formatDate(request.procurements.poValidFrom) : null },
-        { label: 'PO Valid To', value: request.procurements.poValidTo ? formatDate(request.procurements.poValidTo) : null }
-      ].filter(item => item.value);
-      
+        { label: "Vendor ID", value: request.procurements.vendor },
+        { label: "Vendor Name", value: request.procurements.vendorName },
+        {
+          label: "Quotation Number",
+          value: request.procurements.quotationNumber,
+        },
+        {
+          label: "Quotation Date",
+          value: request.procurements.quotationDate
+            ? formatDate(request.procurements.quotationDate)
+            : null,
+        },
+        { label: "Service Period", value: request.procurements.servicePeriod },
+        {
+          label: "PO Valid From",
+          value: request.procurements.poValidFrom
+            ? formatDate(request.procurements.poValidFrom)
+            : null,
+        },
+        {
+          label: "PO Valid To",
+          value: request.procurements.poValidTo
+            ? formatDate(request.procurements.poValidTo)
+            : null,
+        },
+      ].filter((item) => item.value);
+
       // Arrange in 2 columns
       const procColWidth = (doc.page.width - 100) / 2;
       let procRowY = doc.y;
-      
+
       procFields.forEach((item, index) => {
         const colIndex = index % 2;
         const rowOffset = Math.floor(index / 2) * 40;
-        
-        doc.fontSize(11).fillColor('#666666')
-          .text(item.label, 50 + (colIndex * procColWidth), procRowY + rowOffset);
-        
-        doc.fontSize(11).fillColor('#333333')
-          .text(item.value, 50 + (colIndex * procColWidth), procRowY + rowOffset + 15);
-        
+
+        doc
+          .fontSize(11)
+          .fillColor("#666666")
+          .text(item.label, 50 + colIndex * procColWidth, procRowY + rowOffset);
+
+        doc
+          .fontSize(11)
+          .fillColor("#333333")
+          .text(
+            item.value,
+            50 + colIndex * procColWidth,
+            procRowY + rowOffset + 15
+          );
+
         // Adjust Y position based on rows
-        if (index === procFields.length - 1 || index === procFields.length - 2) {
+        if (
+          index === procFields.length - 1 ||
+          index === procFields.length - 2
+        ) {
           doc.y = procRowY + rowOffset + 40;
         }
       });
-      
+
       // Uploaded Files Section
       if (request.procurements.uploadedFiles) {
-        doc.fontSize(14).fillColor('#003366').text('Uploaded Files', { underline: false }).moveDown(0.5);
-        
+        doc
+          .fontSize(14)
+          .fillColor("#003366")
+          .text("Uploaded Files", { underline: false })
+          .moveDown(0.5);
+
         if (Object.keys(request.procurements.uploadedFiles).length > 0) {
-          doc.fontSize(11).fillColor('#007700').text('Files uploaded successfully').moveDown(0.5);
-          
+          doc
+            .fontSize(11)
+            .fillColor("#007700")
+            .text("Files uploaded successfully")
+            .moveDown(0.5);
+
           // List the files
-          Object.keys(request.procurements.uploadedFiles).forEach(fileKey => {
-            doc.fontSize(10).fillColor('#333333')
-              .text(`• ${fileKey}`, { indent: 10 }).moveDown(0.2);
+          Object.keys(request.procurements.uploadedFiles).forEach((fileKey) => {
+            doc
+              .fontSize(10)
+              .fillColor("#333333")
+              .text(`• ${fileKey}`, { indent: 10 })
+              .moveDown(0.2);
           });
         } else {
-          doc.fontSize(11).fillColor('#666666').text('No files uploaded').moveDown(0.5);
+          doc
+            .fontSize(11)
+            .fillColor("#666666")
+            .text("No files uploaded")
+            .moveDown(0.5);
         }
       }
     } else {
-      doc.fontSize(11).fillColor('#666666').text('No procurement details available').moveDown(1);
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("No procurement details available")
+        .moveDown(1);
     }
-    
+
     // Check if we need a page break
     if (doc.y > 600) doc.addPage();
-    
+
     // PRODUCT/SERVICES SECTION
-    doc.fontSize(16).fillColor('#003366').text('Product/Services Details', { underline: true }).moveDown(0.5);
-    
+    doc
+      .fontSize(16)
+      .fillColor("#003366")
+      .text("Product/Services Details", { underline: true })
+      .moveDown(0.5);
+
     if (request.supplies?.services?.length > 0) {
       // Table header
       const servicesTableTop = doc.y;
-      doc.rect(50, servicesTableTop, doc.page.width - 100, 20).fill('#e6eef7');
-      
+      doc.rect(50, servicesTableTop, doc.page.width - 100, 20).fill("#e6eef7");
+
       const serviceColCount = 7;
       const serviceColWidth = (doc.page.width - 100) / serviceColCount;
-      
+
       // Define column positions
-      const serviceColPositions = Array.from({ length: serviceColCount }, (_, i) => 50 + (i * serviceColWidth));
-      
-      doc.fontSize(9).fillColor('#003366')
-        .text('Product Names', serviceColPositions[0] + 3, servicesTableTop + 5)
-        .text('Description', serviceColPositions[1] + 3, servicesTableTop + 5)
-        .text('Purpose', serviceColPositions[2] + 3, servicesTableTop + 5)
-        .text('Quantity', serviceColPositions[3] + 3, servicesTableTop + 5)
-        .text('Price', serviceColPositions[4] + 3, servicesTableTop + 5)
-        .text('Tax (%)', serviceColPositions[5] + 3, servicesTableTop + 5)
-        .text('Total', serviceColPositions[6] + 3, servicesTableTop + 5);
-      
+      const serviceColPositions = Array.from(
+        { length: serviceColCount },
+        (_, i) => 50 + i * serviceColWidth
+      );
+
+      doc
+        .fontSize(9)
+        .fillColor("#003366")
+        .text("Product Names", serviceColPositions[0] + 3, servicesTableTop + 5)
+        .text("Description", serviceColPositions[1] + 3, servicesTableTop + 5)
+        .text("Purpose", serviceColPositions[2] + 3, servicesTableTop + 5)
+        .text("Quantity", serviceColPositions[3] + 3, servicesTableTop + 5)
+        .text("Price", serviceColPositions[4] + 3, servicesTableTop + 5)
+        .text("Tax (%)", serviceColPositions[5] + 3, servicesTableTop + 5)
+        .text("Total", serviceColPositions[6] + 3, servicesTableTop + 5);
+
       // Table rows
       let serviceRowY = servicesTableTop + 20;
-      
+
       request.supplies.services.forEach((service, index) => {
         // Check if we need a page break
         if (serviceRowY > doc.page.height - 100) {
           doc.addPage();
           serviceRowY = 50;
-          
+
           // Redraw header on new page
-          doc.rect(50, serviceRowY, doc.page.width - 100, 20).fill('#e6eef7');
-          
-          doc.fontSize(9).fillColor('#003366')
-            .text('Product Names', serviceColPositions[0] + 3, serviceRowY + 5)
-            .text('Description', serviceColPositions[1] + 3, serviceRowY + 5)
-            .text('Purpose', serviceColPositions[2] + 3, serviceRowY + 5)
-            .text('Quantity', serviceColPositions[3] + 3, serviceRowY + 5)
-            .text('Price', serviceColPositions[4] + 3, serviceRowY + 5)
-            .text('Tax (%)', serviceColPositions[5] + 3, serviceRowY + 5)
-            .text('Total', serviceColPositions[6] + 3, serviceRowY + 5);
-            
+          doc.rect(50, serviceRowY, doc.page.width - 100, 20).fill("#e6eef7");
+
+          doc
+            .fontSize(9)
+            .fillColor("#003366")
+            .text("Product Names", serviceColPositions[0] + 3, serviceRowY + 5)
+            .text("Description", serviceColPositions[1] + 3, serviceRowY + 5)
+            .text("Purpose", serviceColPositions[2] + 3, serviceRowY + 5)
+            .text("Quantity", serviceColPositions[3] + 3, serviceRowY + 5)
+            .text("Price", serviceColPositions[4] + 3, serviceRowY + 5)
+            .text("Tax (%)", serviceColPositions[5] + 3, serviceRowY + 5)
+            .text("Total", serviceColPositions[6] + 3, serviceRowY + 5);
+
           serviceRowY += 20;
         }
-        
+
         const isEven = index % 2 === 0;
         if (isEven) {
-          doc.rect(50, serviceRowY, doc.page.width - 100, 20).fill('#f7f7f7');
+          doc.rect(50, serviceRowY, doc.page.width - 100, 20).fill("#f7f7f7");
         }
-        
+
         // Calculate the total
         const quantity = parseFloat(service.quantity) || 0;
         const price = parseFloat(service.price) || 0;
         const tax = parseFloat(service.tax) || 0;
         const total = quantity * price * (1 + tax / 100);
-        
+
         // Truncate text that's too long
         const truncateText = (text, maxLength = 15) => {
-          return text && text.length > maxLength ? text.substring(0, maxLength) + '...' : (text || 'N/A');
+          return text && text.length > maxLength
+            ? text.substring(0, maxLength) + "..."
+            : text || "N/A";
         };
-        
-        doc.fontSize(8).fillColor('#333333')
-          .text(truncateText(service.productName), serviceColPositions[0] + 3, serviceRowY + 5, { width: serviceColWidth - 6 })
-          .text(truncateText(service.productDescription), serviceColPositions[1] + 3, serviceRowY + 5, { width: serviceColWidth - 6 })
-          .text(truncateText(service.productPurpose), serviceColPositions[2] + 3, serviceRowY + 5, { width: serviceColWidth - 6 })
-          .text(service.quantity || 'N/A', serviceColPositions[3] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'center' })
-          .text(formatCurrency(service.price), serviceColPositions[4] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'right' })
-          .text(service.tax || 'N/A', serviceColPositions[5] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'right' })
-          .text(formatCurrency(total), serviceColPositions[6] + 3, serviceRowY + 5, { width: serviceColWidth - 6, align: 'right' });
-        
+
+        doc
+          .fontSize(8)
+          .fillColor("#333333")
+          .text(
+            truncateText(service.productName),
+            serviceColPositions[0] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6 }
+          )
+          .text(
+            truncateText(service.productDescription),
+            serviceColPositions[1] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6 }
+          )
+          .text(
+            truncateText(service.productPurpose),
+            serviceColPositions[2] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6 }
+          )
+          .text(
+            service.quantity || "N/A",
+            serviceColPositions[3] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6, align: "center" }
+          )
+          .text(
+            formatCurrency(service.price),
+            serviceColPositions[4] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6, align: "right" }
+          )
+          .text(
+            service.tax || "N/A",
+            serviceColPositions[5] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6, align: "right" }
+          )
+          .text(
+            formatCurrency(total),
+            serviceColPositions[6] + 3,
+            serviceRowY + 5,
+            { width: serviceColWidth - 6, align: "right" }
+          );
+
         serviceRowY += 20;
       });
-      
+
       // Total Value
       if (request.supplies?.totalValue !== undefined) {
         doc.y = serviceRowY + 20;
-        
-        doc.fontSize(11).fillColor('#666666').text('Total Value', 50);
-        doc.fontSize(11).fillColor('#333333').text(formatCurrency(request.supplies.totalValue), { align: 'right' });
+
+        doc.fontSize(11).fillColor("#666666").text("Total Value", 50);
+        doc
+          .fontSize(11)
+          .fillColor("#333333")
+          .text(formatCurrency(request.supplies.totalValue), {
+            align: "right",
+          });
       }
-      
+
       // Remarks
       if (request.supplies?.remarks) {
         doc.y += 20;
-        doc.fontSize(14).fillColor('#003366').text('Remarks', { underline: false }).moveDown(0.5);
-        doc.fontSize(10).fillColor('#333333').text(request.supplies.remarks).moveDown(1);
+        doc
+          .fontSize(14)
+          .fillColor("#003366")
+          .text("Remarks", { underline: false })
+          .moveDown(0.5);
+        doc
+          .fontSize(10)
+          .fillColor("#333333")
+          .text(request.supplies.remarks)
+          .moveDown(1);
       }
     } else {
-      doc.fontSize(11).fillColor('#666666').text('No products or services details available').moveDown(1);
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("No products or services details available")
+        .moveDown(1);
     }
-    
+
     // Check if we need a page break
     if (doc.y > 600) doc.addPage();
-    
+
     // COMPLIANCE DETAILS SECTION
-    doc.fontSize(16).fillColor('#003366').text('Compliance Details', { underline: true }).moveDown(0.5);
-    
+    doc
+      .fontSize(16)
+      .fillColor("#003366")
+      .text("Compliance Details", { underline: true })
+      .moveDown(0.5);
+
     if (request.complinces && Object.keys(request.complinces).length > 0) {
       // Create a grid layout for compliance items
       let compRowY = doc.y;
       const compColWidth = (doc.page.width - 100) / 2;
       let colIndex = 0;
-      
-      Object.entries(request.complinces).forEach(([questionId, compliance], index) => {
-        // Check if we need a page break
-        if (compRowY > doc.page.height - 200) {
-          doc.addPage();
-          compRowY = 50;
-          colIndex = 0;
+
+      Object.entries(request.complinces).forEach(
+        ([questionId, compliance], index) => {
+          // Check if we need a page break
+          if (compRowY > doc.page.height - 200) {
+            doc.addPage();
+            compRowY = 50;
+            colIndex = 0;
+          }
+
+          // Determine colors based on compliance status
+          const bgColor =
+            compliance.expectedAnswer !== compliance.answer
+              ? "#ffebee"
+              : "#e8f5e9";
+          const textColor =
+            compliance.expectedAnswer !== compliance.answer
+              ? "#c62828"
+              : "#2e7d32";
+
+          // Calculate position
+          const xPosition = 50 + colIndex * compColWidth;
+          const boxHeight = 100; // Fixed height for all boxes
+
+          // Draw box
+          doc
+            .rect(xPosition, compRowY, compColWidth - 10, boxHeight)
+            .fillAndStroke(bgColor, bgColor);
+
+          // Question text
+          doc
+            .fontSize(10)
+            .fillColor(textColor)
+            .text(compliance.question, xPosition + 10, compRowY + 10, {
+              width: compColWidth - 30,
+            });
+
+          // Answer
+          doc
+            .fontSize(10)
+            .fillColor(textColor)
+            .text(
+              `Answer: ${compliance.answer ? "Yes" : "No"}`,
+              xPosition + 10,
+              compRowY + 40
+            );
+
+          // Department if available
+          if (compliance.department) {
+            doc
+              .fontSize(9)
+              .fillColor("#666666")
+              .text(
+                `Department: ${compliance.department}`,
+                xPosition + 10,
+                compRowY + 60
+              );
+          }
+
+          // Deviation reason if applicable
+          if (
+            compliance.deviation &&
+            compliance.expectedAnswer !== compliance.answer
+          ) {
+            doc
+              .fontSize(9)
+              .fillColor(textColor)
+              .text(
+                `Deviation Reason: ${compliance.deviation.reason}`,
+                xPosition + 10,
+                compRowY + 75,
+                { width: compColWidth - 30 }
+              );
+          }
+
+          // Increment column index or move to next row
+          colIndex = (colIndex + 1) % 2;
+          if (colIndex === 0) {
+            compRowY += boxHeight + 10; // Move to next row
+          }
         }
-        
-        // Determine colors based on compliance status
-        const bgColor = compliance.expectedAnswer !== compliance.answer ? '#ffebee' : '#e8f5e9';
-        const textColor = compliance.expectedAnswer !== compliance.answer ? '#c62828' : '#2e7d32';
-        
-        // Calculate position
-        const xPosition = 50 + (colIndex * compColWidth);
-        const boxHeight = 100; // Fixed height for all boxes
-        
-        // Draw box
-        doc.rect(xPosition, compRowY, compColWidth - 10, boxHeight)
-           .fillAndStroke(bgColor, bgColor);
-        
-        // Question text
-        doc.fontSize(10).fillColor(textColor)
-           .text(compliance.question, xPosition + 10, compRowY + 10, { width: compColWidth - 30 });
-        
-        // Answer
-        doc.fontSize(10).fillColor(textColor)
-           .text(`Answer: ${compliance.answer ? "Yes" : "No"}`, xPosition + 10, compRowY + 40);
-        
-        // Department if available
-        if (compliance.department) {
-          doc.fontSize(9).fillColor('#666666')
-             .text(`Department: ${compliance.department}`, xPosition + 10, compRowY + 60);
-        }
-        
-        // Deviation reason if applicable
-        if (compliance.deviation && compliance.expectedAnswer !== compliance.answer) {
-          doc.fontSize(9).fillColor(textColor)
-             .text(`Deviation Reason: ${compliance.deviation.reason}`, xPosition + 10, compRowY + 75, { width: compColWidth - 30 });
-        }
-        
-        // Increment column index or move to next row
-        colIndex = (colIndex + 1) % 2;
-        if (colIndex === 0) {
-          compRowY += boxHeight + 10; // Move to next row
-        }
-      });
-      
+      );
+
       // Adjust final Y position
       if (colIndex !== 0) {
         compRowY += boxHeight + 10;
       }
       doc.y = compRowY;
     } else {
-      doc.fontSize(11).fillColor('#666666').text('No compliance details available').moveDown(1);
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text("No compliance details available")
+        .moveDown(1);
     }
-    
+
     // Add footer with page numbers
     const range = doc.bufferedPageRange();
     for (let i = 0; i < range.count; i++) {
       doc.switchToPage(i);
-      
+
       // Add page number
-      doc.fontSize(10).fillColor('#666666');
-      doc.text(
-        `Page ${i + 1} of ${range.count}`,
-        50,
-        doc.page.height - 50,
-        { align: 'center', width: doc.page.width - 100 }
-      );
-      
+      doc.fontSize(10).fillColor("#666666");
+      doc.text(`Page ${i + 1} of ${range.count}`, 50, doc.page.height - 50, {
+        align: "center",
+        width: doc.page.width - 100,
+      });
+
       // Add timestamp
       const dateStr = new Date().toLocaleDateString();
-      doc.text(
-        `Generated on: ${dateStr}`,
-        50,
-        doc.page.height - 35,
-        { align: 'center', width: doc.page.width - 100 }
-      );
+      doc.text(`Generated on: ${dateStr}`, 50, doc.page.height - 35, {
+        align: "center",
+        width: doc.page.width - 100,
+      });
     }
-    
+
     // Finalize the PDF
     doc.end();
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error generating PDF:", error);
     if (!res.headersSent) {
-      res.status(500).json({ message: "Error generating PDF", error: error.message });
+      res
+        .status(500)
+        .json({ message: "Error generating PDF", error: error.message });
     }
     return { success: false, error: error.message };
   }
@@ -3645,35 +4219,81 @@ const saveAggrementData = async (req, res) => {
 const getRoleBasedApprovals = async (req, res) => {
   try {
     const { role, userId } = req.params;
-    
-    // Fetch data based on the role
-    const roleApprovalData = await CreateNewReq.find({ "approvals.nextDepartment": role });
+    console.log("My role", role, userId);
+    const empData = await empModel.findOne(
+      { employee_id: userId },
+      { company_email_id: 1 }
+    );
+
+    console.log("empData", empData, role === "HOD Department");
+
+    let roleApprovalData;
+
+    if (role === "HOD Department" || role === "Admin") {
+      roleApprovalData = await CreateNewReq.find({
+        "firstLevelApproval.hodEmail": empData.company_email_id,
+      }).lean();
+    } else {
+      roleApprovalData = await CreateNewReq.find({
+        "approvals.nextDepartment": role,
+     
+
+      }).lean();
+    }
+
+    const processedReqData = roleApprovalData.map((request) => {
+      const { approvals, firstLevelApproval } = request;
+      const latestLevelApproval = approvals?.[approvals.length - 1]; // Avoids error if approvals array is empty
+      console.log("latestLevelApproval", latestLevelApproval);
+      let departmentInfo = {};
+
+      if (!latestLevelApproval) {
+        if (firstLevelApproval.approved) {
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        } else {
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        }
+
+        return { ...request, ...departmentInfo }; // This return was missing a closing brace
+      }
+
+      if (latestLevelApproval.status === "Approved") {
+        departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+      } else if (
+        latestLevelApproval.status === "Hold" ||
+        latestLevelApproval.status === "Rejected"
+      ) {
+        departmentInfo.cDepartment = latestLevelApproval.departmentName;
+      }
+      console.log("latestLevelApproval", departmentInfo);
+
+      return { ...request, ...departmentInfo };
+    });
 
     console.log("roleApprovalData", roleApprovalData);
 
     // Check if data exists
     if (!roleApprovalData || roleApprovalData.length === 0) {
-      return res.status(404).json({ success: false, message: "No approvals found for this role" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No approvals found for this role" });
     }
 
     // Send response
     res.status(200).json({
       success: true,
       message: "Role-based approvals fetched successfully",
-     roleApprovalData
+      processedReqData,
     });
-
   } catch (err) {
     console.error("Error in getting the role-based approvals", err);
-    res.status(500).json({ success: false, message: "Internal server error", error: err.message });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: err.message,
+    });
   }
 };
-
-
-
-
-
-
 
 module.exports = {
   getRoleBasedApprovals,
@@ -3702,4 +4322,5 @@ module.exports = {
   sendNudgeNotification,
   editSendRequestMail,
   filterByDateStatitics,
+  getFilteredRequest,
 };

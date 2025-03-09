@@ -6,15 +6,17 @@ import {
   ChevronsRight,
 } from "lucide-react";
 
-const Pagination = ({ 
-  currentPage, 
-  totalPages, 
+const Pagination = ({
+  currentPage,
+  totalPages,
   handlePageChange,
   itemsPerPage,
-  totalItems 
+  totalItems,
 }) => {
   const getVisiblePages = () => {
-    const delta = 2;
+    // On smaller screens, show fewer pagination items
+    const isMobile = window.innerWidth < 640;
+    const delta = isMobile ? 1 : 2;
     const range = [];
     const rangeWithDots = [];
     let l;
@@ -48,43 +50,47 @@ const Pagination = ({
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
 
   const paginationButtonStyle =
-    "flex items-center justify-center px-3 py-2 text-sm font-medium transition-colors duration-200";
+    "flex items-center justify-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium transition-colors duration-200";
   const paginationActiveStyle = "bg-primary text-white hover:bg-primary/90";
   const paginationInactiveStyle = "text-gray-500 hover:bg-gray-100";
   const paginationDisabledStyle =
     "text-gray-300 cursor-not-allowed hover:bg-transparent";
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-      <div className="flex items-center gap-2 text-sm text-gray-700">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
+      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-700 mb-3 sm:mb-0">
         <span>Showing</span>
         <span className="font-medium">{startIndex + 1}</span>
         <span>to</span>
         <span className="font-medium">{endIndex}</span>
         <span>of</span>
         <span className="font-medium">{totalItems}</span>
-        <span>entries</span>
+        <span className="hidden xs:inline">entries</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <button
           onClick={() => handlePageChange(1)}
           disabled={currentPage === 1}
           className={`${paginationButtonStyle} rounded-l-lg ${
-            currentPage === 1 ? paginationDisabledStyle : paginationInactiveStyle
+            currentPage === 1
+              ? paginationDisabledStyle
+              : paginationInactiveStyle
           }`}
         >
-          <ChevronsLeft className="h-4 w-4" />
+          <ChevronsLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
 
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={`${paginationButtonStyle} ${
-            currentPage === 1 ? paginationDisabledStyle : paginationInactiveStyle
+            currentPage === 1
+              ? paginationDisabledStyle
+              : paginationInactiveStyle
           }`}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
 
         <div className="flex items-center">
@@ -110,20 +116,24 @@ const Pagination = ({
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={`${paginationButtonStyle} ${
-            currentPage === totalPages ? paginationDisabledStyle : paginationInactiveStyle
+            currentPage === totalPages
+              ? paginationDisabledStyle
+              : paginationInactiveStyle
           }`}
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
 
         <button
           onClick={() => handlePageChange(totalPages)}
           disabled={currentPage === totalPages}
           className={`${paginationButtonStyle} rounded-r-lg ${
-            currentPage === totalPages ? paginationDisabledStyle : paginationInactiveStyle
+            currentPage === totalPages
+              ? paginationDisabledStyle
+              : paginationInactiveStyle
           }`}
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronsRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
       </div>
     </div>

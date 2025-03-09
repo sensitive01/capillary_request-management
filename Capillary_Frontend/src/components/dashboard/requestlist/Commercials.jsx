@@ -406,86 +406,67 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
         };
     }, []);
 
-    const renderDepartmentField = () => {
-        if (isDropDown) {
-            return (
-                <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Cost Center <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                const filtered = availableDepartments.filter(
-                                    (dept) =>
-                                        dept.department
-                                            .toLowerCase()
-                                            .includes(
-                                                e.target.value.toLowerCase()
-                                            )
-                                );
-                                setFilteredDepartments(filtered);
-                            }}
-                            onFocus={() => setIsSearchFocused(true)}
-                            placeholder="Search department..."
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        />
-                        <Search
-                            className="absolute right-3 top-3.5 text-gray-400"
-                            size={20}
-                        />
-                    </div>
+  {/* The component containing these render functions and return statement */}
 
-                    {isSearchFocused && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {filteredDepartments.length > 0 ? (
-                                filteredDepartments.map((dept) => (
-                                    <div
-                                        key={dept.department}
-                                        className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex flex-col border-b border-gray-100"
-                                        onClick={() =>
-                                            handleDepartmentChange(dept)
-                                        }
-                                    >
-                                        <span className="font-medium">
-                                            {dept.department}
-                                        </span>
-                                        <span className="text-sm text-gray-500">
-                                            {dept.businessUnit}
-                                        </span>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="px-4 py-3 text-gray-500">
-                                    No departments found
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {errors.department && (
-                        <p className="text-red-500 text-xs mt-1">
-                            {errors.department}
-                        </p>
-                    )}
-                </div>
-            );
-        }
-
+const renderDepartmentField = () => {
+    if (isDropDown) {
         return (
-            <div className="relative">
+            <div className="relative w-full">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Cost Center<span className="text-red-500">*</span>
+                    Cost Center <span className="text-red-500">*</span>
                 </label>
-                <input
-                    type="text"
-                    value={formData.department || empDepartment}
-                    className="w-full px-4 py-3 border-2 bg-gray-100 border-gray-500 rounded-lg"
-                    placeholder=""
-                    readOnly
-                />
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            const filtered = availableDepartments.filter(
+                                (dept) =>
+                                    dept.department
+                                        .toLowerCase()
+                                        .includes(
+                                            e.target.value.toLowerCase()
+                                        )
+                            );
+                            setFilteredDepartments(filtered);
+                        }}
+                        onFocus={() => setIsSearchFocused(true)}
+                        placeholder="Search department..."
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                    />
+                    <Search
+                        className="absolute right-3 top-3.5 text-gray-400"
+                        size={20}
+                    />
+                </div>
+
+                {isSearchFocused && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredDepartments.length > 0 ? (
+                            filteredDepartments.map((dept) => (
+                                <div
+                                    key={dept.department}
+                                    className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex flex-col border-b border-gray-100"
+                                    onClick={() =>
+                                        handleDepartmentChange(dept)
+                                    }
+                                >
+                                    <span className="font-medium">
+                                        {dept.department}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                        {dept.businessUnit}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="px-4 py-3 text-gray-500">
+                                No departments found
+                            </div>
+                        )}
+                    </div>
+                )}
                 {errors.department && (
                     <p className="text-red-500 text-xs mt-1">
                         {errors.department}
@@ -493,214 +474,217 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                 )}
             </div>
         );
-    };
+    }
 
-    const renderApproverField = () => {
-        if (isDropDown) {
-            return (
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Approver <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={localFormData.hod}
-                        onChange={handleApproverChange}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        disabled={!selectedDepartment}
-                    >
-                        <option value="">Select Approver</option>
-                        {approvers.map((approver, index) => (
-                            <option key={index} value={approver.hod}>
-                                {approver.hod}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.hod && (
-                        <p className="text-red-500 text-xs mt-1">
-                            {errors.hod}
-                        </p>
-                    )}
-                </div>
-            );
-        }
-
-        return (
-            <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Approver <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    name="hod"
-                    value={localFormData.hod}
-                    readOnly
-                    className="w-full px-4 py-3 border-2 border-gray-500 rounded-lg bg-gray-100"
-                    placeholder="HOD will be auto-populated"
-                />
-                {errors.hod && (
-                    <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
-                )}
-            </div>
-        );
-    };
-    const renderBusinessUnitField = () => (
-        <div>
-            <label className="block text-sm font-semibold text-primary mb-2">
-                Business Unit <span className="text-red-500">*</span>
+    return (
+        <div className="relative w-full">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Cost Center<span className="text-red-500">*</span>
             </label>
-            <select
-                onChange={handleBusinessUnitChange}
-                value={localFormData.businessUnit}
-                name="businessUnit"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-            >
-                <option value="">Select Business Unit</option>
-                {availableBusinessUnits.map((unit) => (
-                    <option key={unit.value} value={unit.value}>
-                        {unit.label}
-                    </option>
-                ))}
-            </select>
-            {errors.businessUnit && (
+            <input
+                type="text"
+                value={formData.department || empDepartment}
+                className="w-full px-4 py-3 border-2 bg-gray-100 border-gray-500 rounded-lg"
+                placeholder=""
+                readOnly
+            />
+            {errors.department && (
                 <p className="text-red-500 text-xs mt-1">
-                    {errors.businessUnit}
+                    {errors.department}
                 </p>
             )}
         </div>
     );
+};
+
+const renderApproverField = () => {
+    if (isDropDown) {
+        return (
+            <div className="w-full">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Approver <span className="text-red-500">*</span>
+                </label>
+                <select
+                    value={localFormData.hod}
+                    onChange={handleApproverChange}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                    disabled={!selectedDepartment}
+                >
+                    <option value="">Select Approver</option>
+                    {approvers.map((approver, index) => (
+                        <option key={index} value={approver.hod}>
+                            {approver.hod}
+                        </option>
+                    ))}
+                </select>
+                {errors.hod && (
+                    <p className="text-red-500 text-xs mt-1">
+                        {errors.hod}
+                    </p>
+                )}
+            </div>
+        );
+    }
 
     return (
-        <div className="w-full mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-primary to-primary p-6">
-                <h2 className="text-3xl font-extrabold text-white text-center">
-                    Commercial Details
-                </h2>
+        <div className="w-full">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Approver <span className="text-red-500">*</span>
+            </label>
+            <input
+                type="text"
+                name="hod"
+                value={localFormData.hod}
+                readOnly
+                className="w-full px-4 py-3 border-2 border-gray-500 rounded-lg bg-gray-100"
+                placeholder="HOD will be auto-populated"
+            />
+            {errors.hod && (
+                <p className="text-red-500 text-xs mt-1">{errors.hod}</p>
+            )}
+        </div>
+    );
+};
+
+const renderBusinessUnitField = () => (
+    <div className="w-full">
+        <label className="block text-sm font-semibold text-primary mb-2">
+            Business Unit <span className="text-red-500">*</span>
+        </label>
+        <select
+            onChange={handleBusinessUnitChange}
+            value={localFormData.businessUnit}
+            name="businessUnit"
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+        >
+            <option value="">Select Business Unit</option>
+            {availableBusinessUnits.map((unit) => (
+                <option key={unit.value} value={unit.value}>
+                    {unit.label}
+                </option>
+            ))}
+        </select>
+        {errors.businessUnit && (
+            <p className="text-red-500 text-xs mt-1">
+                {errors.businessUnit}
+            </p>
+        )}
+    </div>
+);
+
+return (
+    <div className="w-full mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-primary to-primary p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white text-center">
+                Commercial Details
+            </h2>
+        </div>
+
+        <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+            {/* First row of fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {renderBusinessUnitField()}
+
+                <div className="w-full">
+                    <label className="block text-sm font-semibold text-primary mb-2">
+                        Entity <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                        name="entity"
+                        value={localFormData.entity}
+                        onChange={handleEntityChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                    >
+                        <option value="">Select Entity</option>
+                        {[
+                            ...new Set(
+                                entities.map((entity) => entity.entityName)
+                            ),
+                        ].map((entityName, index) => (
+                            <option key={index} value={entityName}>
+                                {entityName}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.entity && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.entity}
+                        </p>
+                    )}
+                </div>
+
+                <div className="w-full">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        City
+                    </label>
+                    <input
+                        type="text"
+                        name="city"
+                        value={localFormData.city}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                        placeholder="Enter City"
+                    />
+                    {errors.city && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.city}
+                        </p>
+                    )}
+                </div>
+
+                <div className="w-full">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Site
+                    </label>
+                    <input
+                        type="text"
+                        name="site"
+                        value={localFormData.site}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                        placeholder="Enter Site"
+                    />
+                    {errors.site && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.site}
+                        </p>
+                    )}
+                </div>
             </div>
 
-            <div className="p-8 space-y-6">
-                <div className="grid grid-cols-4 gap-6">
-                    {/* <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">
-                            Business Unit{" "}
-                            <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            onChange={handleBusinessUnitChange}
-                            value={localFormData.businessUnit}
-                            name="businessUnit"
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        >
-                            <option value="">Select Business Unit</option>
-                            {businessUnits.map((unit) => (
-                                <option key={unit.value} value={unit.value}>
-                                    {unit.label}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.businessUnit && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.businessUnit}
-                            </p>
-                        )}
-                    </div> */}
-                    {renderBusinessUnitField()}
+            {/* Department and Approver fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                {renderDepartmentField()}
+                {renderApproverField()}
+            </div>
 
-                    <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">
-                            Entity <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="entity"
-                            value={localFormData.entity}
-                            onChange={handleEntityChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        >
-                            <option value="">Select Entity</option>
-                            {[
-                                ...new Set(
-                                    entities.map((entity) => entity.entityName)
-                                ),
-                            ].map((entityName, index) => (
-                                <option key={index} value={entityName}>
-                                    {entityName}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.entity && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.entity}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            City
-                        </label>
-                        <input
-                            type="text"
-                            name="city"
-                            value={localFormData.city}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                            placeholder="Enter City"
-                        />
-                        {errors.city && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.city}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Site
-                        </label>
-                        <input
-                            type="text"
-                            name="site"
-                            value={localFormData.site}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                            placeholder="Enter Site"
-                        />
-                        {errors.site && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.site}
-                            </p>
-                        )}
-                    </div>
+            {/* Payment Terms section */}
+            <div className="space-y-4">
+                <div className="mb-2 sm:mb-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+                        Payment Term
+                    </h3>
                 </div>
 
-                <div className="grid grid-cols-3 gap-6">
-                    {renderDepartmentField()}
-                    {renderApproverField()}
-                </div>
-
-                <div className="space-y-4">
-                    <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                            Payment Term
-                        </h3>
-                    </div>
-
-                    <div className="overflow-x-auto">
+                {/* Responsive table with horizontal scroll on small screens */}
+                <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                    <div className="min-w-max sm:min-w-0 sm:w-full">
                         <table className="w-full table-auto border-collapse">
                             <thead>
                                 <tr className="bg-gray-100 border-b-2 border-gray-200">
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Percentage Term{" "}
                                         <span className="text-red-500">*</span>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Payment Term{" "}
                                         <span className="text-red-500">*</span>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Payment Type{" "}
                                         <span className="text-red-500">*</span>
                                     </th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -712,7 +696,7 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                             key={index}
                                             className="border-b hover:bg-gray-50 transition duration-200"
                                         >
-                                            <td className="px-4 py-3">
+                                            <td className="px-2 sm:px-4 py-2 sm:py-3">
                                                 <input
                                                     type="number"
                                                     name="percentageTerm"
@@ -726,14 +710,14 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                     disabled={
                                                         localFormData.isCreditCardSelected
                                                     }
-                                                    className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-                                            ${
-                                                localFormData.isCreditCardSelected
-                                                    ? "bg-gray-100 cursor-not-allowed"
-                                                    : "focus:ring-2 focus:ring-primary"
-                                            }
-                                            focus:outline-none focus:border-transparent transition duration-300`}
-                                                    placeholder="Enter Percentage Term"
+                                                    className={`w-full px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg 
+                                                    ${
+                                                        localFormData.isCreditCardSelected
+                                                            ? "bg-gray-100 cursor-not-allowed"
+                                                            : "focus:ring-2 focus:ring-primary"
+                                                    }
+                                                    focus:outline-none focus:border-transparent transition duration-300`}
+                                                    placeholder="Enter %"
                                                     style={{
                                                         appearance: "none",
                                                         MozAppearance:
@@ -754,7 +738,7 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                 )}
                                             </td>
 
-                                            <td className="px-4 py-3">
+                                            <td className="px-2 sm:px-4 py-2 sm:py-3">
                                                 <select
                                                     name="paymentTerm"
                                                     value={term.paymentTerm}
@@ -767,15 +751,15 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                     disabled={
                                                         localFormData.isCreditCardSelected
                                                     }
-                                                    className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-                                            ${
-                                                localFormData.isCreditCardSelected
-                                                    ? "bg-gray-100 cursor-not-allowed"
-                                                    : "focus:ring-2 focus:ring-primary"
-                                            }
-                                            focus:outline-none focus:border-transparent transition duration-300`}
+                                                    className={`w-full px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm
+                                                    ${
+                                                        localFormData.isCreditCardSelected
+                                                            ? "bg-gray-100 cursor-not-allowed"
+                                                            : "focus:ring-2 focus:ring-primary"
+                                                    }
+                                                    focus:outline-none focus:border-transparent transition duration-300`}
                                                 >
-                                                    <option value="">
+                                               <option value="">
                                                         Select Payment Term
                                                     </option>
                                                     <option value="Immediate">
@@ -806,7 +790,7 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                 )}
                                             </td>
 
-                                            <td className="px-4 py-3">
+                                            <td className="px-2 sm:px-4 py-2 sm:py-3">
                                                 <select
                                                     name="paymentType"
                                                     value={term.paymentType}
@@ -819,13 +803,13 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                     disabled={
                                                         localFormData.isCreditCardSelected
                                                     }
-                                                    className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-                                            ${
-                                                localFormData.isCreditCardSelected
-                                                    ? "bg-gray-100 cursor-not-allowed"
-                                                    : "focus:ring-2 focus:ring-primary"
-                                            }
-                                            focus:outline-none focus:border-transparent transition duration-300`}
+                                                    className={`w-full px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm
+                                                    ${
+                                                        localFormData.isCreditCardSelected
+                                                            ? "bg-gray-100 cursor-not-allowed"
+                                                            : "focus:ring-2 focus:ring-primary"
+                                                    }
+                                                    focus:outline-none focus:border-transparent transition duration-300`}
                                                 >
                                                     <option value="">
                                                         Select Payment Type
@@ -855,8 +839,8 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                 )}
                                             </td>
 
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end space-x-2">
+                                            <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
+                                                <div className="flex justify-end">
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -868,17 +852,17 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                                                             localFormData.isCreditCardSelected ||
                                                             index === 0
                                                         }
-                                                        className={`flex items-center px-4 py-2 rounded-lg transition duration-300 
-                                                ${
-                                                    localFormData.isCreditCardSelected ||
-                                                    index === 0
-                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                        : "bg-red-500 text-white hover:bg-red-700"
-                                                }`}
+                                                        className={`flex items-center px-2 sm:px-4 py-1 sm:py-2 rounded-lg transition duration-300 text-xs sm:text-sm
+                                                        ${
+                                                            localFormData.isCreditCardSelected ||
+                                                            index === 0
+                                                                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                                : "bg-red-500 text-white hover:bg-red-700"
+                                                        }`}
                                                     >
                                                         <Trash2
                                                             size={16}
-                                                            className="mr-2"
+                                                            className="mr-1 sm:mr-2 hidden sm:inline"
                                                         />
                                                         Delete
                                                     </button>
@@ -890,76 +874,79 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
                             </tbody>
                         </table>
                     </div>
-
-                    <div className="mt-4 flex justify-start">
-                        <button
-                            type="button"
-                            onClick={handleAddMorePaymentTerm}
-                            className={`${
-                                localFormData.isCreditCardSelected
-                                    ? "bg-gray-300 text-black"
-                                    : "bg-primary text-white"
-                            } flex items-center px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300`}
-                            disabled={localFormData.isCreditCardSelected}
-                        >
-                            <PlusCircle size={16} className="mr-2" />
-                            Add Payment Term
-                        </button>
-                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Bill To <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            name="billTo"
-                            value={localFormData.billTo}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                            placeholder="Enter Bill To"
-                            rows="6"
-                        ></textarea>
-                        {errors.billTo && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.billTo}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Ship To <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            name="shipTo"
-                            value={localFormData.shipTo}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                            placeholder="Enter Ship To"
-                            rows="6"
-                        ></textarea>
-                        {errors.shipTo && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.shipTo}
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                <div className="mt-8 flex justify-end">
+                <div className="mt-2 sm:mt-4 flex justify-start">
                     <button
                         type="button"
-                        onClick={handleNextStep}
-                        className="px-10 py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
+                        onClick={handleAddMorePaymentTerm}
+                        className={`${
+                            localFormData.isCreditCardSelected
+                                ? "bg-gray-300 text-black"
+                                : "bg-primary text-white"
+                        } flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:bg-primary-dark transition duration-300 text-xs sm:text-sm`}
+                        disabled={localFormData.isCreditCardSelected}
                     >
-                        Next
+                        <PlusCircle size={16} className="mr-1 sm:mr-2" />
+                        Add Payment Term
                     </button>
                 </div>
             </div>
+
+            {/* Bill To and Ship To fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Bill To <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        name="billTo"
+                        value={localFormData.billTo}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                        placeholder="Enter Bill To"
+                        rows={window.innerWidth < 640 ? "4" : "6"}
+                    ></textarea>
+                    {errors.billTo && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.billTo}
+                        </p>
+                    )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Ship To <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        name="shipTo"
+                        value={localFormData.shipTo}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                        placeholder="Enter Ship To"
+                        rows={window.innerWidth < 640 ? "4" : "6"}
+                    ></textarea>
+                    {errors.shipTo && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {errors.shipTo}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* Next button */}
+            <div className="mt-4 sm:mt-8 flex justify-end">
+                <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="px-6 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
+                >
+                    Next
+                </button>
+            </div>
         </div>
-    );
+    </div>
+);
 };
 
 export default Commercials;

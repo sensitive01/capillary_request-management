@@ -10,13 +10,12 @@ import { createNewRequest } from "../../../api/service/adminServices";
 import AgreementCompliences from "./AgreementCompliences";
 
 const CreateRequest = () => {
-  
     const navigate = useNavigate();
     const empId = localStorage.getItem("capEmpId");
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [reqId,setReqId] = useState()
+    const [reqId, setReqId] = useState();
 
     const [formData, setFormData] = useState({
         commercials: {},
@@ -24,7 +23,6 @@ const CreateRequest = () => {
         supplies: [],
         remarks: "",
         complinces: [],
-       
     });
 
     const handleSubmit = async () => {
@@ -40,7 +38,6 @@ const CreateRequest = () => {
                         answer: compliance.answer,
                         department: compliance.department,
                         expectedAnswer: compliance.expectedAnswer,
-
                         deviation: compliance.deviation
                             ? {
                                   reason: compliance.deviation.reason,
@@ -51,7 +48,11 @@ const CreateRequest = () => {
                 ),
             };
 
-            const response = await createNewRequest(empId, transformedData,transformedData?.commercials?.newReqId);
+            const response = await createNewRequest(
+                empId,
+                transformedData,
+                transformedData?.commercials?.newReqId
+            );
             console.log(response);
             if (response.status === 200) {
                 toast.success("New Request is created");
@@ -61,8 +62,7 @@ const CreateRequest = () => {
             }
         } catch (err) {
             console.log("Error in submit req", err);
-        }
-         finally {
+        } finally {
             setIsSubmitting(false);
         }
     };
@@ -84,7 +84,7 @@ const CreateRequest = () => {
                         }))
                     }
                     onNext={() => handleStepComplete(0)}
-                    setReqId = {()=>setReqId()}
+                    setReqId={() => setReqId()}
                 />
             ),
         },
@@ -105,7 +105,7 @@ const CreateRequest = () => {
                     }
                     onNext={() => handleStepComplete(1)}
                     onBack={() => setCurrentStep(0)}
-                    reqId = {formData.commercials.newReqId}
+                    reqId={formData.commercials.newReqId}
                 />
             ),
         },
@@ -127,8 +127,7 @@ const CreateRequest = () => {
                     remarks={formData.remarks}
                     onBack={() => setCurrentStep(1)}
                     onNext={() => handleStepComplete(2)}
-                    reqId = {formData.commercials.newReqId}
-
+                    reqId={formData.commercials.newReqId}
                 />
             ),
         },
@@ -141,8 +140,7 @@ const CreateRequest = () => {
                     setFormData={setFormData}
                     onBack={() => setCurrentStep(2)}
                     onNext={() => handleStepComplete(3)}
-                    reqId = {formData.commercials.newReqId}
-
+                    reqId={formData.commercials.newReqId}
                 />
             ),
         },
@@ -160,7 +158,7 @@ const CreateRequest = () => {
     ];
 
     const handleStepComplete = (stepIndex) => {
-        console.log("create formData",formData,reqId);
+        console.log("create formData", formData, reqId);
         if (!completedSteps.includes(stepIndex)) {
             setCompletedSteps([...completedSteps, stepIndex]);
         }
@@ -170,8 +168,43 @@ const CreateRequest = () => {
         }
     };
 
+    // Function to render step labels based on screen size
+    const renderStepLabel = (step, isActive, isCompleted, isMobile) => {
+        if (isMobile) {
+            // On mobile, only show title for active step
+            return isActive ? (
+                <h3
+                    className={`text-center font-semibold text-xs md:text-sm ${
+                        isActive
+                            ? "text-primary"
+                            : isCompleted
+                            ? "text-green-600"
+                            : "text-gray-500"
+                    }`}
+                >
+                    {step.title}
+                </h3>
+            ) : null;
+        } else {
+            // On larger screens, show all titles
+            return (
+                <h3
+                    className={`text-center font-semibold text-xs md:text-sm ${
+                        isActive
+                            ? "text-primary"
+                            : isCompleted
+                            ? "text-green-600"
+                            : "text-gray-500"
+                    }`}
+                >
+                    {step.title}
+                </h3>
+            );
+        }
+    };
+
     return (
-        <div className="w-full mx-auto bg-gray-50 p-6">
+        <div className="w-full mx-auto bg-gray-50 p-2 sm:p-4 md:p-6">
             {isSubmitting && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white p-4 rounded-lg flex items-center gap-3">
@@ -182,60 +215,85 @@ const CreateRequest = () => {
                     </div>
                 </div>
             )}
-            {/* Stepper */}
-            <div className="flex justify-between items-center mb-6">
-                {steps.map((step, index) => {
-                    const StepIcon = step.icon;
-                    const isActive = currentStep === index;
-                    const isCompleted = completedSteps.includes(index);
 
-                    return (
-                        <div
-                            key={index}
-                            className="flex flex-col items-center relative"
-                        >
-                            {index < steps.length - 1 && (
-                                <div
-                                    className={`absolute top-1/2 left-full w-full h-0.5 transform -translate-y-1/2 -z-10 
-                    ${
-                        isCompleted || isActive ? "bg-green-500" : "bg-gray-300"
-                    }`}
-                                    style={{ width: "50px" }} // Adjust for space between steps
-                                />
-                            )}
+            {/* Responsive Stepper */}
+            <div className="mb-6 overflow-x-auto no-scrollbar">
+                <div className="flex justify-between items-center min-w-max md:min-w-0 px-2">
+                    {steps.map((step, index) => {
+                        const StepIcon = step.icon;
+                        const isActive = currentStep === index;
+                        const isCompleted = completedSteps.includes(index);
+                        const isMobile = window.innerWidth < 768; // Check for mobile view
+
+                        return (
                             <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 mb-2
-                  ${
-                      isActive
-                          ? "border-primary bg-primary/10 text-primary"
-                          : isCompleted
-                          ? "border-green-500 bg-green-50 text-green-500"
-                          : "border-gray-300 bg-gray-100 text-gray-400"
-                  }
-                  transition-all duration-300`}
+                                key={index}
+                                className="flex flex-col items-center relative"
                             >
-                                {isCompleted && !isActive ? (
-                                    <Check className="w-6 h-6" />
-                                ) : (
-                                    <StepIcon className="w-6 h-6" />
+                                {/* Connector line between steps */}
+                                {index < steps.length - 1 && (
+                                    <div
+                                        className={`absolute top-1/2 w-8 sm:w-12 md:w-16 lg:w-24 h-0.5 transform -translate-y-1/2 -z-10 
+                                        ${
+                                            isCompleted ||
+                                            (isActive && index > 0)
+                                                ? "bg-green-500"
+                                                : "bg-gray-300"
+                                        }`}
+                                        style={{
+                                            left: "100%",
+                                            width: isMobile ? "20px" : "50px",
+                                        }}
+                                    />
                                 )}
+
+                                {/* Step icon */}
+                                <div
+                                    className={`w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center border-2 mb-1 md:mb-2
+                                    ${
+                                        isActive
+                                            ? "border-primary bg-primary/10 text-primary"
+                                            : isCompleted
+                                            ? "border-green-500 bg-green-50 text-green-500"
+                                            : "border-gray-300 bg-gray-100 text-gray-400"
+                                    }
+                                    transition-all duration-300`}
+                                >
+                                    {isCompleted && !isActive ? (
+                                        <Check className="w-4 h-4 md:w-6 md:h-6" />
+                                    ) : (
+                                        <StepIcon className="w-4 h-4 md:w-6 md:h-6" />
+                                    )}
+                                </div>
+
+                                {/* Step title - different rendering based on screen size */}
+                                <div className="hidden md:block">
+                                    {renderStepLabel(
+                                        step,
+                                        isActive,
+                                        isCompleted,
+                                        false
+                                    )}
+                                </div>
+                                <div className="md:hidden">
+                                    {renderStepLabel(
+                                        step,
+                                        isActive,
+                                        isCompleted,
+                                        true
+                                    )}
+                                </div>
                             </div>
-                            <h3
-                                className={`text-center font-semibold text-sm
-                  ${
-                      isActive
-                          ? "text-primary"
-                          : isCompleted
-                          ? "text-green-600"
-                          : "text-gray-500"
-                  }
-                  transition-colors duration-300`}
-                            >
-                                {step.title}
-                            </h3>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
+
+                {/* Mobile step title indicator (shows current step name) */}
+                <div className="flex justify-center mt-2 md:hidden">
+                    <h3 className="text-primary font-semibold text-sm">
+                        {steps[currentStep].title}
+                    </h3>
+                </div>
             </div>
 
             {/* Step Content */}
@@ -248,7 +306,7 @@ const CreateRequest = () => {
                 draggable
                 pauseOnFocusLoss
             />
-            <div className="mt-6">{steps[currentStep].content}</div>
+            <div className="mt-4 md:mt-6">{steps[currentStep].content}</div>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MoreVertical, Bell, LogOut } from "lucide-react";
-import capillary_logo from "../../../assets/images/capilary_logo.png";
+import capillary_logo from "../../../assets/images/CapillaryLogo_Horiz.png";
 import { getNewNotification } from "../../../api/service/adminServices";
 
 const TopBar = () => {
@@ -9,6 +9,7 @@ const TopBar = () => {
   const userId = localStorage.getItem("capEmpId");
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
+  const department = localStorage.getItem("department");
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [reqData, setReqData] = useState([]);
 
@@ -40,18 +41,15 @@ const TopBar = () => {
 
   return (
     <div className="relative">
-      <div className="bg-white shadow-md px-4 sm:px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/dashboard" className="mr-4 sm:mr-6">
+      <div className="bg-white shadow-md px-4 sm:px-6 py-4 flex items-center justify-between h-16">
+        <div className="flex items-center ">
+          <Link to="/dashboard" className="mr-4 sm:mr-6  ">
             <img
               src={capillary_logo}
               alt="Capillary Logo"
-              className="h-12 w-auto sm:h-16"
+              className="h-8 w-auto sm:h-16 p-3"
             />
           </Link>
-          <h1 className="text-sm sm:text-lg font-semibold">
-            Capillary Technologies
-          </h1>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4 ml-auto">
           <div className="relative" onClick={toggleNotifications}>
@@ -62,8 +60,11 @@ const TopBar = () => {
               </span>
             )}
           </div>
-          <div className="bg-gray-100 rounded-full px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700">
-            {`${user?.name}`}
+          <div
+            className="bg-gray-100 rounded-full cursor-pointer px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700"
+            onClick={() => navigate("/employee-profile")}
+          >
+            {`${user?.name}-${department}`}
           </div>
           <MoreVertical className="text-gray-500 cursor-pointer" />
           <button

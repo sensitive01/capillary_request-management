@@ -8,9 +8,11 @@ const approvalController= require("../controllers/approvalController")
 
 
 
-router.get('/get-statistic-data/:empId/:role/:email', reqController.getStatisticData); 
+router.get('/get-statistic-data/:empId/:role/:email/:multipartRole', reqController.getStatisticData); 
 router.get('/get-new-notification/:id', reqController.getNewNotifications); 
 router.get('/get-approved-req/:id', reqController.getApprovedReqData); 
+router.get('/get-filtered-req/:id/:action', reqController.getFilteredRequest); 
+
 router.get('/is-display-button/:id', reqController.isButtonSDisplay); 
 router.get('/generate-po/:id', reqController.generatePo); 
 router.get('/get-all-chats/:id', reqController.getAllChats); 

@@ -78,8 +78,7 @@ const AgreementCompliances = ({
                                     answer: q.expectedAnswer,
                                     department: q.createdBy.department,
                                     deviation: null,
-                                    expectedAnswer:q.expectedAnswer,
-
+                                    expectedAnswer: q.expectedAnswer,
                                 },
                             },
                             hasDeviations: 0, // Initialize deviation flag
@@ -118,9 +117,6 @@ const AgreementCompliances = ({
                     answer: value,
                     department: question.createdBy.department,
                     deviation: isDeviation ? deviations[questionId] : null,
-
-                    
-
                 },
             },
         }));
@@ -212,37 +208,6 @@ const AgreementCompliances = ({
             return "Document";
         }
     };
-
-    const FileDisplay = ({ files, onRemove }) => (
-        <div className="flex flex-wrap gap-2 mt-2">
-            {files.map((fileUrl, index) => (
-                <div
-                    key={index}
-                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-gray-200"
-                >
-                    <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 hover:text-primary"
-                    >
-                        <FaFilePdf size={16} className="text-red-500" />
-                        <span className="text-sm text-gray-600 max-w-[150px] truncate">
-                            {getCleanFileName(fileUrl)}
-                        </span>
-                    </a>
-                    <button
-                        onClick={() => onRemove(fileUrl)}
-                        className="p-1 hover:bg-gray-100 rounded-full"
-                        title="Remove file"
-                    >
-                        <X size={14} className="text-gray-500" />
-                    </button>
-                </div>
-            ))}
-        </div>
-    );
-
     const questionsByDepartment = questions.reduce((acc, q) => {
         const dept = q.createdBy.department;
         if (!acc[dept]) acc[dept] = [];
@@ -261,18 +226,50 @@ const AgreementCompliances = ({
             </div>
         );
     }
+    const FileDisplay = ({ files, onRemove }) => (
+        <div className="flex flex-wrap gap-2 mt-2">
+            {files.map((fileUrl, index) => (
+                <div
+                    key={index}
+                    className="flex items-center gap-2 bg-white px-2 sm:px-3 py-1 sm:py-2 rounded-md border border-gray-200 w-full sm:w-auto"
+                >
+                    <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 sm:gap-2 hover:text-primary flex-1 min-w-0"
+                    >
+                        <FaFilePdf
+                            size={14}
+                            className="text-red-500 shrink-0"
+                        />
+                        <span className="text-xs sm:text-sm text-gray-600 truncate">
+                            {getCleanFileName(fileUrl)}
+                        </span>
+                    </a>
+                    <button
+                        onClick={() => onRemove(fileUrl)}
+                        className="p-1 hover:bg-gray-100 rounded-full shrink-0"
+                        title="Remove file"
+                    >
+                        <X size={12} sm:size={14} className="text-gray-500" />
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
 
     return (
-        <div className="max-w-7xl mx-auto">
-            <div className="space-y-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="space-y-6 sm:space-y-8">
                 {Object.entries(questionsByDepartment).map(
                     ([department, deptQuestions]) => (
                         <div
                             key={department}
-                            className="bg-white rounded-xl shadow-lg overflow-hidden"
+                            className="bg-white rounded-lg sm:rounded-xl shadow-md sm:shadow-lg overflow-hidden"
                         >
-                            <div className="bg-primary/10 px-6 py-4">
-                                <h3 className="text-xl font-semibold text-primary">
+                            <div className="bg-primary/10 px-4 sm:px-6 py-3 sm:py-4">
+                                <h3 className="text-lg sm:text-xl font-semibold text-primary">
                                     {department}
                                 </h3>
                             </div>
@@ -287,13 +284,13 @@ const AgreementCompliances = ({
                                     return (
                                         <div
                                             key={question._id}
-                                            className="p-6 hover:bg-gray-50 transition-colors"
+                                            className="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
                                         >
-                                            <div className="flex justify-between items-center gap-8">
-                                                <p className="text-lg text-gray-800">
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-8">
+                                                <p className="text-base sm:text-lg text-gray-800">
                                                     {question.question}
                                                 </p>
-                                                <div className="flex items-center gap-6">
+                                                <div className="flex items-center gap-4 sm:gap-6 shrink-0">
                                                     {["Yes", "No"].map(
                                                         (option) => (
                                                             <label
@@ -317,9 +314,9 @@ const AgreementCompliances = ({
                                                                                 "Yes"
                                                                         )
                                                                     }
-                                                                    className="w-5 h-5 text-primary"
+                                                                    className="w-4 h-4 sm:w-5 sm:h-5 text-primary"
                                                                 />
-                                                                <span className="text-gray-700">
+                                                                <span className="text-sm sm:text-base text-gray-700">
                                                                     {option}
                                                                 </span>
                                                             </label>
@@ -330,7 +327,7 @@ const AgreementCompliances = ({
 
                                             {existingAnswer !==
                                                 question.expectedAnswer && (
-                                                <div className="mt-4 bg-red-50 rounded-lg p-4 space-y-4">
+                                                <div className="mt-4 bg-red-50 rounded-md sm:rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
                                                     <textarea
                                                         placeholder="Kindly Justify..."
                                                         value={
@@ -344,17 +341,17 @@ const AgreementCompliances = ({
                                                                 e.target.value
                                                             )
                                                         }
-                                                        className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                                                        className="w-full p-2 sm:p-3 border rounded-md sm:rounded-lg resize-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                                                         rows={3}
                                                     />
                                                     <div className="space-y-2">
-                                                        <div className="flex items-center justify-between">
-                                                            <label className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border hover:bg-gray-50 cursor-pointer">
+                                                        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+                                                            <label className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-md sm:rounded-lg border hover:bg-gray-50 cursor-pointer w-full xs:w-auto">
                                                                 <Upload
-                                                                    size={20}
-                                                                    className="text-primary"
+                                                                    size={16}
+                                                                    className="text-primary shrink-0"
                                                                 />
-                                                                <span className="text-sm font-medium">
+                                                                <span className="text-xs sm:text-sm font-medium truncate">
                                                                     Upload
                                                                     Documents
                                                                 </span>
@@ -374,7 +371,7 @@ const AgreementCompliances = ({
                                                                     }
                                                                 />
                                                             </label>
-                                                            <span className="text-sm text-gray-600">
+                                                            <span className="text-xs sm:text-sm text-gray-600">
                                                                 {existingDeviation
                                                                     ?.attachments
                                                                     ?.length ||
@@ -411,17 +408,17 @@ const AgreementCompliances = ({
                 )}
 
                 <div
-                    className={`p-6 rounded-xl ${
+                    className={`p-4 sm:p-6 rounded-lg sm:rounded-xl ${
                         hasDeviations ? "bg-red-50" : "bg-green-50"
-                    } flex items-center gap-4`}
+                    } flex items-center gap-3 sm:gap-4`}
                 >
                     {hasDeviations ? (
-                        <AlertTriangle className="text-red-500 h-8 w-8" />
+                        <AlertTriangle className="text-red-500 h-6 w-6 sm:h-8 sm:w-8 shrink-0" />
                     ) : (
-                        <CheckCircle className="text-green-500 h-8 w-8" />
+                        <CheckCircle className="text-green-500 h-6 w-6 sm:h-8 sm:w-8 shrink-0" />
                     )}
                     <p
-                        className={`font-medium ${
+                        className={`font-medium text-sm sm:text-base ${
                             hasDeviations ? "text-red-700" : "text-green-700"
                         }`}
                     >
@@ -439,10 +436,9 @@ const AgreementCompliances = ({
                         <ArrowLeft size={20} />
                         Back to edit
                     </button>
-
                     <button
-                        onClick={handleSubmit}
-                        className="px-6 py-3 bg-primary text-white font-medium rounded-lg flex items-center gap-2 hover:bg-primary/90"
+                        onClick={onNext}
+                        className="px-5 py-2 bg-primary text-white font-medium rounded-lg flex items-center gap-2 hover:bg-primary/90"
                     >
                         Preview
                         <ArrowRight size={20} />

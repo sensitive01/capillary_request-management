@@ -46,6 +46,8 @@ const HomePage = () => {
         localStorage.setItem("department", response?.data?.data?.department);
         localStorage.setItem("empAccessToken", response?.data?.token);
         localStorage.setItem("capEmpId", response?.data?.data?.employee_id);
+        localStorage.setItem("multiRole", response?.data?.multiRole);
+
 
 
         navigate("/dashboard");

@@ -480,16 +480,45 @@ const Procurements = ({
             });
         }
     };
+    const handleSearch = (value) => {
+        setSearchTerm(value);
+        const filtered = vendors.filter((vendor) => {
+            const vendorName =
+                vendor.firstName ||
+                vendor.Name ||
+                vendor.name ||
+                vendor.vendorName ||
+                "";
+            const vendorId = vendor.ID || vendor.vendorId || "";
+            const searchLower = value.toLowerCase();
+
+            return (
+                vendorName.toLowerCase().includes(searchLower) ||
+                vendorId.toString().toLowerCase().includes(searchLower)
+            );
+        });
+        setFilteredVendors(filtered);
+    };
+    const handleSubmit = async () => {
+        if (validateFields()) {
+            const response = await savePocurementsData(formData,reqId);
+            if (response.status === 200) {
+                onNext();
+            }
+        } else {
+            toast.error("Please fill in all required fields correctly");
+        }
+    };
 
     const renderVendorSearch = () => {
         const filteredVendors = getFilteredVendors();
-
+    
         return (
             <div className="relative" ref={searchRef}>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Choose Vendor<span className="text-red-500">*</span>
                 </label>
-
+    
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaSearch className="text-gray-400" />
@@ -506,7 +535,7 @@ const Procurements = ({
                         className="w-full pl-10 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                     />
                 </div>
-
+    
                 {showResults && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         {filteredVendors.length > 0 ? (
@@ -541,24 +570,24 @@ const Procurements = ({
             </div>
         );
     };
-
+    
     // Render uploaded files for a specific row
     const renderUploadedFiles = (rowIndex) => {
         const fileData = filesData[rowIndex];
         const fileType = getEffectiveFileType(fileData);
-
+    
         if (!fileType || !fileData.urls.length) return null;
-
+    
         const displayType =
             fileData.fileType === "Other"
                 ? fileData.otherType
                 : fileData.fileType;
-
+    
         return (
             <div className="flex flex-col gap-4">
                 <div>
                     <h3 className="font-semibold mb-2">{displayType}</h3>
-
+    
                     <div className="flex flex-wrap gap-2">
                         {fileData.urls.map((url, fileIndex) => (
                             <div
@@ -575,7 +604,9 @@ const Procurements = ({
                                         size={24}
                                         className="text-red-500"
                                     />
-                                    {`${fileType}-${fileIndex}`}
+                                    <span className="ml-1 text-sm md:text-base truncate max-w-xs">
+                                        {`${fileType}-${fileIndex}`}
+                                    </span>
                                 </a>
                                 <button
                                     onClick={() =>
@@ -596,54 +627,24 @@ const Procurements = ({
             </div>
         );
     };
-
-    const handleSubmit = async () => {
-        if (validateFields()) {
-            const response = await savePocurementsData(formData,reqId);
-            if (response.status === 200) {
-                onNext();
-            }
-        } else {
-            toast.error("Please fill in all required fields correctly");
-        }
-    };
-
+    
     const ErrorMessage = ({ error }) => {
         if (!error) return null;
         return <p className="text-red-500 text-sm mt-1">{error}</p>;
     };
-
-    const handleSearch = (value) => {
-        setSearchTerm(value);
-        const filtered = vendors.filter((vendor) => {
-            const vendorName =
-                vendor.firstName ||
-                vendor.Name ||
-                vendor.name ||
-                vendor.vendorName ||
-                "";
-            const vendorId = vendor.ID || vendor.vendorId || "";
-            const searchLower = value.toLowerCase();
-
-            return (
-                vendorName.toLowerCase().includes(searchLower) ||
-                vendorId.toString().toLowerCase().includes(searchLower)
-            );
-        });
-        setFilteredVendors(filtered);
-    };
-
+    
     return (
         <div className="mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-primary to-primary p-6">
-                <h2 className="text-3xl font-extrabold text-white text-center">
+            <div className="bg-gradient-to-r from-primary to-primary p-4 md:p-6">
+                <h2 className="text-xl md:text-3xl font-extrabold text-white text-center">
                     Procurement Details
                 </h2>
             </div>
-
-            <div className="p-8 space-y-6">
+    
+            <div className="p-4 md:p-8 space-y-6">
                 <div className="grid grid-cols-1 gap-6">
-                    <div className="grid grid-cols-3 gap-4">
+                    {/* First row - Vendor and dates */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="col-span-1">{renderVendorSearch()}</div>
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -673,8 +674,9 @@ const Procurements = ({
                             />
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-3 gap-6">
+    
+                    {/* Service Period row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Service Period
@@ -699,7 +701,7 @@ const Procurements = ({
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
-
+    
                         {formData.servicePeriod === "custom" && (
                             <>
                                 <div>
@@ -730,8 +732,9 @@ const Procurements = ({
                             </>
                         )}
                     </div>
-
-                    <div className="grid grid-cols-2 gap-6">
+    
+                    {/* Project and Client row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Project Code
@@ -757,131 +760,233 @@ const Procurements = ({
                             />
                         </div>
                     </div>
-
+    
+                    {/* Document Upload section */}
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold text-gray-700 mb-2">
                             Upload Documents
                         </h3>
-
+    
                         <div className="overflow-x-auto">
-                            <table className="w-full table-auto border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-100 border-b-2 border-gray-200">
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            File Type
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Upload File
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Uploaded Files
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filesData.map((fileData, index) => (
-                                        <tr
-                                            key={fileData.id}
-                                            className="border-b hover:bg-gray-50 transition duration-200"
-                                        >
-                                            <td className="px-4 py-3">
-                                                <select
-                                                    value={fileData.fileType}
+                            <div className="md:hidden">
+                                {/* Mobile view - cards instead of table */}
+                                {filesData.map((fileData, index) => (
+                                    <div
+                                        key={fileData.id}
+                                        className="mb-4 p-4 border rounded-lg shadow-sm"
+                                    >
+                                        <div className="mb-3">
+                                            <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">
+                                                File Type
+                                            </label>
+                                            <select
+                                                value={fileData.fileType}
+                                                onChange={(e) =>
+                                                    handleFileTypeChange(e, index)
+                                                }
+                                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                            >
+                                                <option value="">
+                                                    Select File Type
+                                                </option>
+                                                <option value="finalQuotation">
+                                                    Final Quotation
+                                                </option>
+                                                <option value="competitive">
+                                                    Competitive
+                                                </option>
+                                                <option value="agreement">
+                                                    Agreement
+                                                </option>
+                                                <option value="engagementwork">
+                                                    Engagement Letter(EL)
+                                                </option>
+                                                <option value="statementofwork">
+                                                    Statement Of Work (SOW)
+                                                </option>
+                                                <option value="Other">
+                                                    Other
+                                                </option>
+                                            </select>
+    
+                                            {fileData.fileType === "Other" && (
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter other file type"
+                                                    value={fileData.otherType}
                                                     onChange={(e) =>
-                                                        handleFileTypeChange(
+                                                        handleOtherTypeChange(
                                                             e,
                                                             index
                                                         )
                                                     }
-                                                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                                                >
-                                                    <option value="">
-                                                        Select File Type
-                                                    </option>
-                                                    <option value="finalQuotation">
-                                                        Final Quotation
-                                                    </option>
-                                                    <option value="competitive">
-                                                        Competitive
-                                                    </option>
-                                                    <option value="agreement">
-                                                        Agreement
-                                                    </option>
-                                                    <option value="engagementwork">
-                                                        Engagement Letter(EL)
-                                                    </option>
-                                                    <option value="statementofwork">
-                                                        Statement Of Work (SOW)
-                                                    </option>
-                                                    <option value="Other">
-                                                        Other
-                                                    </option>
-                                                </select>
-
-                                                {fileData.fileType ===
-                                                    "Other" && (
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Enter other file type"
-                                                        value={
-                                                            fileData.otherType
-                                                        }
+                                                    className="mt-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                />
+                                            )}
+                                        </div>
+    
+                                        <div className="mb-3">
+                                            <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">
+                                                Upload File
+                                            </label>
+                                            <input
+                                                type="file"
+                                                onChange={(e) =>
+                                                    handleMultiFileChange(e, index)
+                                                }
+                                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                multiple
+                                                disabled={!fileData.fileType}
+                                            />
+                                        </div>
+    
+                                        <div className="mb-3">
+                                            <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">
+                                                Uploaded Files
+                                            </label>
+                                            {renderUploadedFiles(index)}
+                                        </div>
+    
+                                        <div className="flex justify-end">
+                                            <button
+                                                onClick={() =>
+                                                    handleRemoveRow(index)
+                                                }
+                                                className={`bg-red-500 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300 ${
+                                                    index === 0
+                                                        ? "cursor-not-allowed opacity-50"
+                                                        : ""
+                                                }`}
+                                                disabled={index === 0}
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+    
+                            {/* Desktop view - table */}
+                            <div className="hidden md:block">
+                                <table className="w-full table-auto border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-100 border-b-2 border-gray-200">
+                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                File Type
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Upload File
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Uploaded Files
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filesData.map((fileData, index) => (
+                                            <tr
+                                                key={fileData.id}
+                                                className="border-b hover:bg-gray-50 transition duration-200"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <select
+                                                        value={fileData.fileType}
                                                         onChange={(e) =>
-                                                            handleOtherTypeChange(
+                                                            handleFileTypeChange(
                                                                 e,
                                                                 index
                                                             )
                                                         }
-                                                        className="mt-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                    >
+                                                        <option value="">
+                                                            Select File Type
+                                                        </option>
+                                                        <option value="finalQuotation">
+                                                            Final Quotation
+                                                        </option>
+                                                        <option value="competitive">
+                                                            Competitive
+                                                        </option>
+                                                        <option value="agreement">
+                                                            Agreement
+                                                        </option>
+                                                        <option value="engagementwork">
+                                                            Engagement Letter(EL)
+                                                        </option>
+                                                        <option value="statementofwork">
+                                                            Statement Of Work (SOW)
+                                                        </option>
+                                                        <option value="Other">
+                                                            Other
+                                                        </option>
+                                                    </select>
+    
+                                                    {fileData.fileType ===
+                                                        "Other" && (
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter other file type"
+                                                            value={
+                                                                fileData.otherType
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleOtherTypeChange(
+                                                                    e,
+                                                                    index
+                                                                )
+                                                            }
+                                                            className="mt-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                        />
+                                                    )}
+                                                </td>
+    
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="file"
+                                                        onChange={(e) =>
+                                                            handleMultiFileChange(
+                                                                e,
+                                                                index
+                                                            )
+                                                        }
+                                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                        multiple
+                                                        disabled={
+                                                            !fileData.fileType
+                                                        }
                                                     />
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-3">
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) =>
-                                                        handleMultiFileChange(
-                                                            e,
-                                                            index
-                                                        )
-                                                    }
-                                                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                                                    multiple
-                                                    disabled={
-                                                        !fileData.fileType
-                                                    }
-                                                />
-                                            </td>
-
-                                            <td className="px-4 py-3">
-                                                {renderUploadedFiles(index)}
-                                            </td>
-
-                                            <td className="px-4 py-3 text-right">
-                                                <button
-                                                    onClick={() =>
-                                                        handleRemoveRow(index)
-                                                    }
-                                                    className={`bg-red-500 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300 ${
-                                                        index === 0
-                                                            ? "cursor-not-allowed opacity-50"
-                                                            : ""
-                                                    }`}
-                                                    disabled={index === 0}
-                                                >
-                                                    Remove
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                </td>
+    
+                                                <td className="px-4 py-3">
+                                                    {renderUploadedFiles(index)}
+                                                </td>
+    
+                                                <td className="px-4 py-3 text-right">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleRemoveRow(index)
+                                                        }
+                                                        className={`bg-red-500 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300 ${
+                                                            index === 0
+                                                                ? "cursor-not-allowed opacity-50"
+                                                                : ""
+                                                        }`}
+                                                        disabled={index === 0}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-
+    
                         <div className="mt-4 flex justify-start">
                             <button
                                 onClick={handleAddRow}
@@ -891,32 +996,33 @@ const Procurements = ({
                             </button>
                         </div>
                     </div>
-
-                    <div className="mt-8 flex justify-between">
+    
+                    <div className="mt-8 flex flex-col sm:flex-row justify-between gap-4">
                         <button
                             onClick={onBack}
-                            className="px-6 w-40 h-10 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary"
+                            className="px-6 w-full sm:w-40 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary"
                         >
                             Back
                         </button>
                         <button
                             onClick={handleSubmit}
-                            className="px-6 py-2 w-40 h-10 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark"
+                            className="px-6 py-2 w-full sm:w-40 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark"
                         >
                             Next
                         </button>
                     </div>
-
+    
+                    {/* Add Vendor Modal */}
                     {showModal && (
                         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
-                            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out">
-                                <div className="bg-primary text-white p-6 rounded-t-2xl">
-                                    <h3 className="text-2xl font-bold text-center">
+                            <div className="bg-white w-full max-w-sm md:max-w-md rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out">
+                                <div className="bg-primary text-white p-4 md:p-6 rounded-t-2xl">
+                                    <h3 className="text-xl md:text-2xl font-bold text-center">
                                         Add New Vendor
                                     </h3>
                                 </div>
-
-                                <div className="p-8 space-y-6">
+    
+                                <div className="p-4 md:p-8 space-y-4 md:space-y-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Vendor Name
@@ -934,7 +1040,7 @@ const Procurements = ({
                                             }
                                         />
                                     </div>
-
+    
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Vendor Email
@@ -952,8 +1058,8 @@ const Procurements = ({
                                             }
                                         />
                                     </div>
-
-                                    <div className="flex space-x-4">
+    
+                                    <div className="flex flex-col sm:flex-row gap-4 sm:space-x-4">
                                         <button
                                             onClick={() => setShowModal(false)}
                                             className="w-full px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300"

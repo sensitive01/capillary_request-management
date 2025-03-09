@@ -23,10 +23,10 @@ export const fetchDateFilterStatistics = async (empId, role, from, to) => {
   }
 };
 
-export const getStatisticData = async (empId, role, email) => {
+export const getStatisticData = async (empId, role, email,multipartRole) => {
   try {
     const response = await adminServices.get(
-      `/request/get-statistic-data/${empId}/${role}/${email}`
+      `/request/get-statistic-data/${empId}/${role}/${email}/${multipartRole}`
     );
     return response;
   } catch (err) {
@@ -648,6 +648,17 @@ export const getApprovedReq = async (userId) => {
     return err;
   }
 };
+export const getFilteredRequest = async (userId,action) => {
+  try {
+    const response = await adminServices.get(
+      `/request/get-filtered-req/${userId}/${action}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 
 // api/service/adminServices.js
 export const downloadInvoicePdf = async (id) => {

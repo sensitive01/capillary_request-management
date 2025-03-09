@@ -13,6 +13,9 @@ import {
   Calendar,
   Search,
   X,
+  Users,
+  Layers,
+  AlertCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -34,6 +37,7 @@ const currencies = [
 ];
 
 const Dashboard = () => {
+  const multipartRole = localStorage.getItem("multiRole");
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const role = localStorage.getItem("role");
@@ -60,6 +64,11 @@ const Dashboard = () => {
     departmentBudget: 0,
     pendingRequest: 0,
     totalApprovals: 0,
+
+    // Adding new properties for multipart role stats
+    roleApprovals: 0,
+    pendingRoleRequests: 0,
+    approvedRoleRequests: 0,
   });
 
   useEffect(() => {
@@ -67,7 +76,7 @@ const Dashboard = () => {
       setIsLoading(true);
 
       try {
-        const response = await getStatisticData(empId, role, email);
+        const response = await getStatisticData(empId, role, email,multipartRole);
         if (response.status === 200) {
           setDashboardStats(response.data);
         }
@@ -99,6 +108,7 @@ const Dashboard = () => {
       return value;
     }
   };
+
   const clearFilters = () => {
     setDateRange({
       fromDate: "",
@@ -118,16 +128,18 @@ const Dashboard = () => {
   const handleFilter = async () => {
     if (dateRange.fromDate && dateRange.toDate) {
       setIsFilterActive(true);
-      console.log(dateRange.fromDate, dateRange.toDate);
-      const response = await fetchDateFilterStatistics(
-        empId,
-        role,
-        dateRange.fromDate,
-        dateRange.toDate
-      );
-      console.log("Response", response);
-      if (response.status === 200) {
-        setDashboardStats(response.data);
+      try {
+        const response = await fetchDateFilterStatistics(
+          empId,
+          role,
+          dateRange.fromDate,
+          dateRange.toDate
+        );
+        if (response.status === 200) {
+          setDashboardStats(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch filtered statistics:", error);
       }
     } else {
       alert("Please select both From and To dates");
@@ -135,34 +147,34 @@ const Dashboard = () => {
   };
 
   const DateFilter = () => (
-    <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <h3 className="text-xl font-bold text-gray-900 flex items-center">
+    <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6 border border-gray-100">
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
           <Calendar className="w-5 h-5 mr-2 text-primary" />
           Date Range Filter
         </h3>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <label className="text-sm font-medium text-gray-700">From:</label>
             <input
               type="date"
               name="fromDate"
               value={dateRange.fromDate}
               onChange={handleDateChange}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <label className="text-sm font-medium text-gray-700">To:</label>
             <input
               type="date"
               name="toDate"
               value={dateRange.toDate}
               onChange={handleDateChange}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
             <button
               onClick={handleFilter}
               className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
@@ -197,15 +209,20 @@ const Dashboard = () => {
       onClick={onClick}
       className={`${bgColor} rounded-xl p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
     >
-      <div className="flex items-center space-x-3 mb-3">
-        <Icon className={`w-8 h-8 ${textColor}`} />
-        <h4 className="font-semibold text-gray-900">{title}</h4>
+      <div className="flex items-center space-x-3 mb-2">
+        <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${textColor}`} />
+        <h4 className="font-semibold text-sm sm:text-base text-gray-900">
+          {title}
+        </h4>
       </div>
       <div>
-        <span className={`text-3xl font-bold ${textColor}`}>{value}</span>
+        <span className={`text-xl sm:text-3xl font-bold ${textColor}`}>
+          {value}
+        </span>
       </div>
     </div>
   );
+
   const BudgetCard = ({
     title,
     departmentBudgetByCurrency,
@@ -218,17 +235,21 @@ const Dashboard = () => {
       onClick={onClick}
       className={`${bgColor} rounded-xl p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
     >
-      <div className="flex items-center space-x-3 mb-3">
-        <Icon className={`w-8 h-8 ${textColor}`} />
-        <h4 className="font-semibold text-gray-900">{title}</h4>
+      <div className="flex items-center space-x-3 mb-2">
+        <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${textColor}`} />
+        <h4 className="font-semibold text-sm sm:text-base text-gray-900">
+          {title}
+        </h4>
       </div>
       <div className="space-y-1">
         {departmentBudgetByCurrency &&
           Object.entries(departmentBudgetByCurrency).map(
             ([currency, value]) => (
               <div key={currency} className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">{currency}</span>
-                <span className={`text-xl font-bold ${textColor}`}>
+                <span className="text-xs sm:text-sm text-gray-600">
+                  {currency}
+                </span>
+                <span className={`text-sm sm:text-xl font-bold ${textColor}`}>
                   {new Intl.NumberFormat("en-US", {
                     style: "currency",
                     currency: currency,
@@ -239,7 +260,7 @@ const Dashboard = () => {
           )}
         {(!departmentBudgetByCurrency ||
           Object.keys(departmentBudgetByCurrency).length === 0) && (
-          <span className="text-sm text-gray-500">
+          <span className="text-xs sm:text-sm text-gray-500">
             No budget data available
           </span>
         )}
@@ -247,8 +268,49 @@ const Dashboard = () => {
     </div>
   );
 
+  // New section for multipart role cards
+  const renderMultipartRoleCards = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+      <StatCard
+        title="Approved Role Requests"
+        value={dashboardStats.completedApprovals || 0}
+        icon={CheckSquare}
+        bgColor="bg-emerald-50 hover:bg-emerald-100"
+        textColor="text-emerald-600"
+        onClick={() =>
+          navigate("/approval-request-list/show-request-statistcs/My-Approvals")
+        }
+      />
+
+      <StatCard
+        title="Pending Role Requests"
+        value={dashboardStats.pendingApprovals || 0}
+        icon={AlertCircle}
+        bgColor="bg-amber-50 hover:bg-amber-100"
+        textColor="text-amber-600"
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+          )
+        }
+      />
+      <StatCard
+        title="Total Role Approvals"
+        value={dashboardStats.completedApprovals || 0}
+        icon={Users}
+        bgColor="bg-purple-50 hover:bg-purple-100"
+        textColor="text-purple-600"
+        onClick={() =>
+          navigate(
+            "/approval-request-list/show-request-statistcs/Total-Approvals"
+          )
+        }
+      />
+    </div>
+  );
+
   const renderAdminCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
         title="Total Requests"
         value={dashboardStats.adminAllTotalRequests}
@@ -296,7 +358,7 @@ const Dashboard = () => {
   );
 
   const renderHODCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       <StatCard
         title="My Requests"
         value={dashboardStats.myRequests}
@@ -327,7 +389,7 @@ const Dashboard = () => {
       />
 
       <StatCard
-        title="My Approvals"
+        title="⁠Approved Approvals"
         value={dashboardStats.myApprovals}
         icon={CheckSquare}
         bgColor="bg-green-50 hover:bg-green-100"
@@ -352,7 +414,7 @@ const Dashboard = () => {
         }
       />
       <StatCard
-        title="Total Approvals"
+        title="My Department Approvals"
         value={dashboardStats.totalApprovals}
         icon={CheckCircle2}
         bgColor="bg-indigo-50 hover:bg-indigo-100"
@@ -375,7 +437,7 @@ const Dashboard = () => {
   );
 
   const renderFinanceCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       <StatCard
         title="My Requests"
         value={dashboardStats.myRequests}
@@ -451,7 +513,7 @@ const Dashboard = () => {
   );
 
   const renderEmployeeCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <StatCard
         title="My Requests"
         value={dashboardStats.myRequests}
@@ -484,7 +546,7 @@ const Dashboard = () => {
   );
 
   const renderVendorManagement = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       <StatCard
         title="My Requests"
         value={dashboardStats.myRequests}
@@ -577,63 +639,30 @@ const Dashboard = () => {
     <>
       {isLoading && <LoadingSpinner />}
 
-      <div className="min-h-screen bg-gray-50/50 py-8 px-4">
+      <div className="min-h-screen bg-gray-50/50 py-4 sm:py-8 px-2 sm:px-4">
         <div className="max-w-7xl mx-auto">
           {/* Profile Card */}
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
-            <div className="bg-primary h-32" />
-            <div className="px-6 py-8 relative">
-              <div className="flex flex-col sm:flex-row -mt-16 sm:-mt-20 mb-8">
-                <div className="relative">
-                  {user?.picture ? (
-                    <img
-                      src={user.picture}
-                      alt="Profile"
-                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white object-cover shadow-lg"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-lg">
-                      <UserCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 sm:mt-0 sm:ml-6 flex-1">
-                  <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                    {user?.name || "User"}
-                  </h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
-                      <Mail className="w-5 h-5 mr-3 text-primary" />
-                      <span className="text-base font-medium">
-                        {user?.email || "No email provided"}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
-                      <Briefcase className="w-5 h-5 mr-3 text-primary" />
-                      <span className="text-base font-medium">
-                        {department || "No department"}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-gray-700 hover:text-gray-900 transition-colors">
-                      <UserCircle2 className="w-5 h-5 mr-3 text-primary" />
-                      <span className="text-base font-medium">
-                        {role || "No role assigned"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        
           <DateFilter />
 
           {/* Statistics Cards */}
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <span className="inline-block w-2 h-6 bg-primary rounded-full mr-3"></span>
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 hover:shadow-lg transition-shadow border border-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+              <span className="inline-block w-2 h-4 sm:h-6 bg-primary rounded-full mr-2 sm:mr-3"></span>
               Dashboard Statistics
             </h3>
             {renderStatisticCards()}
+
+            {/* Multipart Role Section */}
+            {multipartRole == 1 && (
+              <>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-8 mb-4 flex items-center">
+                  <span className="inline-block w-2 h-4 sm:h-6 bg-purple-500 rounded-full mr-2 sm:mr-3"></span>
+                  Role Management
+                </h3>
+                {renderMultipartRoleCards()}
+              </>
+            )}
           </div>
         </div>
       </div>
