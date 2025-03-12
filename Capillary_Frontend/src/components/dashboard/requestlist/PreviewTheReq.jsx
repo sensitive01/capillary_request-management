@@ -61,7 +61,25 @@ const PreviewTheReq = () => {
     const [approveStatus, setApproveStatus] = useState();
     const [newStatus, setNewStatus] = useState();
     const [reason, setReason] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const needsReason = ["Hold", "Reject"].includes(approveStatus);
+    const [modalContent, setModalContent] = useState({
+        title: "",
+        description: "",
+    });
+    const openInfoModal = (question, description) => {
+        setModalContent({
+            title: question,
+            description:
+                description ||
+                "No additional information available for this question.",
+        });
+        setIsModalOpen(true);
+    };
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
 
     const [isLoading, setIsLoading] = useState(false);
     const [loadingAction, setLoadingAction] = useState("");
@@ -1025,21 +1043,81 @@ const PreviewTheReq = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
-                                            Department
+                                            Requestor Details
                                         </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials.department}
+                                        <div className="mt-2 space-y-1">
+                                        {request.userId && (
+                                                <div>
+                                                    <span className="text-gray-500 text-sm">
+                                                        ID:
+                                                    </span>
+                                                    <div className="text-gray-800 font-semibold">
+                                                        {
+                                                            request.userId
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Name:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {request
+                                                        .userName || "N/A"}
+                                                </div>
+                                            </div>
+                                           
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Department:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {request.empDepartment || "N/A"}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
+
+                                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
-                                            Head of Department
+                                            HOD Details
                                         </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials.hod}
+                                        <div className="mt-2 space-y-1">
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Name:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {request.commercials.hod ||
+                                                        "N/A"}
+                                                </div>
+                                            </div>
+                                            {request.commercials.hodId && (
+                                                <div>
+                                                    <span className="text-gray-500 text-sm">
+                                                        ID:
+                                                    </span>
+                                                    <div className="text-gray-800 font-semibold">
+                                                        {
+                                                            request.commercials
+                                                                .hodId
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Department:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {request.commercials
+                                                        .department || "N/A"}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1374,33 +1452,55 @@ const PreviewTheReq = () => {
                         Compliance Details
                     </h2>
                     {request.complinces && request?.complinces ? (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-4">
                             {Object.keys(request?.complinces)?.length > 0 ? (
                                 Object.entries(request?.complinces)?.map(
                                     ([questionId, compliance], index) => (
                                         <div
                                             key={questionId}
-                                            className={`p-4 rounded-lg ${
-                                                compliance.expectedAnswer !==
-                                                compliance.answer
+                                            className={`p-3 sm:p-4 rounded-lg ${
+                                                compliance.deviation
                                                     ? "bg-red-50 border border-red-200"
                                                     : "bg-green-50 border border-green-200"
                                             }`}
                                         >
-                                            <h3
-                                                className={`text-lg font-semibold ${
-                                                    compliance.expectedAnswer !==
-                                                    compliance.answer
-                                                        ? "text-red-800"
-                                                        : "text-green-800"
-                                                }`}
-                                            >
-                                                {compliance.question}
-                                            </h3>
+                                            <div className="flex items-start ">
+                                                <h3
+                                                    className={`text-base sm:text-lg font-semibold ${
+                                                        compliance.deviation
+                                                            ? "text-red-800"
+                                                            : "text-green-800"
+                                                    }`}
+                                                >
+                                                    {compliance.question}
+                                                </h3>
+                                                <button
+                                                    onClick={() =>
+                                                        openInfoModal(
+                                                            compliance.question,
+                                                            compliance.description
+                                                        )
+                                                    }
+                                                    className="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                                    aria-label="More information"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-5 w-5"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             <p
                                                 className={`mt-2 font-medium ${
-                                                    compliance.expectedAnswer !==
-                                                    compliance.answer
+                                                    compliance.deviation
                                                         ? "text-red-600"
                                                         : "text-green-600"
                                                 }`}
@@ -1410,39 +1510,38 @@ const PreviewTheReq = () => {
                                                     : "No"}
                                             </p>
                                             {compliance.department && (
-                                                <p className="mt-2 text-sm text-gray-600">
+                                                <p className="mt-2 text-xs sm:text-sm text-gray-600">
                                                     <strong>Department:</strong>{" "}
                                                     {compliance.department}
                                                 </p>
                                             )}
-                                            {compliance.deviation &&
-                                                compliance.expectedAnswer !==
-                                                    compliance.answer && (
-                                                    <div className="mt-2 p-3 bg-red-100 rounded">
-                                                        <p className="text-sm text-red-700">
-                                                            <strong>
-                                                                Deviation
-                                                                Reason:
-                                                            </strong>{" "}
-                                                            {
-                                                                compliance
-                                                                    .deviation
-                                                                    .reason
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                )}
+                                            {compliance.deviation && (
+                                                <div className="mt-2 p-2 sm:p-3 bg-red-100 rounded">
+                                                    <p className="text-xs sm:text-sm text-red-700">
+                                                        <strong>
+                                                            Deviation Reason:
+                                                        </strong>{" "}
+                                                        {
+                                                            compliance.deviation
+                                                                .reason
+                                                        }
+                                                    </p>
+                                                </div>
+                                            )}
 
                                             {compliance?.deviation?.attachments
                                                 ?.length > 0 && (
                                                 <div className="mt-4">
-                                                    <strong className="text-red-700">
+                                                    <strong className="text-xs sm:text-sm text-red-700">
                                                         Attachments:
                                                     </strong>
-                                                    <ul className="list-disc pl-6 mt-2">
+                                                    <ul className="list-disc pl-4 sm:pl-6 mt-2">
                                                         {compliance?.deviation?.attachments.map(
                                                             (attachment, i) => (
-                                                                <li key={i}>
+                                                                <li
+                                                                    key={i}
+                                                                    className="text-xs sm:text-sm"
+                                                                >
                                                                     <a
                                                                         href={
                                                                             attachment
@@ -1464,7 +1563,7 @@ const PreviewTheReq = () => {
                                     )
                                 )
                             ) : (
-                                <div className="text-gray-500 col-span-2">
+                                <div className="text-gray-500">
                                     No compliance details available
                                 </div>
                             )}
@@ -1876,7 +1975,7 @@ const PreviewTheReq = () => {
                     )}
 
                 {request.status === "Invoice-Pending" &&
-                    (role === "Employee" || role === "HOD Department") && (
+                    (role === "Employee" || role === "HOD Department"||role === "Admin") && (
                         <div className="flex items-center gap-4">
                             <FilePreview
                                 selectedFile={selectedImage}
@@ -2015,6 +2114,48 @@ const PreviewTheReq = () => {
                                 className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {approveStatus}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+                {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+                        <button
+                            onClick={closeModal}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {modalContent.title}
+                        </h3>
+
+                        <p className="text-gray-600">
+                            {modalContent.description}
+                        </p>
+
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                onClick={closeModal}
+                                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+                            >
+                                Close
                             </button>
                         </div>
                     </div>

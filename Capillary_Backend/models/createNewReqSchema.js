@@ -108,6 +108,7 @@ const createnewReqSchema = new mongoose.Schema(
     reqid: { type: String },
     userId: { type: String },
     userName: { type: String },
+    empDepartment:{ type: String },
     commercials: { type: commercialsSchema },
     procurements: { type: procurementsSchema },
     supplies: { type: suppliesSchema },

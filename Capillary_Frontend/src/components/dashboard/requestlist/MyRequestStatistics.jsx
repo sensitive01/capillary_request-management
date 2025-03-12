@@ -97,6 +97,7 @@ const MyRequestStatistics = () => {
     const { action } = useParams();
     const userId = localStorage.getItem("capEmpId");
     const department = localStorage.getItem("department");
+    const multiRole = localStorage.getItem("multiRole")
 
     const role = localStorage.getItem("role");
     const navigate = useNavigate();
@@ -313,7 +314,7 @@ const MyRequestStatistics = () => {
         }
 
         // Role-specific actions for completed requests
-        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
+        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department"||multiRole==1) {
             return (
                 <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
                     <div className="flex justify-center items-center space-x-2">

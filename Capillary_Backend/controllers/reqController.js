@@ -295,8 +295,9 @@ const getStatisticData = async (req, res) => {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
       pendingRequest = myRequestData.filter(
-        (req) => req.status === "Pending"
+        (req) => (req.status === "Pending" ||req.status === "PO-Pending")
       ).length;
+      
 
       const reqDataStatics = reqData.filter(
         (req) =>
@@ -509,20 +510,20 @@ const getStatisticData = async (req, res) => {
 
       const pendingApprovalData = await CreateNewReq.find({
         $or: [
-          { 
-            "firstLevelApproval.hodEmail": consolidatedData.company_email_id, 
-            "firstLevelApproval.approved": false 
+          {
+            "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+            "firstLevelApproval.approved": false,
           },
-          { 
-            "approvals.nextDepartment": { $ne: role }, 
+          {
+            "approvals.nextDepartment": { $ne: role },
             "approvals.status": { $ne: "Approved" },
-          }
+          },
         ],
-        isCompleted:true
+        isCompleted: true,
       });
-      
-      console.log('pendingApprovals', pendingApprovals);
-      
+
+      console.log("pendingApprovals", pendingApprovals);
+
       const completedApprovalData = await CreateNewReq.find({
         $or: [
           {
@@ -531,7 +532,7 @@ const getStatisticData = async (req, res) => {
           },
           { "approvals.nextDepartment": role },
         ],
-        isCompleted:true
+        isCompleted: true,
       });
 
       pendingApprovals = pendingApprovalData.length;
@@ -976,6 +977,119 @@ const calculateBudget = (reqData, department = null) => {
 //   }
 // };
 
+// const getApprovedReqData = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     console.log("Id", id);
+
+//     let consolidatedData;
+
+//     const panelUserData = await addPanelUsers
+//       .findOne(
+//         { employee_id: id },
+//         { _id: 1, full_name: 1, department: 1, role: 1, company_email_id: 1 }
+//       )
+//       .lean();
+
+//     console.log("panelUserData", panelUserData);
+
+//     const employeeData = await empModel
+//       .findOne(
+//         { employee_id: id },
+//         {
+//           _id: 1,
+//           full_name: 1,
+//           department: 1,
+//           hod_email_id: 1,
+//           company_email_id: 1,
+//         }
+//       )
+//       .lean();
+
+//     if (panelUserData) {
+//       consolidatedData = panelUserData;
+//     } else if (employeeData) {
+//       const isEmpHod = await CreateNewReq.findOne({
+//         "firstLevelApproval.hodEmail": employeeData.company_email_id,
+//       }).lean();
+
+//       consolidatedData = {
+//         ...employeeData,
+//         role: isEmpHod ? "HOD Department" : "Employee",
+//       };
+//     }
+
+//     console.log("consolidatedData", consolidatedData);
+
+//     if (!consolidatedData || !consolidatedData.company_email_id) {
+//       return res
+//         .status(404)
+//         .json({ message: "User not found or invalid data" });
+//     }
+
+//     let reqData = await CreateNewReq.find({
+//       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+//       isCompleted: true,
+//     })
+//       .sort({ createdAt: -1 })
+//       .lean(); // Added .lean() for better performance
+
+//     console.log("reqData", reqData, consolidatedData.role);
+
+//     if (
+//       reqData.length === 0 &&
+//       consolidatedData.role !== "HOD Department" &&
+//       consolidatedData.role !== "Employee"
+//     ) {
+//       console.log("Fetching all requests as no matching records found.");
+//       reqData = await CreateNewReq.find({
+//         isCompleted: true,
+//         $or: [
+//           { "approvals.nextDepartment": consolidatedData.role },
+//           { "firstLevelApproval.hodEmail": consolidatedData.company_email_id },
+//         ],
+//       })
+//         .sort({ createdAt: -1 })
+//         .lean();
+//     }
+
+//     const processedReqData = reqData.map((request) => {
+//       const { approvals, firstLevelApproval } = request;
+//       const latestLevelApproval = approvals?.[approvals.length - 1];
+//       console.log("latestLevelApproval", latestLevelApproval);
+//       let departmentInfo = {};
+
+//       if (!latestLevelApproval) {
+//         if (firstLevelApproval.approved) {
+//           departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+//         } else {
+//           departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+//         }
+
+//         return { ...request, ...departmentInfo }; // This return was missing a closing brace
+//       }
+
+//       if (latestLevelApproval.status === "Approved") {
+//         departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+//       } else if (
+//         latestLevelApproval.status === "Hold" ||
+//         latestLevelApproval.status === "Rejected"
+//       ) {
+//         departmentInfo.cDepartment = latestLevelApproval.departmentName;
+//       }
+//       console.log("latestLevelApproval", departmentInfo);
+
+//       return { ...request, ...departmentInfo };
+//     });
+
+//     console.log("Processed Request Data", processedReqData);
+//     res.status(200).json({ reqData: processedReqData });
+//   } catch (err) {
+//     console.error("Error in fetching new notifications", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
 const getApprovedReqData = async (req, res) => {
   try {
     const { id } = req.params;
@@ -989,8 +1103,6 @@ const getApprovedReqData = async (req, res) => {
         { _id: 1, full_name: 1, department: 1, role: 1, company_email_id: 1 }
       )
       .lean();
-
-    console.log("panelUserData", panelUserData);
 
     const employeeData = await empModel
       .findOne(
@@ -1018,22 +1130,20 @@ const getApprovedReqData = async (req, res) => {
       };
     }
 
-    console.log("consolidatedData", consolidatedData);
-
     if (!consolidatedData || !consolidatedData.company_email_id) {
       return res
         .status(404)
         .json({ message: "User not found or invalid data" });
     }
+    console.log("New consolidated data",consolidatedData)
 
     let reqData = await CreateNewReq.find({
       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+     
       isCompleted: true,
     })
       .sort({ createdAt: -1 })
-      .lean(); // Added .lean() for better performance
-
-    console.log("reqData", reqData, consolidatedData.role);
+      .lean();
 
     if (
       reqData.length === 0 &&
@@ -1045,48 +1155,111 @@ const getApprovedReqData = async (req, res) => {
         isCompleted: true,
         $or: [
           { "approvals.nextDepartment": consolidatedData.role },
-          { "firstLevelApproval.hodEmail": consolidatedData.company_email_id },
+          { "firstLevelApproval.hodEmail": consolidatedData.company_email_id},
         ],
       })
         .sort({ createdAt: -1 })
         .lean();
     }
 
-    // Process reqData to extract department details based on status
-    const processedReqData = reqData.map((request) => {
-      const { approvals, firstLevelApproval } = request;
-      const latestLevelApproval = approvals?.[approvals.length - 1]; // Avoids error if approvals array is empty
-      console.log("latestLevelApproval", latestLevelApproval);
-      let departmentInfo = {};
+    // Process requests and check approval status
+    const processedReqData = await Promise.all(
+      reqData.map(async (request) => {
+        const { approvals, firstLevelApproval, _id } = request;
+        const latestLevelApproval = approvals?.[approvals.length - 1];
+        let departmentInfo = {};
 
-      if (!latestLevelApproval) {
-        if (firstLevelApproval.approved) {
-          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+        if (!latestLevelApproval) {
+          if (firstLevelApproval.approved) {
+            departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+          } else {
+            departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+          }
         } else {
-          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
+          if (latestLevelApproval.status === "Approved") {
+            departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
+          } else if (
+            latestLevelApproval.status === "Hold" ||
+            latestLevelApproval.status === "Rejected"
+          ) {
+            departmentInfo.cDepartment = latestLevelApproval.departmentName;
+          }
         }
 
-        return { ...request, ...departmentInfo }; // This return was missing a closing brace
-      }
+        // Call the approval status function
+        const approvalStatus = await checkApprovalStatus(
+          consolidatedData.role,
+          id,
+          _id,
+          consolidatedData.company_email_id
+        );
 
-      if (latestLevelApproval.status === "Approved") {
-        departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
-      } else if (
-        latestLevelApproval.status === "Hold" ||
-        latestLevelApproval.status === "Rejected"
-      ) {
-        departmentInfo.cDepartment = latestLevelApproval.departmentName;
-      }
-      console.log("latestLevelApproval", departmentInfo);
+        return { ...request, ...departmentInfo, approvalStatus };
+      })
+    );
 
-      return { ...request, ...departmentInfo };
-    });
-
-    console.log("Processed Request Data", processedReqData);
     res.status(200).json({ reqData: processedReqData });
   } catch (err) {
     console.error("Error in fetching new notifications", err);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Function to check approval status and assign color if disabled
+const checkApprovalStatus = async (role, userId, requestId, email) => {
+  console.log("role, userId, requestId,email", role, userId, requestId, email);
+  try {
+    const request = await CreateNewReq.findById(requestId).lean();
+
+    if (!request) {
+      return { success: false, message: "Request not found", isDisplay: false };
+    }
+
+    const approvals = request.approvals || [];
+    const latestApproval = approvals[approvals.length - 1];
+
+    let isDisplay = true;
+    let color = "gray"; // Default color
+
+    if (latestApproval) {
+      console.log(" latest approval");
+      if (latestApproval.nextDepartment === role||(latestApproval.approvalId===userId&&request.status!=="Approved")) {
+        isDisplay = false;
+        color = "red";
+      } else if (
+        latestApproval?.approvalId === userId &&
+        (request.status === "Hold" || request.status === "Rejected")
+      ) {
+        console.log("Am inside");
+        isDisplay = false;
+        color = "red";
+      }
+    }
+    if (!latestApproval) {
+      console.log("No latest approval");
+
+      if (
+        request.firstLevelApproval.hodEmail === email &&
+        request.firstLevelApproval.approved !== true
+      ) {
+        isDisplay = false;
+        color = "red";
+      }
+    }
+
+    return {
+      success: true,
+      message: "Approval status checked successfully",
+      isDisplay,
+      color,
+    };
+  } catch (error) {
+    console.error("Error checking approval status:", error);
+    return {
+      success: false,
+      message: "Error checking approval status",
+      isDisplay: false,
+    };
   }
 };
 
@@ -1945,57 +2118,12 @@ const isApproved = async (req, res) => {
     console.log("approvals", approvals, reqData.firstLevelApproval);
     const lastlevalApproval = approvals[approvals.length - 1];
 
-    // if (
-    //   reqData &&
-    //   reqData.firstLevelApproval &&
-    //   empData.company_email_id === reqData.firstLevelApproval.hodEmail &&
-    //   reqData.firstLevelApproval.approved === true
-    // ) {
-    //   console.log("IF ckhec");
-    //   if (reqData.firstLevelApproval.status === "Approved") {
-    //     disable = true;
-    //   }
-    // } else if (
-    //   reqData?.approvals?.some(
-    //     (app) => app.approvalId === userId && app.status === "Approved"
-    //   )
-    // ) {
-    //   console.log("Else if");
-    //   disable = true;
-    // } else {
-    //   console.log("else");
-    //   const lastApproved = reqData.approvals;
-    //   console.log("lastApproved", lastApproved);
-    //   const lastApprovedDepartment = lastApproved[lastApproved.length - 1];
-    //   console.log("lastApprovedDepartment", lastApprovedDepartment);
-    //   if (
-    //     !lastApprovedDepartment &&
-    //     lastApprovedDepartment?.nextDepartment !== empData?.role &&
-    //     lastApprovedDepartment?.status !== "Approved" &&
-    //     empData.company_email_id !== reqData.firstLevelApproval.hodEmail
-    //   ) {
-    //     console.log("hi");
-    //     disable = true;
-    //   } else if (
-    //     !lastlevalApproval &&
-    //     lastlevalApproval.nextDepartment !== empData.role
-    //   ) {
-    //     console.log(
-    //       "I a checkingm",
-    //       !lastlevalApproval &&
-    //         lastlevalApproval.nextDepartment !== empData.role
-    //     );
-    //     disable = true;
-    //   } else if (lastlevalApproval.nextDepartment !== empData.role&&reqData.status==="Pending") {
-    //     disable = true;
-    //   }
-    // }
-
     if (
       (role === "HOD Department" ||
         role === "Admin" ||
         reqData.firstLevelApproval.hodEmail === empData.company_email_id) &&
-      reqData.firstLevelApproval.hodEmail === empData.company_email_id
+      reqData.firstLevelApproval.hodEmail === empData.company_email_id &&
+      lastlevalApproval.nextDepartment !== role
     ) {
       console.log("HOD Deparment");
       if (!reqData.firstLevelApproval.approved) {
@@ -3260,6 +3388,7 @@ const saveCommercialData = async (req, res) => {
         reqid: reqid,
         userId: empData.employee_id,
         userName: empData.full_name,
+        empDepartment:empData.department,
         commercials: formData,
         firstLevelApproval: {
           hodName: formData.hod,
@@ -4228,17 +4357,27 @@ const getRoleBasedApprovals = async (req, res) => {
     console.log("empData", empData, role === "HOD Department");
 
     let roleApprovalData;
+    let roleApprovalDatas;
 
     if (role === "HOD Department" || role === "Admin") {
       roleApprovalData = await CreateNewReq.find({
         "firstLevelApproval.hodEmail": empData.company_email_id,
       }).lean();
     } else {
-      roleApprovalData = await CreateNewReq.find({
-        "approvals.nextDepartment": role,
-     
+      if (role === "Head of Finance") {
+        roleApprovalDatas = await CreateNewReq.find({
+          $or: [{ "approvals.nextDepartment": role }, { status: "PO-Pending" }],
+        }).lean();
+      } else {
+        roleApprovalDatas = await CreateNewReq.find({
+          "approvals.nextDepartment": role,
+        }).lean();
+      }
 
-      }).lean();
+      roleApprovalData = roleApprovalDatas.filter((item) => {
+        const lastApproval = item.approvals[item.approvals.length - 1];
+        return (lastApproval?.nextDepartment === role||(lastApproval.approvalId===userId&&item.status!=="Approved")); // Ensure it matches the role
+      });
     }
 
     const processedReqData = roleApprovalData.map((request) => {

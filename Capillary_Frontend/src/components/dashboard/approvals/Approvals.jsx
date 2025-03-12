@@ -29,7 +29,9 @@ const currencies = [
 const Approvals = () => {
   const userId = localStorage.getItem("capEmpId");
   const role = localStorage.getItem("role");
+  const email = localStorage.getItem("email")
   const navigate = useNavigate();
+  const multiRole = localStorage.getItem("multiRole")
 
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -40,6 +42,8 @@ const Approvals = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDelete, setIsDelete] = useState(false);
   const [reqId, setReqId] = useState(null);
+  const [isShowModal, setIsShowModal] = useState(false);
+  const [viewMode, setViewMode] = useState("pending"); // New state for tracking filter mode
 
   const [dateFilters, setDateFilters] = useState({
     fromDate: "",
@@ -48,33 +52,69 @@ const Approvals = () => {
 
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    const fetchReqTable = async () => {
-      setIsLoading(true);
+  const fetchRequests = async (showPendingOnly = true) => {
+    setIsLoading(true);
 
-      try {
-        const response = await getApprovedReq(userId);
-        console.log("response", response);
-        if (response.status === 200) {
-          setUsers(response.data.reqData);
-          setFilteredUsers(response.data.reqData);
+    try {
+      const response = await getApprovedReq(userId);
+      console.log("response", response);
+      if (response.status === 200) {
+        const allRequests = response.data.reqData;
+
+        // If showPendingOnly is true, filter to show only red/pending requests
+        if (showPendingOnly) {
+
+          const pendingRequests = allRequests.filter((req) => {
+            const approvals = req.approvals
+            const lastLevelApproval = approvals[approvals.length-1]
+            console.log("lastLevelApproval",lastLevelApproval)
+            const isRed = req.approvalStatus?.color === "red";
+            const isApproved = (req.firstLevelApproval.hodEmail===email&&req.firstLevelApproval.approved===false)||(lastLevelApproval.nextDepartment===role||(lastLevelApproval.approvalId===userId&&lastLevelApproval.status!="Approved"));
+            
+            console.log(`Request ID: ${req.reqid || "N/A"}`, { 
+              isRed, 
+              isApproved 
+            });
+            
+          
+            return isRed &&  isApproved;
+          });
+          
+          setFilteredUsers(pendingRequests);
+        } else {
+          const allRequestData = allRequests.filter(
+            (req) => (req.approvalStatus && req.approvalStatus.color === "red")
+          );
+          setFilteredUsers(allRequests);
         }
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-      } finally {
-        // Add a small delay to prevent flash of loading state
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      // Add a small delay to prevent flash of loading state
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    }
+  };
 
-    fetchReqTable();
+  useEffect(() => {
+    // Initial fetch - default to pending only
+    fetchRequests(viewMode === "pending");
   }, [userId, role]);
 
   useEffect(() => {
     const filterUsers = () => {
-      const filtered = users.filter((user) => {
+      // Start with all users or only pending users based on viewMode
+      let baseUsers = users;
+      if (viewMode === "pending") {
+        baseUsers = users.filter(
+          (user) => user.approvalStatus && user.approvalStatus.color === "red"
+        );
+      }
+
+      // Then apply search filters
+      const filtered = baseUsers.filter((user) => {
         const searchString = searchTerm.toLowerCase();
         const reqIdMatch = user.reqid?.toLowerCase().includes(searchString);
         const nameMatch = user.userName?.toLowerCase().includes(searchString);
@@ -107,7 +147,20 @@ const Approvals = () => {
     };
 
     filterUsers();
-  }, [searchTerm, users, dateFilters]);
+  }, [searchTerm, users, dateFilters, viewMode]);
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    setCurrentPage(1); // Reset to first page when changing view modes
+
+    if (mode === "all") {
+      // Show all requests (fetch fresh data to ensure we have everything)
+      fetchRequests(false);
+    } else {
+      // Show only pending requests
+      fetchRequests(true);
+    }
+  };
 
   const formatCurrency = (value, currencyCode) => {
     if (!value) return "N/A";
@@ -163,6 +216,16 @@ const Approvals = () => {
     }
   };
 
+  // Function to determine row background color based on status
+  const getStatusBackgroundColor = (color) => {
+    switch (color) {
+      case "red":
+        return "bg-red-200";
+      default:
+        return "bg-white"; // Default background
+    }
+  };
+
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -171,86 +234,90 @@ const Approvals = () => {
   const renderActionColumn = (user) => {
     // If status is Approved, don't show any actions
     if (user.status === "Approved") {
-        return (
-            <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
-                <span className="text-xs text-gray-400">No actions</span>
-            </td>
-        );
+      return (
+        <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
+          <span className="text-xs text-gray-400">No actions</span>
+        </td>
+      );
     }
 
     // If request is not completed (Draft), show edit and delete options for all users
     if (!user.isCompleted) {
-        return (
-            <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
-                <div className="flex justify-center items-center space-x-2">
-                    <button
-                        className="text-blue-500 hover:text-blue-700"
-                        onClick={(e) => handleEdit(e, user._id)}
-                    >
-                        <Edit className="h-4 w-4 md:h-5 md:w-5" />
-                    </button>
-                    <button
-                        className="text-red-500 hover:text-red-700"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setReqId(user._id);
-                            setIsDelete(true);
-                        }}
-                    >
-                        <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
-                    </button>
-                </div>
-            </td>
-        );
+      return (
+        <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
+          <div className="flex justify-center items-center space-x-2">
+            <button
+              className="text-blue-500 hover:text-blue-700"
+              onClick={(e) => handleEdit(e, user._id)}
+            >
+              <Edit className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
+            <button
+              className="text-red-500 hover:text-red-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                setReqId(user._id);
+                setIsDelete(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
+          </div>
+        </td>
+      );
     }
 
     // Role-specific actions for completed requests
-    if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
-        return (
-            <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
-                <div className="flex justify-center items-center space-x-2">
-                    {/* Both Admin and Head of Finance can edit */}
-                    <button
-                        className="text-blue-500 hover:text-blue-700"
-                        onClick={(e) => handleEdit(e, user._id)}
-                    >
-                        <Edit className="h-4 w-4 md:h-5 md:w-5" />
-                    </button>
+    if (
+      role === "Admin" ||
+      role === "Head of Finance" ||
+      role === "HOD Department"||multiRole==1
+    ) {
+      return (
+        <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
+          <div className="flex justify-center items-center space-x-2">
+            {/* Both Admin and Head of Finance can edit */}
+            <button
+              className="text-blue-500 hover:text-blue-700"
+              onClick={(e) => handleEdit(e, user._id)}
+            >
+              <Edit className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
 
-                    {/* Only Admin can delete completed requests */}
-                    {role === "Admin" && (
-                        <button
-                            className="text-red-500 hover:text-red-700"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setReqId(user._id);
-                                setIsDelete(true);
-                            }}
-                        >
-                            <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
-                        </button>
-                    )}
-                </div>
-            </td>
-        );
+            {/* Only Admin can delete completed requests */}
+            {role === "Admin" && (
+              <button
+                className="text-red-500 hover:text-red-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReqId(user._id);
+                  setIsDelete(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+              </button>
+            )}
+          </div>
+        </td>
+      );
     } else {
-        // For regular employees with completed requests
-        return (
-            <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
-                <button
-                    className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary text-xs md:text-sm"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsShowModal(true);
-                        setReqId(user._id);
-                    }}
-                >
-                    Request Edit
-                </button>
-            </td>
-        );
+      // For regular employees with completed requests
+      return (
+        <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
+          <button
+            className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary text-xs md:text-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsShowModal(true);
+              setReqId(user._id);
+            }}
+          >
+            Request Edit
+          </button>
+        </td>
+      );
     }
-};
+  };
 
   return (
     <>
@@ -277,6 +344,30 @@ const Approvals = () => {
             </div>
 
             <div className="flex items-center gap-4">
+              {/* View mode toggle buttons */}
+              <div className="flex rounded-md overflow-hidden">
+                <button
+                  className={`px-4 py-2.5 text-sm font-medium ${
+                    viewMode === "pending"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 border border-gray-300"
+                  }`}
+                  onClick={() => handleViewModeChange("pending")}
+                >
+                  Pending
+                </button>
+                <button
+                  className={`px-4 py-2.5 text-sm font-medium ${
+                    viewMode === "all"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 border border-gray-300"
+                  }`}
+                  onClick={() => handleViewModeChange("all")}
+                >
+                  All
+                </button>
+              </div>
+
               <button
                 className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                 onClick={() => setShowFilters(!showFilters)}
@@ -367,12 +458,6 @@ const Approvals = () => {
                       >
                         Business Unit
                       </th>
-                      {/* <th
-                        scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
-                      >
-                        Entity
-                      </th> */}
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
@@ -406,7 +491,9 @@ const Approvals = () => {
                       currentUsers.map((user, index) => (
                         <tr
                           key={user._id}
-                          className="hover:bg-gray-100 cursor-pointer"
+                          className={`hover:bg-gray-200 cursor-pointer ${getStatusBackgroundColor(
+                            user.approvalStatus.color
+                          )}`}
                           onClick={() =>
                             navigate(
                               `/approval-request-list/preview-one-req/${user._id}`
@@ -429,9 +516,6 @@ const Approvals = () => {
                               </span>
                             </div>
                           </td>
-                          {/* <td className="px-4 py-4 text-sm text-gray-500">
-                            {user.commercials?.businessUnit || "NA"}
-                          </td> */}
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div>
                               <span className="block font-medium">
@@ -462,7 +546,7 @@ const Approvals = () => {
                             )}
                           </td>
 
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className={`px-6 py-4 text-sm `}>
                             {user.isCompleted ? (
                               <>
                                 {user.status !== "Approved" && (
@@ -472,35 +556,17 @@ const Approvals = () => {
                                     {" : "}
                                   </>
                                 )}
-                                {user.status || "Pending"}
+                                <span className="font-medium">
+                                  {user.status || "Pending"}
+                                </span>
                               </>
                             ) : (
-                              <span className="text-red-500">Draft</span>
+                              <span className="text-red-500 font-medium">
+                                Draft
+                              </span>
                             )}
                           </td>
 
-                          {/* <td className="px-6 py-4 text-sm text-gray-500">
-                            {user.status !== "Approved" && (
-                              <div className="flex justify-center items-center space-x-2">
-                                <button
-                                  className="text-blue-500 hover:text-blue-700"
-                                  onClick={(e) => handleEdit(e, user._id)}
-                                >
-                                  <Edit className="h-5 w-5" />
-                                </button>
-                                <button
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setReqId(user._id);
-                                    setIsDelete(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-5 w-5" />
-                                </button>
-                              </div>
-                            )}
-                          </td> */}
                           {renderActionColumn(user)}
                         </tr>
                       ))
@@ -514,6 +580,8 @@ const Approvals = () => {
                           dateFilters.fromDate ||
                           dateFilters.toDate
                             ? "No matching results found."
+                            : viewMode === "pending"
+                            ? "No pending requests available."
                             : "No data available."}
                         </td>
                       </tr>
@@ -553,6 +621,26 @@ const Approvals = () => {
                   className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
                 >
                   Yes Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isShowModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-auto">
+              <h3 className="text-xl font-semibold mb-4">
+                Request Edit Permission
+              </h3>
+              <p className="mb-4">
+                Your edit request has been sent to the administrator.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setIsShowModal(false)}
+                  className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+                >
+                  Close
                 </button>
               </div>
             </div>

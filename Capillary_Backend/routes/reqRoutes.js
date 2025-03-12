@@ -25,15 +25,6 @@ router.get('/get-role-based-approvals/:userId/:role', reqController.getRoleBased
 
 
 
-// router.post('/accept-request-hod/:id', reqController.approveRequest); 
-// router.post('/accept-request-business/:id', reqController.approveRequest); 
-// router.post('/accept-request-vendor/:id', reqController.approveRequest); 
-// router.post('/accept-request-legal/:id', reqController.approveRequest); 
-// router.post('/accept-request-info-security/:id', reqController.approveRequest); 
-// router.post('/accept-request-po-team/:id', reqController.approveRequest); 
-// router.post('/accept-request-hof-team/:id', reqController.approveRequest);
-
-
 router.post('/accept-request-hod/:id', approvalController.approveRequest);
 router.post('/accept-request-business/:id', approvalController.approveRequest); 
 router.post('/accept-request-vendor/:id', approvalController.approveRequest); 

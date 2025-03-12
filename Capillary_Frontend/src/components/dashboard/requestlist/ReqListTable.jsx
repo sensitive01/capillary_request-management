@@ -36,6 +36,7 @@ const currencies = [
 const ReqListTable = () => {
     const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
+    const multiRole = localStorage.getItem("multiRole")
     const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
@@ -270,7 +271,7 @@ const ReqListTable = () => {
         }
 
         // Role-specific actions for completed requests
-        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
+        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department"||multiRole==1) {
             return (
                 <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
                     <div className="flex justify-center items-center space-x-2">

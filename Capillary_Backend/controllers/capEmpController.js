@@ -431,6 +431,7 @@ const createNewReq = async (req, res) => {
         reqid: reqId,
         userId: id,
         userName: empData.full_name,
+        empDepartment:empData.department,
         commercials,
         procurements,
         supplies,

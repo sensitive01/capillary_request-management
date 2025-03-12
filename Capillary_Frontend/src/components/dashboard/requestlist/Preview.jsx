@@ -28,6 +28,23 @@ const currencies = [
 
 const Preview = ({ formData, onSubmit, onBack }) => {
     const [showDialog, setShowDialog] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState({
+        title: "",
+        description: "",
+    });
+    const openInfoModal = (question, description) => {
+        setModalContent({
+            title: question,
+            description:
+                description ||
+                "No additional information available for this question.",
+        });
+        setIsModalOpen(true);
+    };
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
     const formatCurrency = (value) => {
         const currency = currencies.find(
             (c) => c.code === formData.supplies.selectedCurrency
@@ -89,7 +106,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
             </div>
         );
     };
-    
+
     return (
         <div className="w-full mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
             <div className="space-y-6 p-4 sm:p-6">
@@ -101,7 +118,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             Commercials Details
                         </h2>
                     </div>
-    
+
                     {formData.commercials &&
                         Object.values(formData.commercials).some(
                             (value) => value
@@ -125,7 +142,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                         </div>
                                     </div>
                                 </div>
-    
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
@@ -144,26 +161,86 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                         </div>
                                     </div>
                                 </div>
-    
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
-                                            Department
+                                            Requestor Details
                                         </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {formData.commercials.department}
+                                        <div className="mt-2 space-y-1">
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Name:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {formData.commercials
+                                                        .userName || "N/A"}
+                                                </div>
+                                            </div>
+                                            {formData.commercials.userIdd && (
+                                                <div>
+                                                    <span className="text-gray-500 text-sm">
+                                                        ID:
+                                                    </span>
+                                                    <div className="text-gray-800 font-semibold">
+                                                        {
+                                                            formData.commercials
+                                                                .userIdd
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Department:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {formData.commercials
+                                                        .empDepartment || "N/A"}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
                                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                                         <span className="text-gray-600 font-medium">
-                                            Head of Department
+                                            HOD Details
                                         </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {formData.commercials.hod}
+                                        <div className="mt-2 space-y-1">
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Name:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {formData.commercials.hod ||
+                                                        "N/A"}
+                                                </div>
+                                            </div>
+                                            {formData.commercials.hodId && (
+                                                <div>
+                                                    <span className="text-gray-500 text-sm">
+                                                        ID:
+                                                    </span>
+                                                    <div className="text-gray-800 font-semibold">
+                                                        {
+                                                            formData.commercials
+                                                                .hodId
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <span className="text-gray-500 text-sm">
+                                                    Department:
+                                                </span>
+                                                <div className="text-gray-800 font-semibold">
+                                                    {formData.commercials
+                                                        .department || "N/A"}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-    
+
                                 <div className="bg-gray-50 p-4 sm:p-6 rounded-lg w-full">
                                     <div className="flex flex-col lg:flex-row lg:justify-between gap-6 lg:gap-4">
                                         {/* Bill To Column */}
@@ -190,7 +267,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                     ?.trim()}
                                             </div>
                                         </div>
-    
+
                                         {/* Ship To Column */}
                                         <div className="w-full lg:w-1/2 lg:pl-4 mt-4 lg:mt-0">
                                             <span className="text-gray-600 font-medium">
@@ -219,7 +296,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                 </div>
                             </div>
                         )}
-    
+
                     {formData.commercials?.paymentTerms?.length > 0 && (
                         <div className="mt-4 sm:mt-6">
                             <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-4">
@@ -249,7 +326,10 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                         className="hover:bg-gray-50 transition-colors"
                                                     >
                                                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium">
-                                                            {term.percentageTerm}%
+                                                            {
+                                                                term.percentageTerm
+                                                            }
+                                                            %
                                                         </td>
                                                         <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
                                                             {term.paymentTerm?.toLowerCase()}
@@ -267,7 +347,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                         </div>
                     )}
                 </div>
-    
+
                 {/* Procurements Section */}
                 <div className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
                     <div className="flex items-center space-x-2 text-primary">
@@ -276,7 +356,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             Procurements Details
                         </h2>
                     </div>
-    
+
                     {formData.procurements &&
                         Object.values(formData.procurements).some(
                             (value) => value
@@ -346,7 +426,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                     ))}
                             </div>
                         )}
-    
+
                     {formData.procurements?.uploadedFiles && (
                         <div className="mt-4 sm:mt-6">
                             <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-4">
@@ -375,7 +455,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                         </div>
                     )}
                 </div>
-    
+
                 {/* Product/Services Section */}
                 <div className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
                     <div className="flex items-center space-x-2 text-primary">
@@ -384,7 +464,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             Product/Services Details
                         </h2>
                     </div>
-    
+
                     {formData.supplies?.services?.length > 0 && (
                         <div className="mt-4 sm:mt-6">
                             <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-4">
@@ -426,16 +506,18 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                             service.quantity
                                                         ) || 0;
                                                     const price =
-                                                        parseFloat(service.price) ||
-                                                        0;
+                                                        parseFloat(
+                                                            service.price
+                                                        ) || 0;
                                                     const tax =
-                                                        parseFloat(service.tax) ||
-                                                        0;
+                                                        parseFloat(
+                                                            service.tax
+                                                        ) || 0;
                                                     const total =
                                                         quantity *
                                                         price *
                                                         (1 + tax / 100);
-    
+
                                                     return (
                                                         <tr
                                                             key={index}
@@ -454,7 +536,9 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                                     "N/A"}
                                                             </td>
                                                             <td className="p-2 sm:p-3 text-sm">
-                                                                {service.quantity}
+                                                                {
+                                                                    service.quantity
+                                                                }
                                                             </td>
                                                             <td className="p-2 sm:p-3 text-sm">
                                                                 {formatCurrency(
@@ -480,7 +564,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             </div>
                         </div>
                     )}
-    
+
                     {formData.supplies?.totalValue !== undefined && (
                         <div className="p-3 bg-gray-50 rounded-lg flex flex-col sm:flex-row sm:justify-between">
                             <span className="text-gray-600 font-medium mb-1 sm:mb-0">
@@ -491,7 +575,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             </span>
                         </div>
                     )}
-    
+
                     {formData.supplies?.remarks && (
                         <div className="mt-4 sm:mt-6">
                             <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-4">
@@ -503,7 +587,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                         </div>
                     )}
                 </div>
-    
+
                 {/* Compliances Section */}
                 <div className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
                     <div className="flex items-center space-x-2 text-primary">
@@ -512,7 +596,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             Compliance Details
                         </h2>
                     </div>
-    
+
                     {formData.complinces && formData?.complinces ? (
                         <div className="space-y-4">
                             {Object.keys(formData?.complinces)?.length > 0 ? (
@@ -526,15 +610,40 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                     : "bg-green-50 border border-green-200"
                                             }`}
                                         >
-                                            <h3
-                                                className={`text-base sm:text-lg font-semibold ${
-                                                    compliance.deviation
-                                                        ? "text-red-800"
-                                                        : "text-green-800"
-                                                }`}
-                                            >
-                                                {compliance.question}
-                                            </h3>
+                                            <div className="flex items-start ">
+                                                <h3
+                                                    className={`text-base sm:text-lg font-semibold ${
+                                                        compliance.deviation
+                                                            ? "text-red-800"
+                                                            : "text-green-800"
+                                                    }`}
+                                                >
+                                                    {compliance.question}
+                                                </h3>
+                                                <button
+                                                    onClick={() =>
+                                                        openInfoModal(
+                                                            compliance.question,
+                                                            compliance.description
+                                                        )
+                                                    }
+                                                    className="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                                    aria-label="More information"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-5 w-5"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             <p
                                                 className={`mt-2 font-medium ${
                                                     compliance.deviation
@@ -542,7 +651,9 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                         : "text-green-600"
                                                 }`}
                                             >
-                                                {compliance.answer ? "Yes" : "No"}
+                                                {compliance.answer
+                                                    ? "Yes"
+                                                    : "No"}
                                             </p>
                                             {compliance.department && (
                                                 <p className="mt-2 text-xs sm:text-sm text-gray-600">
@@ -556,11 +667,14 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                         <strong>
                                                             Deviation Reason:
                                                         </strong>{" "}
-                                                        {compliance.deviation.reason}
+                                                        {
+                                                            compliance.deviation
+                                                                .reason
+                                                        }
                                                     </p>
                                                 </div>
                                             )}
-    
+
                                             {compliance?.deviation?.attachments
                                                 ?.length > 0 && (
                                                 <div className="mt-4">
@@ -570,7 +684,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                     <ul className="list-disc pl-4 sm:pl-6 mt-2">
                                                         {compliance?.deviation?.attachments.map(
                                                             (attachment, i) => (
-                                                                <li 
+                                                                <li
                                                                     key={i}
                                                                     className="text-xs sm:text-sm"
                                                                 >
@@ -606,13 +720,15 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                         </div>
                     )}
                 </div>
-    
+
                 <div className="p-4 sm:p-6 border rounded-lg shadow-sm bg-gray-50">
                     <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                         <User className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-                        <h3 className="font-semibold text-xl sm:text-2xl">Approver</h3>
+                        <h3 className="font-semibold text-xl sm:text-2xl">
+                            Approver
+                        </h3>
                     </div>
-    
+
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 p-3 sm:p-4">
                         <div className="w-full sm:w-auto">
                             <div className="text-gray-600 text-xs sm:text-sm">
@@ -622,7 +738,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                 {formData.commercials.department}
                             </div>
                         </div>
-    
+
                         <div className="w-full sm:w-auto">
                             <div className="text-gray-600 text-xs sm:text-sm">
                                 Head of Department
@@ -631,7 +747,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                 {formData.commercials.hod || "No HOD found"}
                             </div>
                         </div>
-    
+
                         <div className="w-full sm:w-auto">
                             <div className="text-gray-600 text-xs sm:text-sm">
                                 HOD Email
@@ -644,7 +760,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                     </div>
                 </div>
             </div>
-    
+
             {/* Footer Actions */}
             <div className="p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 border-t mt-6 sm:mt-8">
                 <button
@@ -662,6 +778,48 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                     Submit
                 </button>
             </div>
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+                        <button
+                            onClick={closeModal}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {modalContent.title}
+                        </h3>
+
+                        <p className="text-gray-600">
+                            {modalContent.description}
+                        </p>
+
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                onClick={closeModal}
+                                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {showDialog && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm">
@@ -671,7 +829,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                         <p className="mb-4 sm:mb-6 text-sm sm:text-base">
                             Are you sure you want to submit this form?
                         </p>
-    
+
                         <div className="flex flex-col sm:flex-row-reverse justify-end gap-3 sm:gap-4">
                             <button
                                 onClick={() => {
@@ -682,7 +840,7 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                             >
                                 Submit Request
                             </button>
-                            
+
                             <button
                                 onClick={() => setShowDialog(false)}
                                 className="px-4 py-2 border rounded-lg hover:bg-gray-100 w-full sm:w-auto mt-2 sm:mt-0"

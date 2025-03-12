@@ -6,6 +6,7 @@ import {
     ArrowRight,
     Upload,
     X,
+    Info,
 } from "lucide-react";
 import {
     getAllLegalQuestions,
@@ -27,6 +28,14 @@ const AgreementCompliances = ({
     const [deviations, setDeviations] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [globalDeviationFlag, setGlobalDeviationFlag] = useState(0);
+    
+
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState({
+        title: "",
+        description: "",
+    });
 
     useEffect(() => {
         if (questions.length > 0 && Object.keys(answers).length > 0) {
@@ -46,6 +55,7 @@ const AgreementCompliances = ({
                 setIsLoading(true);
                 const response = await getAllLegalQuestions();
                 const questionData = response.data.data;
+                console.log("response.data.data", response.data.data);
                 setQuestions(questionData);
 
                 const initialAnswers = {};
@@ -79,6 +89,7 @@ const AgreementCompliances = ({
                                     department: q.createdBy.department,
                                     deviation: null,
                                     expectedAnswer: q.expectedAnswer,
+                                    description: q.description,
                                 },
                             },
                             hasDeviations: 0, // Initialize deviation flag
@@ -121,6 +132,7 @@ const AgreementCompliances = ({
             },
         }));
     };
+
     const handleDeviationChange = (questionId, field, value) => {
         const updatedDeviation = {
             ...deviations[questionId],
@@ -177,6 +189,17 @@ const AgreementCompliances = ({
         handleDeviationChange(questionId, "attachments", updatedAttachments);
     };
 
+    // Function to show info modal
+    const showInfo = (title, description) => {
+        setModalContent({ title, description });
+        setIsModalOpen(true);
+    };
+
+    // Function to close modal
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
     const handleSubmit = async () => {
         console.log("ggreentmA", formData);
         const response = await saveAggrementData(formData, reqId);
@@ -210,6 +233,7 @@ const AgreementCompliances = ({
     };
     const questionsByDepartment = questions.reduce((acc, q) => {
         const dept = q.createdBy.department;
+        console.log("dept", dept);
         if (!acc[dept]) acc[dept] = [];
         acc[dept].push(q);
         return acc;
@@ -287,9 +311,24 @@ const AgreementCompliances = ({
                                             className="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
                                         >
                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-8">
-                                                <p className="text-base sm:text-lg text-gray-800">
-                                                    {question.question}
-                                                </p>
+                                                <div className="flex items-center space-x-2">
+                                                    <p className="text-base sm:text-lg text-gray-800">
+                                                        {question.question}
+                                                    </p>
+                                                    {question.description && (
+                                                        <button
+                                                            onClick={() =>
+                                                                showInfo(
+                                                                    question.question,
+                                                                    question.description
+                                                                )
+                                                            }
+                                                            className="flex-shrink-0 text-gray-400 hover:text-primary transition-colors"
+                                                        >
+                                                            <Info size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-4 sm:gap-6 shrink-0">
                                                     {["Yes", "No"].map(
                                                         (option) => (
@@ -445,6 +484,50 @@ const AgreementCompliances = ({
                     </button>
                 </div>
             </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+                        <button
+                            onClick={closeModal}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {modalContent.title}
+                        </h3>
+
+                        <p className="text-gray-600">
+                            {modalContent.description}
+                        </p>
+
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                onClick={closeModal}
+                                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

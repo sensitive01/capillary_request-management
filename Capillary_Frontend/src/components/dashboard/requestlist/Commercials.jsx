@@ -10,6 +10,10 @@ import businessUnits from "./dropDownData/businessUnit";
 
 const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
     const empDepartment = localStorage.getItem("department");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    console.log("uaer",user)
+
+    
     const empId = localStorage.getItem("userId");
     const [isDropDown, setIsDropDown] = useState(false);
     const [approvers, setApprovers] = useState([]);
@@ -33,7 +37,9 @@ const Commercials = ({ formData, setFormData, onNext, setReqId }) => {
         hodEmail: formData.hodEmail || "",
         businessUnit: formData.businessUnit || "",
         isCreditCardSelected: formData.isCreditCardSelected || false,
-        newReqId :formData.newReqId||""
+        newReqId :formData.newReqId||"",
+        empDepartment:empDepartment,
+        userName:user.name
     });
 
     const [entities, setEntities] = useState([]);

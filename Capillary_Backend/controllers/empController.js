@@ -529,33 +529,7 @@ exports.createNewReq = async (req, res) => {
   }
 };
 
-// exports.getAllEmployeeReq = async (req, res) => {
-//   try {
-//     console.log("wlcome to get req", req.params.id);
-//     const reqList = await CreateNewReq.find({ userId: req.params.id })
-//       .sort({ createdAt: -1 })
-//       .exec();
 
-//     console.log("Sorted reqList", reqList)
-
-
-//     if (reqList.length > 0) {
-//       return res.status(200).json({
-//         message: "Requests fetched successfully",
-//         data: reqList,
-//       });
-//     } else {
-//       return res.status(404).json({
-//         message: "No requests found for the given userId",
-//       });
-//     }
-//   } catch (err) {
-//     return res.status(500).json({
-//       message: "Error fetching employee requests",
-//       error: err.message,
-//     });
-//   }
-// };
 
 
 exports.getAllEmployeeReq = async (req, res) => {

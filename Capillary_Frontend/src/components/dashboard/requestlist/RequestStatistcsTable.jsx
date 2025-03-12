@@ -35,69 +35,6 @@ const currencies = [
     { code: "PHP", symbol: "₱", locale: "fil-PH" },
 ];
 
-const EmptyState = ({ action }) => {
-    const navigate = useNavigate();
-
-    const getEmptyStateMessage = () => {
-        switch (action) {
-            case "Pending-Request":
-                return {
-                    title: "No Pending Requests",
-                    description:
-                        "There are currently no requests waiting for approval.",
-                };
-            case "Approved-Request":
-                return {
-                    title: "No Approved Requests",
-                    description:
-                        "There are no requests that have been approved yet.",
-                };
-            case "Total-Approvals":
-                return {
-                    title: "No Total Approvals",
-                    description:
-                        "There are no requests that have been Approved yet.",
-                };
-            case "Total-Request":
-                return {
-                    title: "No Requests Found",
-                    description:
-                        "There are no requests in the system at the moment.",
-                };
-            default:
-                return {
-                    title: "No Data Available",
-                    description: "No requests match the current criteria.",
-                };
-        }
-    };
-
-    const message = getEmptyStateMessage();
-
-    return (
-        <div className="text-center py-12">
-            <div className="flex justify-center">
-                <div className="bg-gray-100 rounded-full p-4">
-                    <InboxIcon className="h-12 w-12 text-gray-400" />
-                </div>
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">
-                {message.title}
-            </h3>
-            <p className="mt-2 text-sm text-gray-500">{message.description}</p>
-            <div className="mt-6">
-                <button
-                    onClick={() => navigate("/req-list-table/create-request")}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Request
-                </button>
-            </div>
-        </div>
-    );
-};
-
 const RequestStatistcsTable = () => {
     const { action } = useParams();
     console.log("Action", action);
@@ -107,6 +44,8 @@ const RequestStatistcsTable = () => {
     const email = localStorage.getItem("email");
     const multiRole = localStorage.getItem("multiRole");
     const [reqId, setReqId] = useState(null);
+    const [filterAction, setFilterAction] = useState([]);
+const [newStatus, setNewStatus] = useState('');
 
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
@@ -125,23 +64,21 @@ const RequestStatistcsTable = () => {
 
     const itemsPerPage = 10;
 
-    let filterAction;
-    let newStatus;
-    if (action === "Pending-Request") {
-        filterAction = "Pending";
-    } else if (action === "Approved-Request") {
-        filterAction = "Approved";
-    } else if (action === "Completed-Request") {
-        filterAction = "Approved";
-    } else if (action === "Pending-Approvals") {
-        filterAction = "Pending";
-    } else if (action === "Approved-Approvals") {
-        newStatus = "Approved-Approvals";
-        filterAction = "Approved";
-    } else if (action === "Pending-Approvals") {
-        filterAction = "";
-    } else if (action === "Total-Approvals") {
-    }
+    useEffect(() => {
+        // Set filter action based on the action param
+        if (action === "Pending-Request") {
+          setFilterAction(["Pending", "Hold", "Rejected", "PO-Pending", "Invoice-Pending"]);
+        } else if (action === "Approved-Request") {
+          setFilterAction("Approved");
+        } else if (action === "Completed-Request") {
+          setFilterAction("Approved");
+        } else if (action === "Pending-Approvals") {
+          setFilterAction("Pending");
+        } else if (action === "Approved-Approvals") {
+          setNewStatus("Approved-Approvals");
+          setFilterAction("Approved");
+        }
+      }, [action]);
 
     useEffect(() => {
         const fetchReqTable = async () => {
@@ -156,7 +93,7 @@ const RequestStatistcsTable = () => {
                         setUsers(response.data.data);
                     } else {
                         const filteredData = response.data.data.filter(
-                            (item) => item.status === filterAction
+                            (item) => filterAction.includes(item.status) // Check if status is in the array
                         );
                         setUsers(filteredData);
                     }
@@ -171,9 +108,10 @@ const RequestStatistcsTable = () => {
                         }
                     } else {
                         response = await getApprovedReq(userId);
-                        console.log("respeonse hod", response);
+                        console.log("response hod", response); 
                         if (response.status === 200) {
                             if (action === newStatus) {
+                                console.log("0")
                                 const filteredData =
                                     response.data.reqData.filter((items) =>
                                         items.approvals.some((app) => {
@@ -183,62 +121,75 @@ const RequestStatistcsTable = () => {
                                     );
                                 setUsers(filteredData);
                             } else if (action === "Pending-Approvals") {
+                                console.log("Inside pending approvals");
                                 if (
                                     role === "HOD Department" ||
                                     role === "Admin"
                                 ) {
+                                    console.log("1")
                                     const filteredData =
                                         response.data.reqData.filter((items) =>
                                             [
                                                 "Pending",
                                                 "Hold",
                                                 "Reject",
+                                                "PO-Pending",
+                                                "Invoice-Pending"
                                             ].includes(
-                                                items.firstLevelApproval.status
+                                                (items.firstLevelApproval.status)
                                             )
                                         );
 
                                     setUsers(filteredData);
+                                    setFilteredUsers(filteredData);
                                 } else {
-                                    const filteredData =
-                                        response.data.reqData.filter((items) =>
-                                            items.approvals.some(
-                                                (app, index, arr) => {
-                                                    // Check if the current approval's nextDepartment matches the role
-                                                    const isPending =
-                                                        app.nextDepartment ===
-                                                            role ||
-                                                        app.status !==
-                                                            "Approved";
+                                    console.log("2", response.data.reqData);
+                                    
+                                    // First filter: Check for pending approvals in the approvals array
+                                    const filteredByApprovals = response.data.reqData.filter((items) =>
+                                        items.approvals && items.approvals.some(
+                                            (app, index, arr) => {
+                                                // Check if the current approval's nextDepartment matches the role
+                                                const isPending =
+                                                    (app.nextDepartment === role ||  app.approvalId === userId)&&
+                                                    app.status !== "Approved";
 
-                                                    // Check if this is the last approval entry in the array
-                                                    const isLatestApproval =
-                                                        index ===
-                                                        arr.length - 1;
+                                                // Check if this is the last approval entry in the array
+                                                const isLatestApproval =
+                                                    index === arr.length - 1;
 
-                                                    return (
-                                                        isPending &&
-                                                        isLatestApproval
-                                                    );
-                                                }
-                                            )
-                                        ) ||
-                                        response.data.filter((items) =>
-                                            items.firstLevelApproval.some(
-                                                (app) =>
-                                                    app.hodEmail === email
-                                            )
-                                        );
-
-                                    setUsers(filteredData);
+                                                return isPending && isLatestApproval;
+                                            }
+                                        )
+                                    );
+                                    
+                                    // Second filter: Check for HOD email match in firstLevelApproval
+                                    const filteredByHodEmail = response.data.reqData.filter((items) => 
+                                        items.firstLevelApproval && 
+                                        items.firstLevelApproval.hodEmail === email &&
+                                        items.firstLevelApproval.status !== "Approved"
+                                    );
+                                    
+                                    // Combine both filtered arrays and remove duplicates
+                                    const combinedData = [
+                                        ...filteredByApprovals, 
+                                        ...filteredByHodEmail
+                                    ].filter((item, index, self) => 
+                                        index === self.findIndex((t) => 
+                                            t._id === item._id
+                                        )
+                                    );
+                                    
+                                    console.log("Combined data for pending approvals:", combinedData);
+                                    
+                                    setUsers(combinedData);
+                                    setFilteredUsers(combinedData);
                                 }
-                            } else if (action == "Total-Approvals") {
+                            } else if (action === "Total-Approvals") {
                                 console.log("Action-->", response.data.reqData);
                                 const filteredData = response.data.reqData;
                                 setUsers(filteredData);
-                            } else if (
-                                action === "My-Approvals"
-                            ) {
+                            } else if (action === "My-Approvals") {
                                 const filteredData =
                                     response.data.reqData.filter((item) =>
                                         item.approvals.some(
@@ -270,22 +221,26 @@ const RequestStatistcsTable = () => {
             }
         };
 
-        fetchReqTable();
-    }, [userId, role, action, filterAction]);
-    
-    // Apply filters whenever users, searchTerm, or dateFilters change
+     
+            fetchReqTable();
+        
+    }, [userId, role, action, filterAction, email, department]);
+
+    // Improved search and filter function for better search results
     useEffect(() => {
         // First, apply date filters if they exist
         let filtered = [...users];
-        
+
         if (dateFilters.fromDate || dateFilters.toDate) {
-            filtered = filtered.filter(user => {
+            filtered = filtered.filter((user) => {
                 // Get the request creation date from the reqid format (assuming reqid format has date info)
                 // If createdAt field exists, use that instead
-                const createdDate = user.createdAt ? new Date(user.createdAt) : null;
-                
+                const createdDate = user.createdAt
+                    ? new Date(user.createdAt)
+                    : null;
+
                 if (!createdDate) return true; // If no date available, include by default
-                
+
                 if (dateFilters.fromDate && dateFilters.toDate) {
                     const fromDate = new Date(dateFilters.fromDate);
                     const toDate = new Date(dateFilters.toDate);
@@ -300,31 +255,78 @@ const RequestStatistcsTable = () => {
                     toDate.setHours(23, 59, 59, 999);
                     return createdDate <= toDate;
                 }
-                
+
                 return true;
             });
         }
-        
-        // Then apply search term
+
+        // Enhanced search functionality - more comprehensive field checking
         if (searchTerm.trim() !== "") {
             const term = searchTerm.toLowerCase();
-            filtered = filtered.filter(user => 
-                // Check reqId
-                (user.reqid && user.reqid.toLowerCase().includes(term)) ||
-                // Check userName or employee name
-                (user.userName && user.userName.toLowerCase().includes(term)) ||
-                // Check department
-                (user.commercials?.department && user.commercials.department.toLowerCase().includes(term)) ||
-                // Check businessUnit
-                (user.commercials?.businessUnit && user.commercials.businessUnit.toLowerCase().includes(term)) ||
-                // Check vendor
-                (user.procurements?.vendor && user.procurements.vendor.toLowerCase().includes(term)) ||
-                // Check entity
-                (user.commercials?.entity && user.commercials.entity.toLowerCase().includes(term))
-            );
+            filtered = filtered.filter((user) => {
+                // Create a function to safely check nested properties
+                const safeCheck = (obj, path) => {
+                    if (!obj) return false;
+                    // Handle direct string properties
+                    if (typeof obj === 'string') {
+                        return obj.toLowerCase().includes(term);
+                    }
+                    
+                    // Handle array of objects
+                    if (Array.isArray(obj)) {
+                        return obj.some(item => safeCheck(item, ''));
+                    }
+                    
+                    // Handle nested paths
+                    if (path) {
+                        const props = path.split('.');
+                        let current = obj;
+                        for (const prop of props) {
+                            if (current[prop] === undefined) return false;
+                            current = current[prop];
+                        }
+                        return typeof current === 'string' ? 
+                            current.toLowerCase().includes(term) : 
+                            false;
+                    }
+                    
+                    // Handle object
+                    return Object.values(obj).some(value => {
+                        if (typeof value === 'string') {
+                            return value.toLowerCase().includes(term);
+                        } else if (typeof value === 'object' && value !== null) {
+                            return safeCheck(value, '');
+                        }
+                        return false;
+                    });
+                };
+                
+                // Check basic fields
+                if (user.reqid && user.reqid.toLowerCase().includes(term)) return true;
+                if (user.userName && user.userName.toLowerCase().includes(term)) return true;
+                if (user.status && user.status.toLowerCase().includes(term)) return true;
+                
+                // Check nested fields
+                if (safeCheck(user.commercials, '')) return true;
+                if (safeCheck(user.procurements, '')) return true;
+                if (safeCheck(user.supplies, '')) return true;
+                if (safeCheck(user.firstLevelApproval, '')) return true;
+                if (safeCheck(user.approvals, '')) return true;
+                
+                // Check specific nested paths
+                return (
+                    safeCheck(user.commercials, 'department') ||
+                    safeCheck(user.commercials, 'businessUnit') ||
+                    safeCheck(user.commercials, 'entity') ||
+                    safeCheck(user.commercials, 'site') ||
+                    safeCheck(user.procurements, 'vendor') ||
+                    safeCheck(user.procurements, 'vendorName')
+                );
+            });
         }
-        
+
         setFilteredUsers(filtered);
+        setCurrentPage(1); // Reset to first page when filters change
     }, [users, searchTerm, dateFilters]);
 
     const handlePageChange = (page) => {
@@ -332,7 +334,7 @@ const RequestStatistcsTable = () => {
             setCurrentPage(page);
         }
     };
-    
+
     const sendEditMail = async () => {
         try {
             console.log("Sending...");
@@ -350,11 +352,11 @@ const RequestStatistcsTable = () => {
             setSelectedUsers([]);
         }
     };
-    
+
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
-    
+
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -367,7 +369,7 @@ const RequestStatistcsTable = () => {
                 : [...prev, sno]
         );
     };
-    
+
     const exportToExcel = () => {
         const exportData = filteredUsers.map((user) => ({
             "SL No": user.sno,
@@ -408,7 +410,7 @@ const RequestStatistcsTable = () => {
             return value;
         }
     };
-    
+
     const clearFilters = () => {
         setDateFilters({
             fromDate: "",
@@ -422,7 +424,7 @@ const RequestStatistcsTable = () => {
         e.stopPropagation();
         navigate(`/req-list-table/edit-req/${userId}`);
     };
-    
+
     const handleDateFilterChange = (e) => {
         const { name, value } = e.target;
         setDateFilters((prev) => ({
@@ -430,7 +432,7 @@ const RequestStatistcsTable = () => {
             [name]: value,
         }));
     };
-    
+
     const handleDelete = async (id) => {
         try {
             const response = await deleteReq(id);
@@ -442,7 +444,7 @@ const RequestStatistcsTable = () => {
             console.error("Error deleting request:", error);
         }
     };
-    
+
     const renderActionColumn = (user) => {
         // If status is Approved, don't show any actions
         if (user.status === "Approved") {
@@ -480,7 +482,11 @@ const RequestStatistcsTable = () => {
         }
 
         // Role-specific actions for completed requests
-        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
+        if (
+            role === "Admin" ||
+            role === "Head of Finance" ||
+            role === "HOD Department"||multiRole==1
+        ) {
             return (
                 <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
                     <div className="flex justify-center items-center space-x-2">
@@ -548,6 +554,7 @@ const RequestStatistcsTable = () => {
                             Add Request
                         </button>
                         <div className="flex justify-between">
+                            
                             <button
                                 className="flex-1 mr-2 flex justify-center items-center px-2 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 onClick={() => setShowFilters(!showFilters)}
