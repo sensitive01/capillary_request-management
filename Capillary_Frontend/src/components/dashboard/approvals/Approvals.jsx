@@ -29,9 +29,9 @@ const currencies = [
 const Approvals = () => {
   const userId = localStorage.getItem("capEmpId");
   const role = localStorage.getItem("role");
-  const email = localStorage.getItem("email")
+  const email = localStorage.getItem("email");
   const navigate = useNavigate();
-  const multiRole = localStorage.getItem("multiRole")
+  const multiRole = localStorage.getItem("multiRole");
 
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -43,7 +43,7 @@ const Approvals = () => {
   const [isDelete, setIsDelete] = useState(false);
   const [reqId, setReqId] = useState(null);
   const [isShowModal, setIsShowModal] = useState(false);
-  const [viewMode, setViewMode] = useState("pending"); // New state for tracking filter mode
+  const [viewMode, setViewMode] = useState("pending");
 
   const [dateFilters, setDateFilters] = useState({
     fromDate: "",
@@ -56,42 +56,43 @@ const Approvals = () => {
     setIsLoading(true);
 
     try {
-      const response = await getApprovedReq(userId);
+      const response = await getApprovedReq(userId,"Pending");
       console.log("response", response);
       if (response.status === 200) {
         const allRequests = response.data.reqData;
 
-        // If showPendingOnly is true, filter to show only red/pending requests
         if (showPendingOnly) {
-
           const pendingRequests = allRequests.filter((req) => {
-            const approvals = req.approvals
-            const lastLevelApproval = approvals[approvals.length-1]
-            console.log("lastLevelApproval",lastLevelApproval)
+            const approvals = req.approvals;
+            const lastLevelApproval = approvals[approvals.length - 1];
+            console.log("lastLevelApproval", lastLevelApproval);
             const isRed = req.approvalStatus?.color === "red";
-            const isApproved = (req.firstLevelApproval.hodEmail===email&&req.firstLevelApproval.approved===false)||(lastLevelApproval.nextDepartment===role||(lastLevelApproval.approvalId===userId&&lastLevelApproval.status!="Approved"));
-            
-            console.log(`Request ID: ${req.reqid || "N/A"}`, { 
-              isRed, 
-              isApproved 
+            const isApproved =
+              (req.firstLevelApproval.hodEmail === email &&
+                req.firstLevelApproval.approved === false) ||
+              lastLevelApproval.nextDepartment === role ||
+              (lastLevelApproval.approvalId === userId &&
+                lastLevelApproval.status != "Approved");
+
+            console.log(`Request ID: ${req.reqid || "N/A"}`, {
+              isRed,
+              isApproved,
             });
-            
-          
-            return isRed &&  isApproved;
+
+            return isRed && isApproved;
           });
-          
+
           setFilteredUsers(pendingRequests);
+          setUsers(pendingRequests);
         } else {
-          const allRequestData = allRequests.filter(
-            (req) => (req.approvalStatus && req.approvalStatus.color === "red")
-          );
+          const response = await getApprovedReq(userId,"All");
           setFilteredUsers(allRequests);
+          setUsers(allRequests);
         }
       }
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
-      // Add a small delay to prevent flash of loading state
       setTimeout(() => {
         setIsLoading(false);
       }, 500);
@@ -99,13 +100,11 @@ const Approvals = () => {
   };
 
   useEffect(() => {
-    // Initial fetch - default to pending only
     fetchRequests(viewMode === "pending");
   }, [userId, role]);
 
   useEffect(() => {
     const filterUsers = () => {
-      // Start with all users or only pending users based on viewMode
       let baseUsers = users;
       if (viewMode === "pending") {
         baseUsers = users.filter(
@@ -113,7 +112,6 @@ const Approvals = () => {
         );
       }
 
-      // Then apply search filters
       const filtered = baseUsers.filter((user) => {
         const searchString = searchTerm.toLowerCase();
         const reqIdMatch = user.reqid?.toLowerCase().includes(searchString);
@@ -151,15 +149,8 @@ const Approvals = () => {
 
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
-    setCurrentPage(1); // Reset to first page when changing view modes
-
-    if (mode === "all") {
-      // Show all requests (fetch fresh data to ensure we have everything)
-      fetchRequests(false);
-    } else {
-      // Show only pending requests
-      fetchRequests(true);
-    }
+    setCurrentPage(1);
+    fetchRequests(mode === "pending");
   };
 
   const formatCurrency = (value, currencyCode) => {
@@ -216,13 +207,12 @@ const Approvals = () => {
     }
   };
 
-  // Function to determine row background color based on status
   const getStatusBackgroundColor = (color) => {
     switch (color) {
       case "red":
         return "bg-red-200";
       default:
-        return "bg-white"; // Default background
+        return "bg-white";
     }
   };
 
@@ -232,7 +222,6 @@ const Approvals = () => {
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
   const renderActionColumn = (user) => {
-    // If status is Approved, don't show any actions
     if (user.status === "Approved") {
       return (
         <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
@@ -241,7 +230,6 @@ const Approvals = () => {
       );
     }
 
-    // If request is not completed (Draft), show edit and delete options for all users
     if (!user.isCompleted) {
       return (
         <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
@@ -267,16 +255,15 @@ const Approvals = () => {
       );
     }
 
-    // Role-specific actions for completed requests
     if (
       role === "Admin" ||
       role === "Head of Finance" ||
-      role === "HOD Department"||multiRole==1
+      role === "HOD Department" ||
+      multiRole == 1
     ) {
       return (
         <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
           <div className="flex justify-center items-center space-x-2">
-            {/* Both Admin and Head of Finance can edit */}
             <button
               className="text-blue-500 hover:text-blue-700"
               onClick={(e) => handleEdit(e, user._id)}
@@ -284,7 +271,6 @@ const Approvals = () => {
               <Edit className="h-4 w-4 md:h-5 md:w-5" />
             </button>
 
-            {/* Only Admin can delete completed requests */}
             {role === "Admin" && (
               <button
                 className="text-red-500 hover:text-red-700"
@@ -301,7 +287,6 @@ const Approvals = () => {
         </td>
       );
     } else {
-      // For regular employees with completed requests
       return (
         <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
           <button
@@ -344,7 +329,6 @@ const Approvals = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* View mode toggle buttons */}
               <div className="flex rounded-md overflow-hidden">
                 <button
                   className={`px-4 py-2.5 text-sm font-medium ${

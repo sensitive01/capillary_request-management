@@ -638,11 +638,12 @@ export const getNewNotification = async (userId) => {
   }
 };
 
-export const getApprovedReq = async (userId) => {
+export const getApprovedReq = async (userId,showPendingOnly) => {
   try {
     const response = await adminServices.get(
-      `/request/get-approved-req/${userId}`
+      `/request/get-approved-req/${userId}?showPendingOnly=${showPendingOnly}`
     );
+    
     return response;
   } catch (err) {
     return err;

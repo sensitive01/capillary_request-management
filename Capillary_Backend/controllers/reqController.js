@@ -1093,6 +1093,8 @@ const calculateBudget = (reqData, department = null) => {
 const getApprovedReqData = async (req, res) => {
   try {
     const { id } = req.params;
+    const { showPendingOnly } = req.query;
+    console.log("showPendingOnly", showPendingOnly);
     console.log("Id", id);
 
     let consolidatedData;
@@ -1135,28 +1137,30 @@ const getApprovedReqData = async (req, res) => {
         .status(404)
         .json({ message: "User not found or invalid data" });
     }
-    console.log("New consolidated data",consolidatedData)
+    console.log("New consolidated data", consolidatedData);
 
     let reqData = await CreateNewReq.find({
       "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
-     
       isCompleted: true,
     })
       .sort({ createdAt: -1 })
       .lean();
 
-    if (
-      reqData.length === 0 &&
-      consolidatedData.role !== "HOD Department" &&
-      consolidatedData.role !== "Employee"
-    ) {
-      console.log("Fetching all requests as no matching records found.");
+    // Check for pending filter
+    if (showPendingOnly === "Pending") {
+      reqData = reqData.filter((request) => {
+        const latestLevelApproval =
+          request.approvals?.[request.approvals.length - 1];
+
+        return !latestLevelApproval || latestLevelApproval.status === "Pending";
+      });
+    }
+
+    // If no pending requests are found, fetch all requests
+    if (showPendingOnly === "All" || reqData.length === 0) {
       reqData = await CreateNewReq.find({
         isCompleted: true,
-        $or: [
-          { "approvals.nextDepartment": consolidatedData.role },
-          { "firstLevelApproval.hodEmail": consolidatedData.company_email_id},
-        ],
+        
       })
         .sort({ createdAt: -1 })
         .lean();
@@ -1170,11 +1174,7 @@ const getApprovedReqData = async (req, res) => {
         let departmentInfo = {};
 
         if (!latestLevelApproval) {
-          if (firstLevelApproval.approved) {
-            departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
-          } else {
-            departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
-          }
+          departmentInfo.nextDepartment = firstLevelApproval.hodDepartment;
         } else {
           if (latestLevelApproval.status === "Approved") {
             departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
@@ -1205,6 +1205,7 @@ const getApprovedReqData = async (req, res) => {
   }
 };
 
+
 // Function to check approval status and assign color if disabled
 const checkApprovalStatus = async (role, userId, requestId, email) => {
   console.log("role, userId, requestId,email", role, userId, requestId, email);
@@ -1234,9 +1235,9 @@ const checkApprovalStatus = async (role, userId, requestId, email) => {
         isDisplay = false;
         color = "red";
       }
+      
     }
     if (!latestApproval) {
-      console.log("No latest approval");
 
       if (
         request.firstLevelApproval.hodEmail === email &&
@@ -1245,6 +1246,7 @@ const checkApprovalStatus = async (role, userId, requestId, email) => {
         isDisplay = false;
         color = "red";
       }
+     
     }
 
     return {
