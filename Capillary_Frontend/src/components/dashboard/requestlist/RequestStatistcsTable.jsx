@@ -1,16 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-    Edit,
-    Trash2,
-    Search,
-    Download,
-    Plus,
-    Filter,
-    FileText,
-    InboxIcon,
-    Loader,
-    X,
-} from "lucide-react";
+import { Edit, Trash2, Search, Download, Plus, Filter, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     deleteReq,
@@ -21,7 +10,7 @@ import {
 } from "../../../api/service/adminServices";
 import LoadingSpinner from "../../spinner/LoadingSpinner";
 import Pagination from "./Pagination";
-import * as XLSX from "xlsx"; // Make sure to import XLSX
+import * as XLSX from "xlsx";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -45,11 +34,12 @@ const RequestStatistcsTable = () => {
     const multiRole = localStorage.getItem("multiRole");
     const [reqId, setReqId] = useState(null);
     const [filterAction, setFilterAction] = useState([]);
-const [newStatus, setNewStatus] = useState('');
+    const [newStatus, setNewStatus] = useState("");
+    const [showAllData, setShowAllData] = useState(false);
 
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
-    const [selectedUsers, setSelectedUsers] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isShowModal, setIsShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -65,186 +55,208 @@ const [newStatus, setNewStatus] = useState('');
     const itemsPerPage = 10;
 
     useEffect(() => {
-        // Set filter action based on the action param
         if (action === "Pending-Request") {
-          setFilterAction(["Pending", "Hold", "Rejected", "PO-Pending", "Invoice-Pending"]);
+            setFilterAction([
+                "Pending",
+                "Hold",
+                "Rejected",
+                "PO-Pending",
+                "Invoice-Pending",
+            ]);
         } else if (action === "Approved-Request") {
-          setFilterAction("Approved");
+            setFilterAction("Approved");
         } else if (action === "Completed-Request") {
-          setFilterAction("Approved");
+            setFilterAction("Approved");
         } else if (action === "Pending-Approvals") {
-          setFilterAction("Pending");
+            setFilterAction("Pending");
         } else if (action === "Approved-Approvals") {
-          setNewStatus("Approved-Approvals");
-          setFilterAction("Approved");
+            setNewStatus("Approved-Approvals");
+            setFilterAction("Approved");
         }
-      }, [action]);
+    }, [action]);
 
-    useEffect(() => {
-        const fetchReqTable = async () => {
-            setIsLoading(true);
-            try {
-                let response;
+    const fetchReqTable = async (showAll = false) => {
+        setIsLoading(true);
+        try {
+            let response;
 
-                if (role === "Admin" && department === "Admin") {
-                    response = await getAdminReqListEmployee();
-                    console.log("1", response);
-                    if (action === "Total-Request") {
-                        setUsers(response.data.data);
-                    } else {
-                        const filteredData = response.data.data.filter(
-                            (item) => filterAction.includes(item.status) // Check if status is in the array
-                        );
-                        setUsers(filteredData);
-                    }
+            if (role === "Admin" && department === "Admin") {
+                response = await getAdminReqListEmployee();
+                console.log("1", response);
+                setAllUsers(response.data.data);
+
+                if (showAll || action === "Total-Request") {
+                    setUsers(response.data.data);
                 } else {
-                    if (role === "Employee") {
-                        response = await getReqListEmployee(userId);
-                        if (response.status === 200) {
+                    const filteredData = response.data.data.filter(
+                        (item) => filterAction.includes(item.status) // Check if status is in the array
+                    );
+                    setUsers(filteredData);
+                }
+            } else {
+                if (role === "Employee") {
+                    response = await getReqListEmployee(userId);
+                    if (response.status === 200) {
+                        setAllUsers(response.data.data);
+
+                        if (showAll) {
+                            setUsers(response.data.data);
+                        } else {
                             const filteredData = response.data.data.filter(
                                 (item) => item.status === filterAction
                             );
                             setUsers(filteredData);
                         }
-                    } else {
-                        response = await getApprovedReq(userId);
-                        console.log("response hod", response); 
-                        if (response.status === 200) {
-                            if (action === newStatus) {
-                                console.log("0")
+                    }
+                } else {
+                    response = await getApprovedReq(userId);
+                    console.log("response hod", response);
+                    if (response.status === 200) {
+                        setAllUsers(response.data.reqData);
+
+                        if (showAll) {
+                            setUsers(response.data.reqData);
+                        } else if (action === newStatus) {
+                            console.log("0");
+                            const filteredData = response.data.reqData.filter(
+                                (items) =>
+                                    items.approvals.some((app) => {
+                                        console.log(app.status);
+                                        return app.status === filterAction;
+                                    })
+                            );
+                            setUsers(filteredData);
+                        } else if (action === "Pending-Approvals") {
+                            console.log("Inside pending approvals");
+                            if (role === "HOD Department" || role === "Admin") {
+                                console.log("1");
                                 const filteredData =
                                     response.data.reqData.filter((items) =>
-                                        items.approvals.some((app) => {
-                                            console.log(app.status);
-                                            return app.status === filterAction;
-                                        })
-                                    );
-                                setUsers(filteredData);
-                            } else if (action === "Pending-Approvals") {
-                                console.log("Inside pending approvals");
-                                if (
-                                    role === "HOD Department" ||
-                                    role === "Admin"
-                                ) {
-                                    console.log("1")
-                                    const filteredData =
-                                        response.data.reqData.filter((items) =>
-                                            [
-                                                "Pending",
-                                                "Hold",
-                                                "Reject",
-                                                "PO-Pending",
-                                                "Invoice-Pending"
-                                            ].includes(
-                                                (items.firstLevelApproval.status)
-                                            )
-                                        );
-
-                                    setUsers(filteredData);
-                                    setFilteredUsers(filteredData);
-                                } else {
-                                    console.log("2", response.data.reqData);
-                                    
-                                    // First filter: Check for pending approvals in the approvals array
-                                    const filteredByApprovals = response.data.reqData.filter((items) =>
-                                        items.approvals && items.approvals.some(
-                                            (app, index, arr) => {
-                                                // Check if the current approval's nextDepartment matches the role
-                                                const isPending =
-                                                    (app.nextDepartment === role ||  app.approvalId === userId)&&
-                                                    app.status !== "Approved";
-
-                                                // Check if this is the last approval entry in the array
-                                                const isLatestApproval =
-                                                    index === arr.length - 1;
-
-                                                return isPending && isLatestApproval;
-                                            }
-                                        )
-                                    );
-                                    
-                                    // Second filter: Check for HOD email match in firstLevelApproval
-                                    const filteredByHodEmail = response.data.reqData.filter((items) => 
-                                        items.firstLevelApproval && 
-                                        items.firstLevelApproval.hodEmail === email &&
-                                        items.firstLevelApproval.status !== "Approved"
-                                    );
-                                    
-                                    // Combine both filtered arrays and remove duplicates
-                                    const combinedData = [
-                                        ...filteredByApprovals, 
-                                        ...filteredByHodEmail
-                                    ].filter((item, index, self) => 
-                                        index === self.findIndex((t) => 
-                                            t._id === item._id
-                                        )
-                                    );
-                                    
-                                    console.log("Combined data for pending approvals:", combinedData);
-                                    
-                                    setUsers(combinedData);
-                                    setFilteredUsers(combinedData);
-                                }
-                            } else if (action === "Total-Approvals") {
-                                console.log("Action-->", response.data.reqData);
-                                const filteredData = response.data.reqData;
-                                setUsers(filteredData);
-                            } else if (action === "My-Approvals") {
-                                const filteredData =
-                                    response.data.reqData.filter((item) =>
-                                        item.approvals.some(
-                                            (app) =>
-                                                app.approvalId === userId &&
-                                                app.status === "Approved"
+                                        [
+                                            "Pending",
+                                            "Hold",
+                                            "Reject",
+                                            "PO-Pending",
+                                            "Invoice-Pending",
+                                        ].includes(
+                                            items.firstLevelApproval.status
                                         )
                                     );
 
                                 setUsers(filteredData);
+                                setFilteredUsers(filteredData);
                             } else {
-                                console.log("else");
-                                const filteredData =
+                                console.log("2", response.data.reqData);
+
+                                const filteredByApprovals =
                                     response.data.reqData.filter(
-                                        (item) => item.status === "Approved"
+                                        (items) =>
+                                            items.approvals &&
+                                            items.approvals.some(
+                                                (app, index, arr) => {
+                                                    const isPending =
+                                                        (app.nextDepartment ===
+                                                            role
+                                                             &&
+                                                            app.approvalId !==
+                                                                userId) &&
+                                                        app.status ===
+                                                            "Approved";
+
+                                                    const isLatestApproval =
+                                                        index ===
+                                                        arr.length - 1;
+
+                                                    return (
+                                                        isPending &&
+                                                        isLatestApproval
+                                                    );
+                                                }
+                                            )
                                     );
-                                setUsers(filteredData);
+
+                                const filteredByHodEmail =
+                                    response.data.reqData.filter(
+                                        (items) =>
+                                            items.firstLevelApproval &&
+                                            items.firstLevelApproval
+                                                .hodEmail === email &&
+                                            items.firstLevelApproval.status !==
+                                                "Approved"
+                                    );
+
+                                const combinedData = [
+                                    ...filteredByApprovals,
+                                    ...filteredByHodEmail,
+                                ].filter(
+                                    (item, index, self) =>
+                                        index ===
+                                        self.findIndex(
+                                            (t) => t._id === item._id
+                                        )
+                                );
+
+                                console.log(
+                                    "Combined data for pending approvals:",
+                                    combinedData
+                                );
+
+                                setUsers(combinedData);
+                                setFilteredUsers(combinedData);
                             }
+                        } else if (action === "Total-Approvals") {
+                            console.log("Action-->", response.data.reqData);
+                            const filteredData = response.data.reqData;
+                            setUsers(filteredData);
+                        } else if (action === "My-Approvals") {
+                            const filteredData = response.data.reqData.filter(
+                                (item) =>
+                                    item.approvals.some(
+                                        (app) =>
+                                            app.approvalId === userId &&
+                                            app.status === "Approved"
+                                    )
+                            );
+
+                            setUsers(filteredData);
+                        } else {
+                            console.log("else");
+                            const filteredData = response.data.reqData.filter(
+                                (item) => item.status === "Approved"
+                            );
+                            setUsers(filteredData);
                         }
                     }
                 }
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                // Add a small delay to prevent flash of loading state
-                setTimeout(() => {
-                    setIsLoading(false);
-                }, 500);
             }
-        };
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            setTimeout(() => {
+                setIsLoading(false);
+            }, 500);
+        }
+    };
 
-     
-            fetchReqTable();
-        
-    }, [userId, role, action, filterAction, email, department]);
-
-    // Improved search and filter function for better search results
     useEffect(() => {
-        // First, apply date filters if they exist
+        fetchReqTable(showAllData);
+    }, [userId, role, action, filterAction, email, department, showAllData]);
+
+    useEffect(() => {
         let filtered = [...users];
 
         if (dateFilters.fromDate || dateFilters.toDate) {
             filtered = filtered.filter((user) => {
-                // Get the request creation date from the reqid format (assuming reqid format has date info)
-                // If createdAt field exists, use that instead
                 const createdDate = user.createdAt
                     ? new Date(user.createdAt)
                     : null;
 
-                if (!createdDate) return true; // If no date available, include by default
+                if (!createdDate) return true;
 
                 if (dateFilters.fromDate && dateFilters.toDate) {
                     const fromDate = new Date(dateFilters.fromDate);
                     const toDate = new Date(dateFilters.toDate);
-                    // Set toDate to end of day
+
                     toDate.setHours(23, 59, 59, 999);
                     return createdDate >= fromDate && createdDate <= toDate;
                 } else if (dateFilters.fromDate) {
@@ -260,74 +272,76 @@ const [newStatus, setNewStatus] = useState('');
             });
         }
 
-        // Enhanced search functionality - more comprehensive field checking
         if (searchTerm.trim() !== "") {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter((user) => {
-                // Create a function to safely check nested properties
                 const safeCheck = (obj, path) => {
                     if (!obj) return false;
-                    // Handle direct string properties
-                    if (typeof obj === 'string') {
+
+                    if (typeof obj === "string") {
                         return obj.toLowerCase().includes(term);
                     }
-                    
-                    // Handle array of objects
+
                     if (Array.isArray(obj)) {
-                        return obj.some(item => safeCheck(item, ''));
+                        return obj.some((item) => safeCheck(item, ""));
                     }
-                    
-                    // Handle nested paths
+
                     if (path) {
-                        const props = path.split('.');
+                        const props = path.split(".");
                         let current = obj;
                         for (const prop of props) {
                             if (current[prop] === undefined) return false;
                             current = current[prop];
                         }
-                        return typeof current === 'string' ? 
-                            current.toLowerCase().includes(term) : 
-                            false;
+                        return typeof current === "string"
+                            ? current.toLowerCase().includes(term)
+                            : false;
                     }
-                    
-                    // Handle object
-                    return Object.values(obj).some(value => {
-                        if (typeof value === 'string') {
+
+                    return Object.values(obj).some((value) => {
+                        if (typeof value === "string") {
                             return value.toLowerCase().includes(term);
-                        } else if (typeof value === 'object' && value !== null) {
-                            return safeCheck(value, '');
+                        } else if (
+                            typeof value === "object" &&
+                            value !== null
+                        ) {
+                            return safeCheck(value, "");
                         }
                         return false;
                     });
                 };
-                
-                // Check basic fields
-                if (user.reqid && user.reqid.toLowerCase().includes(term)) return true;
-                if (user.userName && user.userName.toLowerCase().includes(term)) return true;
-                if (user.status && user.status.toLowerCase().includes(term)) return true;
-                
-                // Check nested fields
-                if (safeCheck(user.commercials, '')) return true;
-                if (safeCheck(user.procurements, '')) return true;
-                if (safeCheck(user.supplies, '')) return true;
-                if (safeCheck(user.firstLevelApproval, '')) return true;
-                if (safeCheck(user.approvals, '')) return true;
-                
-                // Check specific nested paths
+
+                if (user.reqid && user.reqid.toLowerCase().includes(term))
+                    return true;
+                if (user.userName && user.userName.toLowerCase().includes(term))
+                    return true;
+                if (user.status && user.status.toLowerCase().includes(term))
+                    return true;
+
+                if (safeCheck(user.commercials, "")) return true;
+                if (safeCheck(user.procurements, "")) return true;
+                if (safeCheck(user.supplies, "")) return true;
+                if (safeCheck(user.firstLevelApproval, "")) return true;
+                if (safeCheck(user.approvals, "")) return true;
+
                 return (
-                    safeCheck(user.commercials, 'department') ||
-                    safeCheck(user.commercials, 'businessUnit') ||
-                    safeCheck(user.commercials, 'entity') ||
-                    safeCheck(user.commercials, 'site') ||
-                    safeCheck(user.procurements, 'vendor') ||
-                    safeCheck(user.procurements, 'vendorName')
+                    safeCheck(user.commercials, "department") ||
+                    safeCheck(user.commercials, "businessUnit") ||
+                    safeCheck(user.commercials, "entity") ||
+                    safeCheck(user.commercials, "site") ||
+                    safeCheck(user.procurements, "vendor") ||
+                    safeCheck(user.procurements, "vendorName")
                 );
             });
         }
 
         setFilteredUsers(filtered);
-        setCurrentPage(1); // Reset to first page when filters change
+        setCurrentPage(1);
     }, [users, searchTerm, dateFilters]);
+
+    const handleFilterToggle = (showAll) => {
+        setShowAllData(showAll);
+    };
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
@@ -345,14 +359,6 @@ const [newStatus, setNewStatus] = useState('');
         }
     };
 
-    const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedUsers(users.map((user) => user.sno));
-        } else {
-            setSelectedUsers([]);
-        }
-    };
-
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
@@ -361,14 +367,6 @@ const [newStatus, setNewStatus] = useState('');
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const currentUsers = filteredUsers.slice(startIndex, endIndex);
-
-    const handleSelectUser = (sno) => {
-        setSelectedUsers((prev) =>
-            prev.includes(sno)
-                ? prev.filter((id) => id !== sno)
-                : [...prev, sno]
-        );
-    };
 
     const exportToExcel = () => {
         const exportData = filteredUsers.map((user) => ({
@@ -446,7 +444,6 @@ const [newStatus, setNewStatus] = useState('');
     };
 
     const renderActionColumn = (user) => {
-        // If status is Approved, don't show any actions
         if (user.status === "Approved") {
             return (
                 <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
@@ -455,7 +452,6 @@ const [newStatus, setNewStatus] = useState('');
             );
         }
 
-        // If request is not completed (Draft), show edit and delete options for all users
         if (!user.isCompleted) {
             return (
                 <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
@@ -481,16 +477,15 @@ const [newStatus, setNewStatus] = useState('');
             );
         }
 
-        // Role-specific actions for completed requests
         if (
             role === "Admin" ||
             role === "Head of Finance" ||
-            role === "HOD Department"||multiRole==1
+            role === "HOD Department" ||
+            multiRole == 1
         ) {
             return (
                 <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
                     <div className="flex justify-center items-center space-x-2">
-                        {/* Both Admin and Head of Finance can edit */}
                         <button
                             className="text-blue-500 hover:text-blue-700"
                             onClick={(e) => handleEdit(e, user._id)}
@@ -498,7 +493,6 @@ const [newStatus, setNewStatus] = useState('');
                             <Edit className="h-4 w-4 md:h-5 md:w-5" />
                         </button>
 
-                        {/* Only Admin can delete completed requests */}
                         {role === "Admin" && (
                             <button
                                 className="text-red-500 hover:text-red-700"
@@ -515,7 +509,6 @@ const [newStatus, setNewStatus] = useState('');
                 </td>
             );
         } else {
-            // For regular employees with completed requests
             return (
                 <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
                     <button
@@ -542,7 +535,6 @@ const [newStatus, setNewStatus] = useState('');
                         {`${action.replace(/-/g, " ")}`}
                     </h2>
 
-                    {/* Mobile View Top Buttons */}
                     <div className="block lg:hidden mb-4">
                         <button
                             className="w-full flex justify-center items-center px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 mb-2"
@@ -554,7 +546,26 @@ const [newStatus, setNewStatus] = useState('');
                             Add Request
                         </button>
                         <div className="flex justify-between">
-                            
+                            <button
+                                className={`px-4 py-2 mr-2 rounded-lg text-sm font-medium ${
+                                    !showAllData
+                                        ? "bg-primary text-white"
+                                        : "bg-gray-100 text-gray-700"
+                                }`}
+                                onClick={() => handleFilterToggle(false)}
+                            >
+                                {action.replace(/-/g, " ")}
+                            </button>
+                            <button
+                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                    showAllData
+                                        ? "bg-primary text-white"
+                                        : "bg-gray-100 text-gray-700"
+                                }`}
+                                onClick={() => handleFilterToggle(true)}
+                            >
+                                All
+                            </button>
                             <button
                                 className="flex-1 mr-2 flex justify-center items-center px-2 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 onClick={() => setShowFilters(!showFilters)}
@@ -586,8 +597,27 @@ const [newStatus, setNewStatus] = useState('');
                             />
                         </div>
 
-                        {/* Desktop View Buttons */}
                         <div className="hidden lg:flex items-center gap-4">
+                            <button
+                                className={`px-4 py-2  rounded-lg text-sm font-medium ${
+                                    !showAllData
+                                        ? "bg-primary text-white"
+                                        : "bg-gray-100 text-gray-700"
+                                }`}
+                                onClick={() => handleFilterToggle(false)}
+                            >
+                                {action.replace(/-/g, " ")}
+                            </button>
+                            <button
+                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                    showAllData
+                                        ? "bg-primary text-white"
+                                        : "bg-gray-100 text-gray-700"
+                                }`}
+                                onClick={() => handleFilterToggle(true)}
+                            >
+                                All
+                            </button>
                             <button
                                 className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 onClick={() => setShowFilters(!showFilters)}
@@ -704,7 +734,7 @@ const [newStatus, setNewStatus] = useState('');
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                                             >
                                                 Actions
                                             </th>
@@ -821,11 +851,7 @@ const [newStatus, setNewStatus] = useState('');
                                                         )}
                                                     </td>
 
-                                                    {user.status !==
-                                                        "Approved" &&
-                                                        renderActionColumn(
-                                                            user
-                                                        )}
+                                                    {renderActionColumn(user)}
                                                 </tr>
                                             ))
                                         ) : (
@@ -854,7 +880,6 @@ const [newStatus, setNewStatus] = useState('');
                     </div>
                 </div>
 
-                {/* Modal for Edit Request */}
                 {isShowModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-sm md:max-w-md">
@@ -887,7 +912,6 @@ const [newStatus, setNewStatus] = useState('');
                     </div>
                 )}
 
-                {/* Modal for Delete Confirmation */}
                 {isDelete && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-sm md:max-w-md">

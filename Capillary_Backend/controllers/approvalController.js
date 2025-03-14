@@ -138,10 +138,18 @@ const approveRequest = async (req, res) => {
         "Head of Finance",
         "Proceed the PO invoice",
       ];
+      const departmentOrders = [
+        "Business Finance",
+        "Vendor Management",
+        "Legal Team",
+        "Info Security",
+        "Head of Finance",
+        "Proceed the PO invoice",
+      ];
 
       let currentDeptIndex;
-      if (email === reqData.firstLevelApproval.hodEmail &&reqData.firstLevelApproval.approved ) {
-        console.log("Legal team is checking",currentDeptIndex,email === reqData.firstLevelApproval.hodEmail &&!reqData.firstLevelApproval.approved,email === reqData.firstLevelApproval.hodEmail &&reqData.firstLevelApproval.approved)
+      if (email === reqData.firstLevelApproval.hodEmail &&!reqData.firstLevelApproval.approved ) {
+
         currentDeptIndex = departmentOrder.indexOf(email);
       } else {
         currentDeptIndex = departmentOrder.indexOf(role);

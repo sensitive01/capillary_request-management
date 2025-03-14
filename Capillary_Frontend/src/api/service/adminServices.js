@@ -1007,3 +1007,31 @@ export const addNewVendorsExcel = async (data) => {
     return err;
   }
 };
+
+
+
+// ...............................................................................................
+
+
+
+
+export const getAllRequestForPureAdmin = async () => {
+  try {
+    const response = await adminServices.get(
+      `/request/get-all-request-for-admin`
+
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+
+
+
+
+
+// ...............................................................................................

@@ -36,7 +36,7 @@ const currencies = [
 const ReqListTable = () => {
     const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
-    const multiRole = localStorage.getItem("multiRole")
+    const multiRole = localStorage.getItem("multiRole");
     const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
@@ -55,6 +55,7 @@ const ReqListTable = () => {
         fromDate: "",
         toDate: "",
     });
+    const [statusFilter, setStatusFilter] = useState("");
 
     const itemsPerPage = 10;
 
@@ -130,16 +131,21 @@ const ReqListTable = () => {
                 } else if (fromDate) {
                     return userDate >= fromDate;
                 } else if (toDate) {
-                    toDate.setHours(23, 59, 59, 999);
-                    return userDate <= toDate;
+                    return userDate >= fromDate;
                 }
                 return true;
             });
         }
 
+        if (statusFilter) {
+            result = result.filter((user) => {
+                return user.status === statusFilter;
+            });
+        }
+
         setFilteredUsers(result);
         setCurrentPage(1);
-    }, [searchTerm, dateFilters, users]);
+    }, [searchTerm, dateFilters, statusFilter, users]);
 
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
@@ -153,11 +159,16 @@ const ReqListTable = () => {
         }));
     };
 
+    const handleStatusFilterChange = (e) => {
+        setStatusFilter(e.target.value);
+    };
+
     const clearFilters = () => {
         setDateFilters({
             fromDate: "",
             toDate: "",
         });
+        setStatusFilter("");
         setSearchTerm("");
         setShowFilters(false);
     };
@@ -271,7 +282,12 @@ const ReqListTable = () => {
         }
 
         // Role-specific actions for completed requests
-        if (role === "Admin" || role === "Head of Finance"||role === "HOD Department"||multiRole==1) {
+        if (
+            role === "Admin" ||
+            role === "Head of Finance" ||
+            role === "HOD Department" ||
+            multiRole == 1
+        ) {
             return (
                 <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
                     <div className="flex justify-center items-center space-x-2">
@@ -412,7 +428,7 @@ const ReqListTable = () => {
                         <div className="mt-4 w-full md:w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-0 md:right-8 z-10">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-xs font-medium text-gray-700">
-                                    Date Range
+                                    Filters
                                 </h3>
                                 <button
                                     onClick={clearFilters}
@@ -421,31 +437,62 @@ const ReqListTable = () => {
                                     <X className="h-3 w-3" />
                                 </button>
                             </div>
-                            <div className="space-y-2">
-                                <div>
-                                    <label className="text-xs text-gray-600 mb-1 block">
-                                        From
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="fromDate"
-                                        value={dateFilters.fromDate}
-                                        onChange={handleDateFilterChange}
-                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    />
+
+                            {/* Date Range Filters */}
+                            <div className="mb-3">
+                                <h4 className="text-xs font-medium text-gray-700 mb-2">
+                                    Date Range
+                                </h4>
+                                <div className="space-y-2">
+                                    <div>
+                                        <label className="text-xs text-gray-600 mb-1 block">
+                                            From
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="fromDate"
+                                            value={dateFilters.fromDate}
+                                            onChange={handleDateFilterChange}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-600 mb-1 block">
+                                            To
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="toDate"
+                                            value={dateFilters.toDate}
+                                            onChange={handleDateFilterChange}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs text-gray-600 mb-1 block">
-                                        To
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="toDate"
-                                        value={dateFilters.toDate}
-                                        onChange={handleDateFilterChange}
-                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    />
-                                </div>
+                            </div>
+
+                            {/* Status Filter */}
+                            <div>
+                                <h4 className="text-xs font-medium text-gray-700 mb-2">
+                                    Status
+                                </h4>
+                                <select
+                                    value={statusFilter}
+                                    onChange={handleStatusFilterChange}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="PO-Pending">
+                                        PO-Pending
+                                    </option>
+                                    <option value="Invoice-Pending">
+                                        Invoice-Pending
+                                    </option>
+                                    <option value="Approved">Approved</option>
+                                </select>
                             </div>
                         </div>
                     )}
@@ -498,7 +545,7 @@ const ReqListTable = () => {
 
                                             <th
                                                 scope="col"
-                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[9%]"
+                                                className="sticky top-0 px-2 py-2 md:px-6 md:py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                                             >
                                                 Actions
                                             </th>
@@ -506,7 +553,7 @@ const ReqListTable = () => {
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredUsers?.length > 0 ? (
-                                            filteredUsers.map((user, index) => (
+                                            currentUsers.map((user, index) => (
                                                 <tr
                                                     key={user._id}
                                                     className="hover:bg-gray-100 cursor-pointer"

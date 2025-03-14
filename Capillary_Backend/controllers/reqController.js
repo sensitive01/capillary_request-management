@@ -322,11 +322,8 @@ const getStatisticData = async (req, res) => {
         const pendingRequests = request.approvals.filter((app) => {
           const isForEmployeeDept =
             app.departmentName === consolidatedData.department;
-
-          console.log("isForEmployeeDept", isForEmployeeDept);
-
           const isPending =
-            app.status === "Approved" && app.approvalId !== empId;
+            app.status === "Approved" && app.approvalId === empId;
           request.approvals.some((prevApp) => {
             console.log("prevApp", prevApp);
             return (
@@ -334,9 +331,7 @@ const getStatisticData = async (req, res) => {
             );
           });
 
-          if (isForEmployeeDept && isPending) {
-            count++;
-          }
+
 
           return isForEmployeeDept && isPending;
         });
@@ -515,8 +510,7 @@ const getStatisticData = async (req, res) => {
             "firstLevelApproval.approved": false,
           },
           {
-            "approvals.nextDepartment": { $ne: role },
-            "approvals.status": { $ne: "Approved" },
+            "approvals.nextDepartment": { $eq: role },
           },
         ],
         isCompleted: true,
@@ -2125,7 +2119,7 @@ const isApproved = async (req, res) => {
         role === "Admin" ||
         reqData.firstLevelApproval.hodEmail === empData.company_email_id) &&
       reqData.firstLevelApproval.hodEmail === empData.company_email_id &&
-      lastlevalApproval.nextDepartment !== role
+      lastlevalApproval?.nextDepartment !== role
     ) {
       console.log("HOD Deparment");
       if (!reqData.firstLevelApproval.approved) {
@@ -4435,6 +4429,27 @@ const getRoleBasedApprovals = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = {
   getRoleBasedApprovals,

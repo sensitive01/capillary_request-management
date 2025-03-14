@@ -74,11 +74,11 @@ function App() {
           <Route path="/req-list-table/invoice/:id" element={<Invoice/>} />
           <Route path="/req-list-table/preview-one-req/:id" element={<PreviewTheReq/>} />
           <Route path="/req-list-table/edit-req/:id" element={<EditRequestForm/>} />
-          <Route path="/req-list-table/show-request-statistcs/:action" element={<MyRequestStatistics/>} />
 
           <Route path="/approval-request-list" element={<Approvals/>} />
           <Route path="/role-based-approvals-list" element={<RoleBasedApprovals/>} />
 
+          <Route path="/req-list-table/show-request-statistcs/:action" element={<MyRequestStatistics/>} />
           <Route path="/approval-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
 
           <Route path="/approval-request-list/preview-one-req/:id" element={<PreviewTheReq/>} />
