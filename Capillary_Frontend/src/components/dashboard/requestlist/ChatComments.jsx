@@ -6,23 +6,39 @@ import {
     Image,
     File,
     Download,
+    Loader2, // Added Loader icon for spinning
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import {
     fetcAllChats,
+    fetchEmployeesByTopic,
     sendMessageComments,
 } from "../../../api/service/adminServices";
 import uploadFiles from "../../../utils/s3BucketConfig";
 
-const ChatComments = ({ reqId ,reqid}) => {
+const ChatComments = ({ reqId, reqid }) => {
     const userId = localStorage.getItem("capEmpId");
     const [chatMessages, setChatMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [activeChatTopic, setActiveChatTopic] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSendingMessage, setIsSendingMessage] = useState(false); // New state for loading
     const fileInputRef = useRef(null);
     const messagesEndRef = useRef(null);
+
+    // New state for employee tagging
+    const [topicEmployees, setTopicEmployees] = useState([]);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+    const chatTopics = [
+        "Head of Dept",
+        "Business Finance",
+        "Vendor Management",
+        "Legal Team",
+        "Info Security",
+        "Head of Finance",
+    ];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,21 +63,34 @@ const ChatComments = ({ reqId ,reqid}) => {
         scrollToBottom();
     }, [chatMessages]);
 
-    const chatTopics = [
-        "Head of Dept",
-        "Business Finance",
-        "Vendor Management",
-        "Legal",
-        "Info Security",
-        "PO Team",
-        "Head of Finance",
-        "Payments",
-        "Other Queries",
-    ];
+    // Fetch employees when a topic is selected
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            if (activeChatTopic) {
+                console.log(activeChatTopic);
+                try {
+                    const response = await fetchEmployeesByTopic(
+                        activeChatTopic,
+                        reqId
+                    );
+                    if (response.status === 200) {
+                        setTopicEmployees(response.data.empData || []);
+                        // Reset selected employee when topic changes
+                        setSelectedEmployee(null);
+                    }
+                } catch (error) {
+                    console.error("Error fetching employees for topic:", error);
+                    setTopicEmployees([]);
+                }
+            } else {
+                // Reset employees when no topic is selected
+                setTopicEmployees([]);
+                setSelectedEmployee(null);
+            }
+        };
 
-    const filteredMessages = activeChatTopic
-        ? chatMessages.filter((msg) => msg.topic === activeChatTopic)
-        : chatMessages;
+        fetchEmployees();
+    }, [activeChatTopic]);
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
@@ -103,10 +132,11 @@ const ChatComments = ({ reqId ,reqid}) => {
     };
 
     const handleSendMessage = async () => {
-        if ((!newMessage.trim() && !selectedFile) || isUploading) return;
+        if ((!newMessage.trim() && !selectedFile) || isUploading || isSendingMessage) return;
 
         try {
             setIsUploading(true);
+            setIsSendingMessage(true); // Set loading state
             let attachmentUrl = null;
             let attachmentType = null;
             let attachmentName = null;
@@ -118,7 +148,6 @@ const ChatComments = ({ reqId ,reqid}) => {
                         "chat",
                         reqid
                     );
-                    console.log("uploadResponse",uploadResponse)
                     if (uploadResponse && uploadResponse.data.fileUrls[0]) {
                         attachmentUrl = uploadResponse.data.fileUrls[0];
                         attachmentType = selectedFile.type;
@@ -129,6 +158,7 @@ const ChatComments = ({ reqId ,reqid}) => {
                 } catch (error) {
                     console.error("Error uploading file:", error);
                     setIsUploading(false);
+                    setIsSendingMessage(false);
                     return;
                 }
             }
@@ -144,7 +174,13 @@ const ChatComments = ({ reqId ,reqid}) => {
                 attachmentName,
                 timestamp: new Date().toISOString(),
                 topic: activeChatTopic || "General Discussion",
+                // Add tagged employee information
+                taggedEmployeeId: selectedEmployee?._id || null,
+                taggedEmployeeName: selectedEmployee?.full_name || selectedEmployee?.hodName || null,
+                taggedEmployeeEmail: selectedEmployee?.company_email_id || selectedEmployee?.hodEmail
             };
+
+            console.log("New message", newMsg);
 
             const response = await sendMessageComments(newMsg);
             if (response.status === 200) {
@@ -166,6 +202,7 @@ const ChatComments = ({ reqId ,reqid}) => {
             console.error("Error sending message:", error);
         } finally {
             setIsUploading(false);
+            setIsSendingMessage(false); // Reset loading state
         }
     };
 
@@ -253,6 +290,10 @@ const ChatComments = ({ reqId ,reqid}) => {
         );
     };
 
+    const filteredMessages = activeChatTopic
+        ? chatMessages.filter((msg) => msg.topic === activeChatTopic)
+        : chatMessages;
+
     return (
         <div className="flex h-screen">
             <div className="w-1/4 bg-gray-100 border-r p-4 overflow-y-auto">
@@ -326,6 +367,11 @@ const ChatComments = ({ reqId ,reqid}) => {
                                             Tag to: {msg.topic}
                                         </span>
                                     )}
+                                    {msg.taggedEmployeeName && (
+                                        <span className="text-xs text-green-600 mt-1 block">
+                                            Tagged: {msg.taggedEmployeeName}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -371,35 +417,52 @@ const ChatComments = ({ reqId ,reqid}) => {
                             </span>
                         )}
 
-                        <select
-                            value={activeChatTopic || ""}
-                            onChange={(e) =>
-                                setActiveChatTopic(e.target.value || null)
-                            }
-                            className="p-2 border rounded-lg"
-                        >
-                            <option value="">Select Department</option>
-                            {chatTopics.map((topic, index) => (
-                                <option key={index} value={topic}>
-                                    {topic}
-                                </option>
-                            ))}
-                        </select>
+                        {activeChatTopic && topicEmployees.length > 0 && (
+                            <select
+                                value={selectedEmployee?._id || ""}
+                                onChange={(e) => {
+                                    const selectedEmp = topicEmployees.find(
+                                        (emp) => (emp._id === e.target.value || emp.company_email_id === e.target.value)
+                                    );
+                                    setSelectedEmployee(selectedEmp || null);
+                                }}
+                                className="p-2 border rounded-lg"
+                            >
+                                <option value="">Tag Employee</option>
+                                {topicEmployees.map((employee) => (
+                                    <option
+                                        key={employee._id || employee.company_email_id}
+                                        value={employee._id || employee.company_email_id}
+                                    >
+                                        {employee.full_name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
 
                         <button
                             onClick={handleSendMessage}
                             disabled={
                                 isUploading ||
+                                isSendingMessage ||
                                 (!newMessage.trim() && !selectedFile)
                             }
                             className={`${
                                 isUploading ||
+                                isSendingMessage ||
                                 (!newMessage.trim() && !selectedFile)
                                     ? "bg-gray-400 cursor-not-allowed"
                                     : "bg-primary hover:bg-primary/90"
-                            } text-white p-2 rounded-lg`}
+                            } text-white p-2 rounded-lg flex items-center justify-center`}
                         >
-                            <Send size={20} />
+                            {isSendingMessage ? (
+                                <Loader2 
+                                    size={20} 
+                                    className="animate-spin" 
+                                />
+                            ) : (
+                                <Send size={20} />
+                            )}
                         </button>
                     </div>
                 </div>

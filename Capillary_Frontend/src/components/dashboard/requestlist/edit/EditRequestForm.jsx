@@ -174,64 +174,72 @@ const EditRequestForm = () => {
     };
 
     return (
-        <div className="w-full mx-auto bg-gray-50 p-6">
-            {isSubmitting && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white p-4 rounded-lg flex items-center gap-3">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                        <span className="text-gray-700">
-                            Updating request...
-                        </span>
-                    </div>
+        <div className="w-full mx-auto bg-gray-50 p-4 sm:p-6">
+        {isSubmitting && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white p-3 sm:p-4 rounded-lg flex items-center gap-2 sm:gap-3">
+                    <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 animate-spin text-primary" />
+                    <span className="text-xs sm:text-sm text-gray-700">
+                        Updating request...
+                    </span>
                 </div>
-            )}
-            <div className="flex justify-between items-center mb-6">
+            </div>
+        )}
+        
+        {/* Stepper Container */}
+        <div className="w-full overflow-x-auto">
+            <div className="flex justify-between items-center mb-4 sm:mb-6 min-w-max">
                 {steps.map((step, index) => {
                     const StepIcon = step.icon;
                     const isActive = currentStep === index;
                     const isCompleted = completedSteps.includes(index);
-
+    
                     return (
                         <div
                             key={index}
-                            className="flex flex-col items-center relative"
+                            className="flex flex-col items-center relative px-2 sm:px-4"
                         >
                             {index < steps.length - 1 && (
                                 <div
                                     className={`absolute top-1/2 left-full w-full h-0.5 transform -translate-y-1/2 -z-10 
-                    ${
-                        isCompleted || isActive ? "bg-green-500" : "bg-gray-300"
-                    }`}
-                                    style={{ width: "50px" }}
+                                    ${
+                                        isCompleted || isActive 
+                                            ? "bg-green-500" 
+                                            : "bg-gray-300"
+                                    }`}
+                                    style={{ 
+                                        width: "calc(100% - 20px)",
+                                        left: "calc(100% + 10px)"
+                                    }}
                                 />
                             )}
                             <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 mb-2
-                  ${
-                      isActive
-                          ? "border-primary bg-primary/10 text-primary"
-                          : isCompleted
-                          ? "border-green-500 bg-green-50 text-green-500"
-                          : "border-gray-300 bg-gray-100 text-gray-400"
-                  }
-                  transition-all duration-300`}
+                                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center border-2 mb-1 sm:mb-2
+                                ${
+                                    isActive
+                                        ? "border-primary bg-primary/10 text-primary"
+                                        : isCompleted
+                                        ? "border-green-500 bg-green-50 text-green-500"
+                                        : "border-gray-300 bg-gray-100 text-gray-400"
+                                }
+                                transition-all duration-300`}
                             >
                                 {isCompleted && !isActive ? (
-                                    <Check className="w-6 h-6" />
+                                    <Check className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                                 ) : (
-                                    <StepIcon className="w-6 h-6" />
+                                    <StepIcon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                                 )}
                             </div>
                             <h3
-                                className={`text-center font-semibold text-sm
-                  ${
-                      isActive
-                          ? "text-primary"
-                          : isCompleted
-                          ? "text-green-600"
-                          : "text-gray-500"
-                  }
-                  transition-colors duration-300`}
+                                className={`text-center font-semibold text-xs sm:text-sm
+                                ${
+                                    isActive
+                                        ? "text-primary"
+                                        : isCompleted
+                                        ? "text-green-600"
+                                        : "text-gray-500"
+                                }
+                                transition-colors duration-300 whitespace-nowrap`}
                             >
                                 {step.title}
                             </h3>
@@ -239,19 +247,22 @@ const EditRequestForm = () => {
                     );
                 })}
             </div>
-
-            {/* Step Content */}
-            <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                closeOnClick
-                pauseOnHover
-                draggable
-                pauseOnFocusLoss
-            />
-            <div className="mt-6">{steps[currentStep].content}</div>
         </div>
+    
+        {/* Toast Container */}
+        <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            closeOnClick
+            pauseOnHover
+            draggable
+            pauseOnFocusLoss
+        />
+    
+        {/* Step Content */}
+        <div className="mt-4 sm:mt-6">{steps[currentStep].content}</div>
+    </div>
     );
 };
 

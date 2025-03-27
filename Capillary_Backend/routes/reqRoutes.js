@@ -22,6 +22,10 @@ router.get('/is-approved/:userId/:reqId/:role', reqController.isApproved);
 router.get('/get-role-based-approvals/:userId/:role', reqController.getRoleBasedApprovals); 
 
 // router.get('/get-all-request-for-admin', reqController.getAllRequestForAdmin); 
+router.get('/get-email-notification-data', reqController.getAllEmailData);
+router.get('/tag-employee/:role/:reqId', reqController.tagMessageToEmployee);
+
+
 
 
 
@@ -38,6 +42,10 @@ router.post('/accept-request-po-team/:id', approvalController.approveRequest);
 router.post('/accept-request-hof-team/:id', approvalController.approveRequest);
 router.post('/generate-request-pdf/:reqId', reqController.generateRequestPdfData);
 router.post('/edit-commercial-data/:empId/:reqId', reqController.editCommercialData);
+
+router.post('/email-notification-action', reqController.emailNotificationAction);
+
+
 
 
 

@@ -148,238 +148,411 @@ const Supplies = ({
 
     return (
         <div className="mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-primary to-primary p-6">
-                <h2 className="text-3xl font-extrabold text-white text-center">
-                    Product/Services
-                </h2>
-            </div>
-
-            <div className="p-8 space-y-6">
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-gray-100 border-b-2 border-gray-200">
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
-                                    Product / Service Name
-                                    <span className="text-red-500">*</span>
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
-                                    Product / Service Description
-                                    <span className="text-red-500">*</span>
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
-                                    Product / Service Purpose
-                                    <span className="text-red-500">*</span>
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
-                                    Quantity
-                                    <span className="text-red-500">*</span>
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-2">
-                                    Price<span className="text-red-500">*</span>
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
-                                    Tax (%)
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
-                                    Row Total
-                                </th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {services?.map((service, index) => (
-                                <tr
-                                    key={index}
-                                    className="border-b hover:bg-gray-50 transition duration-200"
-                                >
-                                    <td className="px-4 w-24">
-                                        <input
-                                            type="text"
-                                            name="productName"
-                                            value={service?.productName}
-                                            onChange={(e) =>
-                                                handleServiceChange(e, index)
-                                            }
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                                            placeholder="Product Name"
-                                        />
-                                    </td>
-                                    <td className="px-3 py-5 w-56">
-                                        <textarea
-                                            name="productDescription"
-                                            value={service?.productDescription}
-                                            onChange={(e) =>
-                                                handleServiceChange(e, index)
-                                            }
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
-                                            placeholder="Description"
-                                            rows={3}
-                                        />
-                                    </td>
-                                    <td className="px-3 py-4 w-56">
-                                        <textarea
-                                            name="productPurpose"
-                                            value={service?.productPurpose}
-                                            onChange={(e) =>
-                                                handleServiceChange(e, index)
-                                            }
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
-                                            placeholder="Product Purpose"
-                                            rows={3}
-                                        />
-                                    </td>
-                                    <td className="px-3 py-4 w-28">
-                                        <input
-                                            type="number"
-                                            name="quantity"
-                                            value={service?.quantity}
-                                            onChange={(e) =>
-                                                handleServiceChange(e, index)
-                                            }
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                                            placeholder="Quantity"
-                                            min="0"
-                                        />
-                                    </td>
-                                    <td className="px-3 py-4 w-48">
-                                        <input
-                                            type="number"
-                                            name="price"
-                                            value={service?.price}
-                                            onChange={(e) =>
-                                                handleServiceChange(e, index)
-                                            }
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                                            placeholder="Price"
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                    </td>
-                                    <td className="px-3 py-4 w-28">
-                                        <input
-                                            type="number"
-                                            name="tax"
-                                            value={service?.tax}
-                                            onChange={(e) =>
-                                                handleServiceChange(e, index)
-                                            }
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                                            placeholder="Tax (%)"
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                    </td>
-                                    <td className="px-3 py-4 w-52">
-                                        <input
-                                            type="text"
-                                            value={formatCurrency(
-                                                calculateRowTotal(service)
-                                            )}
-                                            readOnly
-                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
-                                            placeholder="Row Total"
-                                        />
-                                    </td>
-                                    <td className="px-3 py-4 text-right">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleRemoveService(index)
-                                            }
-                                            className={`text-red-500 hover:text-red-700 transition duration-300 ${
-                                                services.length === 1
-                                                    ? "cursor-not-allowed opacity-50"
-                                                    : ""
-                                            }`}
-                                            disabled={services.length === 1}
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="bg-gray-100">
-                                <td
-                                    colSpan="4"
-                                    className="px-4 py-3 font-bold text-gray-700"
-                                >
-                                    Total Amount:
-                                </td>
-                                <td className="px-4 py-3">
-                                    <select
-                                        value={selectedCurrency}
-                                        onChange={handleCurrencyChange} // Use the new handler
-                                        className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                                    >
-                                        {currencies.map((currency) => (
-                                            <option
-                                                key={currency.code}
-                                                value={currency.code}
-                                            >
-                                                {currency.code} (
-                                                {currency.symbol})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </td>
-                                <td className="px-4 py-3 font-bold text-blue-600">
-                                    {formatCurrency(totalValue)}
-                                </td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <div className="mt-4">
-                    <button
-                        type="button"
-                        onClick={handleAddService}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition duration-300 shadow-md hover:shadow-lg"
-                    >
-                        <PlusCircle className="w-5 h-5" />
-                        Add Product/Service
-                    </button>
-                </div>
-
-                <div className="mt-6">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Remarks
-                    </label>
-                    <textarea
-                        name="remarks"
-                        value={formData?.remarks}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                remarks: e.target.value,
-                            })
-                        }
-                        rows={4}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition duration-300"
-                        placeholder="Enter additional remarks or notes here..."
-                    />
-                </div>
-
-                <div className="mt-8 flex justify-between">
-                    <button
-                        onClick={onBack}
-                        className="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primary transition duration-300 ease-in-out"
-                    >
-                        Back
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary transition-colors flex items-center"
-                    >
-                        <CheckCircle2 className="mr-2" /> Next
-                    </button>
-                </div>
-            </div>
+        <div className="bg-gradient-to-r from-primary to-primary p-6">
+            <h2 className="text-3xl font-extrabold text-white text-center">
+                Product/Services
+            </h2>
         </div>
+
+        <div className="p-8 space-y-6">
+            <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <table className="w-full border-collapse hidden md:table">
+                    <thead>
+                        <tr className="bg-gray-100 border-b-2 border-gray-200">
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                                Product / Service Name
+                                <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                                Product / Service Description
+                                <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                                Product / Service Purpose
+                                <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                                Quantity
+                                <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-2">
+                                Price<span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                                Tax (%)
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                                Row Total
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {services?.map((service, index) => (
+                            <tr
+                                key={index}
+                                className="border-b hover:bg-gray-50 transition duration-200"
+                            >
+                                <td className="px-4 w-24">
+                                    <input
+                                        type="text"
+                                        name="productName"
+                                        value={service?.productName}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Product Name"
+                                    />
+                                </td>
+                                <td className="px-3 py-5 w-56">
+                                    <textarea
+                                        name="productDescription"
+                                        value={service?.productDescription}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
+                                        placeholder="Description"
+                                        rows={3}
+                                    />
+                                </td>
+                                <td className="px-3 py-4 w-56">
+                                    <textarea
+                                        name="productPurpose"
+                                        value={service?.productPurpose}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
+                                        placeholder="Product Purpose"
+                                        rows={3}
+                                    />
+                                </td>
+                                <td className="px-3 py-4 w-28">
+                                    <input
+                                        type="number"
+                                        name="quantity"
+                                        value={service?.quantity}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Quantity"
+                                        min="0"
+                                    />
+                                </td>
+                                <td className="px-3 py-4 w-48">
+                                    <input
+                                        type="number"
+                                        name="price"
+                                        value={service?.price}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Price"
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </td>
+                                <td className="px-3 py-4 w-28">
+                                    <input
+                                        type="number"
+                                        name="tax"
+                                        value={service?.tax}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Tax (%)"
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </td>
+                                <td className="px-3 py-4 w-52">
+                                    <input
+                                        type="text"
+                                        value={formatCurrency(
+                                            calculateRowTotal(service)
+                                        )}
+                                        readOnly
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                        placeholder="Row Total"
+                                    />
+                                </td>
+                                <td className="px-3 py-4 text-right">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleRemoveService(index)
+                                        }
+                                        className={`text-red-500 hover:text-red-700 transition duration-300 ${
+                                            services.length === 1
+                                                ? "cursor-not-allowed opacity-50"
+                                                : ""
+                                        }`}
+                                        disabled={services.length === 1}
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                    <tfoot>
+                        <tr className="bg-gray-100">
+                            <td
+                                colSpan="4"
+                                className="px-4 py-3 font-bold text-gray-700"
+                            >
+                                Total Amount:
+                            </td>
+                            <td className="px-4 py-3">
+                                <select
+                                    value={selectedCurrency}
+                                    onChange={handleCurrencyChange}
+                                    className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                >
+                                    {currencies.map((currency) => (
+                                        <option
+                                            key={currency.code}
+                                            value={currency.code}
+                                        >
+                                            {currency.code} ({currency.symbol})
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+                            <td className="px-4 py-3 font-bold text-blue-600">
+                                {formatCurrency(totalValue)}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                    {services?.map((service, index) => (
+                        <div 
+                            key={index} 
+                            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                        >
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                        Product Name
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="productName"
+                                        value={service?.productName}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Product Name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                        Quantity
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="quantity"
+                                        value={service?.quantity}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Quantity"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                    Description
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    name="productDescription"
+                                    value={service?.productDescription}
+                                    onChange={(e) =>
+                                        handleServiceChange(e, index)
+                                    }
+                                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
+                                    placeholder="Description"
+                                    rows={3}
+                                />
+                            </div>
+
+                            <div className="mt-4">
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                    Product Purpose
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    name="productPurpose"
+                                    value={service?.productPurpose}
+                                    onChange={(e) =>
+                                        handleServiceChange(e, index)
+                                    }
+                                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 resize-y"
+                                    placeholder="Product Purpose"
+                                    rows={3}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                        Price
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="price"
+                                        value={service?.price}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Price"
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                        Tax (%)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="tax"
+                                        value={service?.tax}
+                                        onChange={(e) =>
+                                            handleServiceChange(e, index)
+                                        }
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                        placeholder="Tax (%)"
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex justify-between items-center">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                        Row Total
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatCurrency(
+                                            calculateRowTotal(service)
+                                        )}
+                                        readOnly
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                        placeholder="Row Total"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveService(index)}
+                                    className={`text-red-500 hover:text-red-700 transition duration-300 ${
+                                        services.length === 1
+                                            ? "cursor-not-allowed opacity-50"
+                                            : ""
+                                    }`}
+                                    disabled={services.length === 1}
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mt-4">
+                <button
+                    type="button"
+                    onClick={handleAddService}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition duration-300 shadow-md hover:shadow-lg"
+                >
+                    <PlusCircle className="w-5 h-5" />
+                    Add Product/Service
+                </button>
+            </div>
+            <div className="mt-4 md:hidden">
+                <div className="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                    <span className="font-bold text-gray-700">Total Amount:</span>
+                    <div className="flex items-center space-x-2">
+                        <select
+                            value={selectedCurrency}
+                            onChange={handleCurrencyChange}
+                            className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                        >
+                            {currencies.map((currency) => (
+                                <option
+                                    key={currency.code}
+                                    value={currency.code}
+                                >
+                                    {currency.code} ({currency.symbol})
+                                </option>
+                            ))}
+                        </select>
+                        <span className="font-bold text-blue-600">
+                            {formatCurrency(totalValue)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Remarks
+                </label>
+                <textarea
+                    name="remarks"
+                    value={formData?.remarks}
+                    onChange={(e) =>
+                        setFormData({
+                            ...formData,
+                            remarks: e.target.value,
+                        })
+                    }
+                    rows={4}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition duration-300"
+                    placeholder="Enter additional remarks or notes here..."
+                />
+            </div>
+
+            <div className="mt-8 flex flex-col md:flex-row justify-between space-y-4 md:space-y-0">
+                <button
+                    onClick={onBack}
+                    className="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primary transition duration-300 ease-in-out"
+                >
+                    Back
+                </button>
+                <button
+                    onClick={handleSubmit}
+                    className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary transition-colors flex items-center justify-center"
+                >
+                    <CheckCircle2 className="mr-2" /> Next
+                </button>
+            </div>
+
+            
+        </div>
+    </div>
     );
 };
 

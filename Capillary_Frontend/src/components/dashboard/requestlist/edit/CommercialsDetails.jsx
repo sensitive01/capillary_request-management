@@ -1,11 +1,14 @@
 import { PlusCircle, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAllEntityData, editCommercials } from "../../../../api/service/adminServices";
+import {
+    getAllEntityData,
+    editCommercials,
+} from "../../../../api/service/adminServices";
 import { toast } from "react-toastify";
 import { CommercialValidationSchema } from "../yupValidation/commercialValidation";
 import businessUnits from "../dropDownData/businessUnit";
 
-const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
+const CommercialsDetails = ({ formData, setFormData, onNext, reqId }) => {
     const empDepartment = localStorage.getItem("department");
     const empId = localStorage.getItem("userId");
     const [isDropDown, setIsDropDown] = useState(false);
@@ -22,7 +25,13 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
         amount: formData?.amount || "",
         entityId: formData?.entityId || "",
         paymentTerms: formData?.paymentTerms || [
-            { percentageTerm: 0, paymentTerm: "", paymentType: "" },
+            {
+                percentageTerm: 0,
+                paymentTerm: "",
+                paymentType: "",
+                customPaymentTerm: "",
+                customPaymentType: "",
+            },
         ],
         billTo: formData?.billTo || "",
         shipTo: formData?.shipTo || "",
@@ -51,7 +60,13 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                 department: formData.department || empDepartment || "",
                 paymentMode: formData.paymentMode || "",
                 paymentTerms: formData.paymentTerms || [
-                    { percentageTerm: "", paymentTerm: "", paymentType: "" },
+                    {
+                        percentageTerm: 0,
+                        paymentTerm: "",
+                        paymentType: "",
+                        customPaymentTerm: "",
+                        customPaymentType: "",
+                    },
                 ],
                 billTo: formData.billTo || "",
                 shipTo: formData.shipTo || "",
@@ -59,7 +74,6 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                 hodEmail: formData.hodEmail || "",
                 businessUnit: formData.businessUnit || "", // This line is missing
                 isCreditCardSelected: formData.isCreditCardSelected || false,
-
             };
 
             setLocalFormData(newLocalFormData);
@@ -291,11 +305,6 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
             [name]: value,
         };
 
-        // // If not in dropdown mode and changing HOD, add a field for hodEmail
-        // if (!isDropDown && name === 'hod') {
-        //     updatedFormData.hodEmail = ''; // Reset or update hodEmail as needed
-        // }
-
         if (name === "paymentMode" && value === "creditcard") {
             updatedFormData.paymentTerms = [
                 {
@@ -362,10 +371,28 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
     const handlePaymentTermChange = (e, index) => {
         const { name, value } = e.target;
         const updatedPaymentTerms = [...localFormData.paymentTerms];
-        updatedPaymentTerms[index] = {
-            ...updatedPaymentTerms[index],
-            [name]: value,
-        };
+
+        // Create a copy of the current payment term
+        const updatedTerm = { ...updatedPaymentTerms[index] };
+
+        // Handle the case when the selection changes
+        if (name === "paymentTerm") {
+            updatedTerm[name] = value;
+            // Clear the customPaymentTerm if the selected value is not "Others"
+            if (value !== "Others") {
+                updatedTerm.customPaymentTerm = "";
+            }
+        } else if (name === "paymentType") {
+            updatedTerm[name] = value;
+        
+            if (value !== "Others") {
+                updatedTerm.customPaymentType = "";
+            }
+        } else {
+            updatedTerm[name] = value;
+        }
+
+        updatedPaymentTerms[index] = updatedTerm;
 
         const updatedFormData = {
             ...localFormData,
@@ -386,12 +413,60 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
         }
     };
 
+    const handleCustomTermChange = (e, index, fieldType) => {
+        const { value } = e.target;
+        const updatedPaymentTerms = [...localFormData.paymentTerms];
+
+        updatedPaymentTerms[index] = {
+            ...updatedPaymentTerms[index],
+            [fieldType]: value,
+        };
+
+        const updatedFormData = {
+            ...localFormData,
+            paymentTerms: updatedPaymentTerms,
+        };
+
+        setLocalFormData(updatedFormData);
+        setFormData(updatedFormData);
+    };
+    const prepareSubmissionData = () => {
+        const preparedData = { ...localFormData };
+
+        // Transform payment terms to use custom values where applicable
+        preparedData.paymentTerms = localFormData.paymentTerms.map((term) => {
+            const transformedTerm = { ...term };
+
+            if (term.paymentTerm === "Others" && term.customPaymentTerm) {
+                transformedTerm.paymentTerm = term.customPaymentTerm;
+            }
+
+            if (term.paymentType === "Others" && term.customPaymentType) {
+                transformedTerm.paymentType = term.customPaymentType;
+            }
+
+            // Remove custom fields before submission
+            delete transformedTerm.customPaymentTerm;
+            delete transformedTerm.customPaymentType;
+
+            return transformedTerm;
+        });
+
+        return preparedData;
+    };
+
     const handleAddMorePaymentTerm = () => {
         const updatedFormData = {
             ...localFormData,
             paymentTerms: [
                 ...localFormData.paymentTerms,
-                { percentageTerm: "", paymentTerm: "", paymentType: "" },
+                {
+                    percentageTerm: "",
+                    paymentTerm: "",
+                    paymentType: "",
+                    customPaymentTerm: "",
+                    customPaymentType: "",
+                },
             ],
         };
 
@@ -412,22 +487,29 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
         setLocalFormData(updatedFormData);
         setFormData(updatedFormData);
     };
-
     const handleNextStep = async () => {
         const isValid = await validateForm();
         if (isValid) {
-            const response = await editCommercials(formData, empId,reqId);
-    
+            const submissionData = prepareSubmissionData();
+            const response = await editCommercials(
+                submissionData,
+                empId,
+                reqId
+            );
+            console.log("Response", response);
+
             if (response.status === 201) {
+                // setReqId(response.data.reqid);
                 setFormData((prevFormData) => ({
                     ...prevFormData,
                     newReqId: response.data.reqid,
                 }));
-
                 onNext();
             }
         }
     };
+
+
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -606,19 +688,19 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
             )}
         </div>
     );
-
     return (
         <div className="w-full mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-primary to-primary p-6">
-                <h2 className="text-3xl font-extrabold text-white text-center">
+            <div className="bg-gradient-to-r from-primary to-primary p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white text-center">
                     Commercial Details
                 </h2>
             </div>
-
-            <div className="p-8 space-y-6">
-                <div className="grid grid-cols-4 gap-6">
+    
+            <div className="p-4 sm:p-8 space-y-6">
+                {/* Business Unit, Entity, City, Site Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                     {renderBusinessUnitField()}
-
+    
                     <div>
                         <label className="block text-sm font-semibold text-primary mb-2">
                             Entity <span className="text-red-500">*</span>
@@ -627,14 +709,10 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             name="entity"
                             value={localFormData.entity}
                             onChange={handleEntityChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                         >
                             <option value="">Select Entity</option>
-                            {[
-                                ...new Set(
-                                    entities.map((entity) => entity.entityName)
-                                ),
-                            ].map((entityName, index) => (
+                            {[...new Set(entities.map((entity) => entity.entityName))].map((entityName, index) => (
                                 <option key={index} value={entityName}>
                                     {entityName}
                                 </option>
@@ -646,7 +724,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             </p>
                         )}
                     </div>
-
+    
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             City
@@ -656,7 +734,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             name="city"
                             value={localFormData.city}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                             placeholder="Enter City"
                         />
                         {errors.city && (
@@ -665,7 +743,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             </p>
                         )}
                     </div>
-
+    
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Site
@@ -675,7 +753,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             name="site"
                             value={localFormData.site}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                             placeholder="Enter Site"
                         />
                         {errors.site && (
@@ -685,234 +763,192 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                         )}
                     </div>
                 </div>
-
-                <div className="grid grid-cols-3 gap-6">
+    
+                {/* Department and Approver Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     {renderDepartmentField()}
                     {renderApproverField()}
                 </div>
-
+    
+                {/* Payment Terms Section */}
                 <div className="space-y-4">
                     <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
                             Payment Term
                         </h3>
                     </div>
-
+    
                     <div className="overflow-x-auto">
                         <table className="w-full table-auto border-collapse">
                             <thead>
                                 <tr className="bg-gray-100 border-b-2 border-gray-200">
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Percentage Term{" "}
-                                        <span className="text-red-500">*</span>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Percentage Term <span className="text-red-500">*</span>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Payment Term{" "}
-                                        <span className="text-red-500">*</span>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Payment Term <span className="text-red-500">*</span>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Payment Type{" "}
-                                        <span className="text-red-500">*</span>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Payment Type <span className="text-red-500">*</span>
                                     </th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {localFormData.paymentTerms.map(
-                                    (term, index) => (
-                                        <tr
-                                            key={index}
-                                            className="border-b hover:bg-gray-50 transition duration-200"
-                                        >
-                                            <td className="px-4 py-3">
+                                {localFormData.paymentTerms.map((term, index) => (
+                                    <tr
+                                        key={index}
+                                        className="border-b hover:bg-gray-50 transition duration-200"
+                                    >
+                                        {/* Percentage Term */}
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                                            <input
+                                                type="number"
+                                                name="percentageTerm"
+                                                value={term.percentageTerm}
+                                                onChange={(e) => handlePaymentTermChange(e, index)}
+                                                disabled={localFormData.isCreditCardSelected}
+                                                className={`w-full px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm
+                                                ${localFormData.isCreditCardSelected
+                                                    ? "bg-gray-100 cursor-not-allowed"
+                                                    : "focus:ring-2 focus:ring-primary"
+                                                }
+                                                focus:outline-none focus:border-transparent transition duration-300`}
+                                                placeholder="Enter %"
+                                                style={{
+                                                    appearance: "none",
+                                                    MozAppearance: "textfield",
+                                                    WebkitAppearance: "none",
+                                                }}
+                                            />
+                                            {errors.paymentTerms?.[index]?.percentageTerm && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {errors.paymentTerms[index].percentageTerm}
+                                                </p>
+                                            )}
+                                        </td>
+    
+                                        {/* Payment Term Select */}
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                                            <select
+                                                name="paymentTerm"
+                                                value={term.paymentTerm}
+                                                onChange={(e) => handlePaymentTermChange(e, index)}
+                                                disabled={localFormData.isCreditCardSelected}
+                                                className={`w-full px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm
+                                                ${localFormData.isCreditCardSelected
+                                                    ? "bg-gray-100 cursor-not-allowed"
+                                                    : "focus:ring-2 focus:ring-primary"
+                                                }
+                                                focus:outline-none focus:border-transparent transition duration-300`}
+                                            >
+                                                <option value="">Select Payment Term</option>
+                                                <option value="Immediate">Immediate</option>
+                                                <option value="30 days credit period">30 days credit period</option>
+                                                <option value="45 days credit period">45 days credit period</option>
+                                                <option value="60 days credit period">60 days credit period</option>
+                                                <option value="90 days credit period">90 days credit period</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                            {term.paymentTerm === "Others" && (
                                                 <input
-                                                    type="number"
-                                                    name="percentageTerm"
-                                                    value={term.percentageTerm}
-                                                    onChange={(e) =>
-                                                        handlePaymentTermChange(
-                                                            e,
-                                                            index
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        localFormData.isCreditCardSelected
-                                                    }
-                                                    className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-                                            ${
-                                                localFormData.isCreditCardSelected
-                                                    ? "bg-gray-100 cursor-not-allowed"
-                                                    : "focus:ring-2 focus:ring-primary"
-                                            }
-                                            focus:outline-none focus:border-transparent transition duration-300`}
-                                                    placeholder="Enter Percentage Term"
-                                                    style={{
-                                                        appearance: "none",
-                                                        MozAppearance:
-                                                            "textfield",
-                                                        WebkitAppearance:
-                                                            "none",
-                                                    }}
+                                                    type="text"
+                                                    value={term.customPaymentTerm || ""}
+                                                    onChange={(e) => handleCustomTermChange(e, index, "customPaymentTerm")}
+                                                    disabled={localFormData.isCreditCardSelected}
+                                                    className="w-full mt-2 px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-primary focus:outline-none focus:border-transparent transition duration-300"
+                                                    placeholder="Specify payment term"
                                                 />
-                                                {errors.paymentTerms?.[index]
-                                                    ?.percentageTerm && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {
-                                                            errors.paymentTerms[
-                                                                index
-                                                            ].percentageTerm
-                                                        }
-                                                    </p>
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-3">
-                                                <select
-                                                    name="paymentTerm"
-                                                    value={term.paymentTerm}
-                                                    onChange={(e) =>
-                                                        handlePaymentTermChange(
-                                                            e,
-                                                            index
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        localFormData.isCreditCardSelected
-                                                    }
-                                                    className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-                                            ${
-                                                localFormData.isCreditCardSelected
+                                            )}
+                                            {errors.paymentTerms?.[index]?.paymentTerm && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {errors.paymentTerms[index].paymentTerm}
+                                                </p>
+                                            )}
+                                            {term.paymentTerm === "Others" && errors.paymentTerms?.[index]?.customPaymentTerm && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {errors.paymentTerms[index].customPaymentTerm}
+                                                </p>
+                                            )}
+                                        </td>
+    
+                                        {/* Payment Type Select */}
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                                            <select
+                                                name="paymentType"
+                                                value={term.paymentType}
+                                                onChange={(e) => handlePaymentTermChange(e, index)}
+                                                disabled={localFormData.isCreditCardSelected}
+                                                className={`w-full px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm
+                                                ${localFormData.isCreditCardSelected
                                                     ? "bg-gray-100 cursor-not-allowed"
                                                     : "focus:ring-2 focus:ring-primary"
-                                            }
-                                            focus:outline-none focus:border-transparent transition duration-300`}
-                                                >
-                                                    <option value="">
-                                                        Select Payment Term
-                                                    </option>
-                                                    <option value="Immediate">
-                                                        Immediate
-                                                    </option>
-                                                    <option value="30 days credit period">
-                                                        30 days credit period
-                                                    </option>
-                                                    <option value="45 days credit period">
-                                                        45 days credit period
-                                                    </option>
-                                                    <option value="60 days credit period">
-                                                        60 days credit period
-                                                    </option>
-                                                    <option value="90 days credit period">
-                                                        90 days credit period
-                                                    </option>
-                                                </select>
-                                                {errors.paymentTerms?.[index]
-                                                    ?.paymentTerm && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {
-                                                            errors.paymentTerms[
-                                                                index
-                                                            ].paymentTerm
-                                                        }
-                                                    </p>
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-3">
-                                                <select
-                                                    name="paymentType"
-                                                    value={term.paymentType}
-                                                    onChange={(e) =>
-                                                        handlePaymentTermChange(
-                                                            e,
-                                                            index
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        localFormData.isCreditCardSelected
-                                                    }
-                                                    className={`w-full px-3 py-2 border-2 border-gray-300 rounded-lg 
-                                            ${
-                                                localFormData.isCreditCardSelected
-                                                    ? "bg-gray-100 cursor-not-allowed"
-                                                    : "focus:ring-2 focus:ring-primary"
-                                            }
-                                            focus:outline-none focus:border-transparent transition duration-300`}
-                                                >
-                                                    <option value="">
-                                                        Select Payment Type
-                                                    </option>
-                                                    <option value="Full Payment">
-                                                        Full Payment
-                                                    </option>
-                                                    <option value="Advance Payment">
-                                                        Advance Payment
-                                                    </option>
-                                                    <option value="Payment on Delivery">
-                                                        Payment on Delivery
-                                                    </option>
-                                                    <option value="Part Payment">
-                                                        Part Payment
-                                                    </option>
-                                                </select>
-                                                {errors.paymentTerms?.[index]
-                                                    ?.paymentType && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {
-                                                            errors.paymentTerms[
-                                                                index
-                                                            ].paymentType
-                                                        }
-                                                    </p>
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end space-x-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleDeletePaymentTerm(
-                                                                index
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            localFormData.isCreditCardSelected ||
-                                                            index === 0
-                                                        }
-                                                        className={`flex items-center px-4 py-2 rounded-lg transition duration-300 
-                                                ${
-                                                    localFormData.isCreditCardSelected ||
-                                                    index === 0
+                                                }
+                                                focus:outline-none focus:border-transparent transition duration-300`}
+                                            >
+                                                <option value="">Select Payment Type</option>
+                                                <option value="Full Payment">Full Payment</option>
+                                                <option value="Advance Payment">Advance Payment</option>
+                                                <option value="Payment on Delivery">Payment on Delivery</option>
+                                                <option value="Part Payment">Part Payment</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                            {term.paymentType === "Others" && (
+                                                <input
+                                                    type="text"
+                                                    value={term.customPaymentType || ""}
+                                                    onChange={(e) => handleCustomTermChange(e, index, "customPaymentType")}
+                                                    disabled={localFormData.isCreditCardSelected}
+                                                    className="w-full mt-2 px-2 sm:px-3 py-1 sm:py-2 border-2 border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-primary focus:outline-none focus:border-transparent transition duration-300"
+                                                    placeholder="Specify payment type"
+                                                />
+                                            )}
+                                            {errors.paymentTerms?.[index]?.paymentType && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {errors.paymentTerms[index].paymentType}
+                                                </p>
+                                            )}
+                                            {term.paymentType === "Others" && errors.paymentTerms?.[index]?.customPaymentType && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {errors.paymentTerms[index].customPaymentType}
+                                                </p>
+                                            )}
+                                        </td>
+    
+                                        {/* Delete Button */}
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeletePaymentTerm(index)}
+                                                    disabled={localFormData.isCreditCardSelected || index === 0}
+                                                    className={`flex items-center px-2 sm:px-4 py-1 sm:py-2 rounded-lg transition duration-300 text-xs sm:text-sm
+                                                    ${localFormData.isCreditCardSelected || index === 0
                                                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                                         : "bg-red-500 text-white hover:bg-red-700"
-                                                }`}
-                                                    >
-                                                        <Trash2
-                                                            size={16}
-                                                            className="mr-2"
-                                                        />
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                )}
+                                                    }`}
+                                                >
+                                                    <Trash2 size={16} className="mr-1 sm:mr-2 hidden sm:inline" />
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
-
+    
+                    {/* Add Payment Term Button */}
                     <div className="mt-4 flex justify-start">
                         <button
                             type="button"
                             onClick={handleAddMorePaymentTerm}
-                            className={`${
-                                localFormData.isCreditCardSelected
-                                    ? "bg-gray-300 text-black"
-                                    : "bg-primary text-white"
+                            className={`${localFormData.isCreditCardSelected
+                                ? "bg-gray-300 text-black"
+                                : "bg-primary text-white"
                             } flex items-center px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300`}
                             disabled={localFormData.isCreditCardSelected}
                         >
@@ -921,8 +957,9 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                         </button>
                     </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-6">
+    
+                {/* Bill To and Ship To Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Bill To <span className="text-red-500">*</span>
@@ -931,7 +968,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             name="billTo"
                             value={localFormData.billTo}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                             placeholder="Enter Bill To"
                             rows="6"
                         ></textarea>
@@ -941,7 +978,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             </p>
                         )}
                     </div>
-
+    
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Ship To <span className="text-red-500">*</span>
@@ -950,7 +987,7 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                             name="shipTo"
                             value={localFormData.shipTo}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                             placeholder="Enter Ship To"
                             rows="6"
                         ></textarea>
@@ -961,12 +998,13 @@ const CommercialsDetails = ({ formData, setFormData, onNext,reqId }) => {
                         )}
                     </div>
                 </div>
-
-                <div className="mt-8 flex justify-end">
+    
+                {/* Next Button */}
+                <div className="mt-6 sm:mt-8 flex justify-end">
                     <button
                         type="button"
                         onClick={handleNextStep}
-                        className="px-10 py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
+                        className="w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-primary to-primary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition duration-300 ease-in-out"
                     >
                         Next
                     </button>

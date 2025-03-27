@@ -11,6 +11,7 @@ const vendorSchema = require("../models/vendorModel");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const EmailSettings = require("../models/emailNotificationSchema");
 
 const addReqForm = async (req, res) => {
   try {
@@ -36,7 +37,15 @@ const postComments = async (req, res) => {
     const { id } = req.params;
     const { data } = req.body;
 
-    console.log(id, data);
+    console.log("id, data", id, data);
+    const { taggedEmployeeEmail } = data;
+    console.log("taggedEmployeeId", taggedEmployeeEmail);
+
+    const taggedEmployee = await empModel.findOne(
+      { company_email_id: taggedEmployeeEmail },
+      { full_name: 1, company_email_id: 1, employee_id: 1 }
+    );
+    console.log("taggedEmployee", taggedEmployee);
 
     let empData =
       (await empModel
@@ -67,6 +76,13 @@ const postComments = async (req, res) => {
       { $push: { commentLogs: commentData } },
       { new: true }
     );
+    await sendEmail(taggedEmployeeEmail, "chatNotificationTemplate", {
+      senderName: empData.full_name,
+      topic: data.message,
+      employeeName: data.taggedEmployeeName,
+      reqId: updatedRequest.reqid,
+      senderDepartment: empData.department,
+    });
 
     if (updatedRequest) {
       res.status(200).json({
@@ -295,9 +311,8 @@ const getStatisticData = async (req, res) => {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
       pendingRequest = myRequestData.filter(
-        (req) => (req.status === "Pending" ||req.status === "PO-Pending")
+        (req) => req.status === "Pending" || req.status === "PO-Pending"
       ).length;
-      
 
       const reqDataStatics = reqData.filter(
         (req) =>
@@ -330,8 +345,6 @@ const getStatisticData = async (req, res) => {
               prevApp.nextDepartment === role && prevApp.status === "Approved"
             );
           });
-
-
 
           return isForEmployeeDept && isPending;
         });
@@ -1154,7 +1167,6 @@ const getApprovedReqData = async (req, res) => {
     if (showPendingOnly === "All" || reqData.length === 0) {
       reqData = await CreateNewReq.find({
         isCompleted: true,
-        
       })
         .sort({ createdAt: -1 })
         .lean();
@@ -1199,7 +1211,6 @@ const getApprovedReqData = async (req, res) => {
   }
 };
 
-
 // Function to check approval status and assign color if disabled
 const checkApprovalStatus = async (role, userId, requestId, email) => {
   console.log("role, userId, requestId,email", role, userId, requestId, email);
@@ -1218,7 +1229,10 @@ const checkApprovalStatus = async (role, userId, requestId, email) => {
 
     if (latestApproval) {
       console.log(" latest approval");
-      if (latestApproval.nextDepartment === role||(latestApproval.approvalId===userId&&request.status!=="Approved")) {
+      if (
+        latestApproval.nextDepartment === role ||
+        (latestApproval.approvalId === userId && request.status !== "Approved")
+      ) {
         isDisplay = false;
         color = "red";
       } else if (
@@ -1229,10 +1243,8 @@ const checkApprovalStatus = async (role, userId, requestId, email) => {
         isDisplay = false;
         color = "red";
       }
-      
     }
     if (!latestApproval) {
-
       if (
         request.firstLevelApproval.hodEmail === email &&
         request.firstLevelApproval.approved !== true
@@ -1240,7 +1252,6 @@ const checkApprovalStatus = async (role, userId, requestId, email) => {
         isDisplay = false;
         color = "red";
       }
-     
     }
 
     return {
@@ -1961,6 +1972,8 @@ const sendNudgeNotification = async (req, res) => {
   try {
     console.log("Welcome to nudge notification", req.params);
     const { reqId } = req.params;
+    const nudgeRequest = await EmailSettings.findOne({ emailId: "6" });
+    console.log("nudgeRequest", nudgeRequest);
 
     const nudgeData = await CreateNewReq.findOne(
       { _id: reqId },
@@ -2019,14 +2032,16 @@ const sendNudgeNotification = async (req, res) => {
     }
     console.log("nudgeData", nudgeData.reqid);
 
-    await sendEmail(to_email, "nudgeNotification", {
-      to_name,
-      empId: userData.employee_id,
-      empName: userData.full_name,
-      reqid: nudgeData.reqid,
-      empEmail: userData.company_email_id,
-      department: userData.department,
-    });
+    if (nudgeRequest.emailStatus) {
+      await sendEmail(to_email, "nudgeNotification", {
+        to_name,
+        empId: userData.employee_id,
+        empName: userData.full_name,
+        reqid: nudgeData.reqid,
+        empEmail: userData.company_email_id,
+        department: userData.department,
+      });
+    }
 
     return res
       .status(200)
@@ -2173,6 +2188,8 @@ const editSendRequestMail = async (req, res) => {
   try {
     const { empId, reqId } = req.params;
     console.log("Welcome sending the edit request mail", empId);
+    const editRequestEnable = await EmailSettings.findOne({ emailId: "6" });
+    console.log("editRequestEnable", editRequestEnable);
 
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
@@ -2207,15 +2224,17 @@ const editSendRequestMail = async (req, res) => {
 
     const { hodEmail, hodName } = reqData.firstLevelApproval;
 
-    await sendEmail(hodEmail, "editRequest", {
-      empId: employee_id,
-      empName: full_name,
-      empEmail: company_email_id,
-      reqid: reqData.reqid,
-      to_name: hodName,
+    if (editRequestEnable.emailStatus) {
+      await sendEmail(hodEmail, "editRequest", {
+        empId: employee_id,
+        empName: full_name,
+        empEmail: company_email_id,
+        reqid: reqData.reqid,
+        to_name: hodName,
 
-      department,
-    });
+        department,
+      });
+    }
 
     res.status(200).send("Edit request email sent successfully");
   } catch (err) {
@@ -2306,14 +2325,22 @@ const uploadPoDocuments = async (req, res) => {
 
 const uploadInvoiceDocuments = async (req, res) => {
   try {
-    console.log("Welcome to upload documets");
+    console.log("Welcome to upload documents");
+
     const { reqId, empId } = req.params;
-    const { link } = req.body;
+    const { link, notes } = req.body; // Added 'notes' for invoice
+
     console.log(link, reqId, empId);
+
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
       { reqid: 1, approvals: 1 }
     );
+
+    if (!reqData) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
     const { approvals } = reqData;
     const latestApproval = approvals[approvals.length - 1];
 
@@ -2327,23 +2354,24 @@ const uploadInvoiceDocuments = async (req, res) => {
           department: 1,
         }
       )) || (await addPanelUsers.findOne({ employee_id: empId }));
-    console.log(empData);
 
     if (!empData) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Prepare the PO document data
+    // Prepare the invoice document data
     const invoiceDocument = {
       uploadedBy: {
         empName: empData.full_name,
         empId: empData.employee_id,
         department: empData.department,
-        uploadedOn: new Date(), // Current date
-        receivedConfirmation: null, // Initially null
+        uploadedOn: new Date(),
+        receivedConfirmation: null,
+        invoiceLink: link,
+        notes: notes || "", // Optional notes field
       },
-      invoiceLink: link,
     };
+
     const approvalRecord = {
       departmentName: empData.department,
       status: "Invoice-Uploaded",
@@ -2355,15 +2383,15 @@ const uploadInvoiceDocuments = async (req, res) => {
       receivedOn: latestApproval?.approvalDate,
     };
 
-    // Update the request with PO document details
+    // Update the request with the new invoice document
     const updatedRequest = await CreateNewReq.findByIdAndUpdate(
       reqId,
       {
-        $push: { approvals: approvalRecord },
-        $set: {
-          invoiceDocumets: invoiceDocument,
-          status: "Approved",
+        $push: {
+          invoiceDocumets: invoiceDocument, // Append new invoice document
+          approvals: approvalRecord, // Append approval record
         },
+        $set: { status: "Approved" }, // Update status
       },
       { new: true }
     );
@@ -2379,7 +2407,7 @@ const uploadInvoiceDocuments = async (req, res) => {
   } catch (err) {
     console.error("Error in uploading the documents", err);
     return res.status(500).json({
-      message: "Error uploading PO document",
+      message: "Error uploading invoice document",
       error: err.message,
     });
   }
@@ -3384,7 +3412,7 @@ const saveCommercialData = async (req, res) => {
         reqid: reqid,
         userId: empData.employee_id,
         userName: empData.full_name,
-        empDepartment:empData.department,
+        empDepartment: empData.department,
         commercials: formData,
         firstLevelApproval: {
           hodName: formData.hod,
@@ -3616,10 +3644,10 @@ const saveAggrementData = async (req, res) => {
       return res.status(400).json({ message: "Invalid formData" });
     }
 
-    let { complinces, hasDeviations } = formData;
+    let { complinces } = formData;
 
-    // Ensure complinces is an object
-    if (typeof complinces !== "object" || complinces === null) {
+    // Ensure complinces is an array
+    if (!Array.isArray(complinces)) {
       return res.status(400).json({ message: "Invalid compliance data" });
     }
 
@@ -3629,12 +3657,23 @@ const saveAggrementData = async (req, res) => {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    // Convert the object to an array and process each compliance item
-    const compliancesArray = Object.values(complinces);
+    let departmentDeviations = new Map(); // Initialize as a Map
+    let riskAccepted = false; // Track if risk is accepted
 
-    // Store compliances in the updateData model
-    updateData.complinces = compliancesArray;
-    updateData.hasDeviations = hasDeviations ? 1 : 0;
+    complinces.forEach(({ department, answer, expectedAnswer }) => {
+      if (answer !== expectedAnswer) {
+        departmentDeviations.set(department, true);
+        riskAccepted = true;
+      } else if (!departmentDeviations.has(department)) {
+        departmentDeviations.set(department, false);
+      }
+    });
+
+    // Convert Map to plain object for MongoDB
+    updateData.departmentDeviations = Object.fromEntries(departmentDeviations);
+    updateData.complinces = complinces;
+    updateData.hasDeviations = riskAccepted ? 1 : 0;
+    updateData.riskAccepted = riskAccepted;
 
     await updateData.save();
 
@@ -3645,25 +3684,23 @@ const saveAggrementData = async (req, res) => {
   }
 };
 
+
+
 const generateRequestPdfData = async (request, res) => {
   try {
-    // Create a new PDF document
     const doc = new PDFDocument({
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
       size: "A4",
-      bufferPages: true, // Enable page buffering for page numbers
+      bufferPages: true,
     });
 
     const fileName = `Request_${request.reqid || "Unknown"}.pdf`;
 
-    // Set response headers for download
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     res.setHeader("Content-Type", "application/pdf");
 
-    // Pipe the PDF to the response
     doc.pipe(res);
 
-    // Helper function to format currency
     const formatCurrency = (value) => {
       if (!value) return "N/A";
       return new Intl.NumberFormat("en-US", {
@@ -3672,14 +3709,12 @@ const generateRequestPdfData = async (request, res) => {
       }).format(value);
     };
 
-    // Helper function to format dates
     const formatDate = (dateString) => {
       if (!dateString) return "N/A";
       const date = new Date(dateString);
-      return date.toLocaleDateString("en-GB"); // DD/MM/YYYY format
+      return date.toLocaleDateString("en-GB");
     };
 
-    // Helper function to extract date and time
     const extractDateAndTime = (dateString) => {
       if (!dateString) return "N/A";
       const date = new Date(dateString);
@@ -4372,7 +4407,10 @@ const getRoleBasedApprovals = async (req, res) => {
 
       roleApprovalData = roleApprovalDatas.filter((item) => {
         const lastApproval = item.approvals[item.approvals.length - 1];
-        return (lastApproval?.nextDepartment === role||(lastApproval.approvalId===userId&&item.status!=="Approved")); // Ensure it matches the role
+        return (
+          lastApproval?.nextDepartment === role ||
+          (lastApproval.approvalId === userId && item.status !== "Approved")
+        ); // Ensure it matches the role
       });
     }
 
@@ -4430,28 +4468,207 @@ const getRoleBasedApprovals = async (req, res) => {
   }
 };
 
+const emailNotificationAction = async (req, res) => {
+  try {
+    console.log("Welcome to change the email notification data", req.body);
 
+    const { emailId, name, emailStatus, label } = req.body.emailData;
 
+    let emailEntry = await EmailSettings.findOne({ emailId: emailId });
 
+    if (emailEntry) {
+      emailEntry.emailStatus = emailStatus;
+      await emailEntry.save();
+      return res.status(200).json({
+        message: "Email status updated successfully",
+        data: emailEntry,
+      });
+    } else {
+      const newEmailEntry = new EmailSettings({
+        emailId,
+        emailType: name,
+        emailStatus,
+        label,
+      });
 
+      await newEmailEntry.save();
+      return res
+        .status(201)
+        .json({ message: "New email notification added", data: newEmailEntry });
+    }
+  } catch (err) {
+    console.error("Error in changing the email status", err);
+    return res.status(500).json({
+      message: "Error updating email notification",
+      error: err.message,
+    });
+  }
+};
 
+const getAllEmailData = async (req, res) => {
+  try {
+    let emailData = await EmailSettings.find();
 
+    // If no email settings exist, insert default settings
+    if (emailData.length === 0) {
+      const defaultEmailSettings = [
+        {
+          emailId: "1",
+          name: "login",
+          emailStatus: true,
+          label: "Login Notification",
+        },
+        {
+          emailId: "2",
+          name: "requestAcknowledgementMails",
+          emailStatus: true,
+          label: "Send Mails to All Panel Members",
+        },
+        {
+          emailId: "3",
+          name: "vendorOnboarding",
+          emailStatus: true,
+          label: "Vendor Onboarding Process - To Vendor",
+        },
+        {
+          emailId: "4",
+          name: "newVendorOnBoard",
+          emailStatus: true,
+          label: "New Vendor Added - To Vendor Management",
+        },
+        {
+          emailId: "5",
+          name: "vendorOnboardingRequestorTemplate",
+          emailStatus: true,
+          label: "New Vendor Onboarding - To Requestor",
+        },
+        {
+          emailId: "6",
+          name: "editRequest",
+          emailStatus: true,
+          label: "Edit Request for Employee",
+        },
+        {
+          emailId: "7",
+          name: "reqApprovedNotificationtoRequestor",
+          emailStatus: true,
+          label: "Request Approved Notification - To Requestor",
+        },
+        {
+          emailId: "8",
+          name: "reqApprovelNotificationtoNextdepartment",
+          emailStatus: true,
+          label: "Request Approval Notification - To Next Department",
+        },
+        {
+          emailId: "9",
+          name: "autoApprovalNotificationtolegal",
+          emailStatus: true,
+          label: "Auto Approved Notification - To Legal Department",
+        },
+        {
+          emailId: "10",
+          name: "autoApprovalNotificationtoInfoSecurity",
+          emailStatus: true,
+          label: "Auto Approved Notification - To Info Security Department",
+        },
+        {
+          emailId: "11",
+          name: "financeApprovalEmail",
+          emailStatus: true,
+          label: "Finance Approval Notification",
+        },
+        {
+          emailId: "12",
+          name: "nudgeNotification",
+          emailStatus: true,
+          label: "Reminder: PO-Request Pending Action",
+        },
+        {
+          emailId: "13",
+          name: "poUploadedNotificationTemplate",
+          emailStatus: true,
+          label: "PO Uploaded - Invoice Submission Pending",
+        },
+        {
+          emailId: "14",
+          name: "invoiceUploadedNotificationTemplate",
+          emailStatus: true,
+          label: "Invoice Uploaded - Request Process Completed",
+        },
+        {
+          emailId: "15",
+          name: "nudgeNotification",
+          emailStatus: true,
+          label: "Nudge Notification",
+        },
+      ];
 
+      emailData = await EmailSettings.insertMany(defaultEmailSettings);
+    }
 
+    return res
+      .status(200)
+      .json({ message: "All email data fetched successfully", emailData });
+  } catch (err) {
+    console.error("Error in getting all emails", err);
+    return res
+      .status(500)
+      .json({ message: "Error fetching email data", error: err.message });
+  }
+};
 
+const tagMessageToEmployee = async (req, res) => {
+  try {
+    console.log("Welcome to tag employee");
 
+    const { role, reqId } = req.params;
+    console.log("role, reqId:", role, reqId);
 
+    let empData = [];
 
+    if (role === "Head of Dept") {
+      const hodData = await CreateNewReq.findOne(
+        { _id: reqId },
+        { firstLevelApproval: 1 }
+      );
 
+      console.log(hodData);
 
+      if (hodData && hodData.firstLevelApproval) {
+        empData.push({
+          full_name: hodData.firstLevelApproval.hodName,
+          company_email_id: hodData.firstLevelApproval.hodEmail,
+        });
+      }
+    } else {
+      empData = await addPanelUsers.find(
+        { role: role },
+        { full_name: 1, company_email_id: 1 }
+      );
+    }
 
+    console.log(`Tag to ${role}:`, empData);
 
-
-
-
-
+    return res.status(200).json({
+      success: true,
+      message: `Employees tagged successfully for role: ${role}`,
+      empData,
+    });
+  } catch (err) {
+    console.log("Error in tagging the employee:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error in tagging the employee",
+      error: err.message,
+    });
+  }
+};
 
 module.exports = {
+  tagMessageToEmployee,
+  getAllEmailData,
+  emailNotificationAction,
   getRoleBasedApprovals,
   generateRequestPdfData,
   editCommercialData,

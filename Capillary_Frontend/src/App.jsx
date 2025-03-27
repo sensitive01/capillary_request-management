@@ -43,7 +43,7 @@ import Settings from "./components/dashboard/settings/Settings";
 import GoogleSSO from "./components/dashboard/settings/integrations/GoogleSSO.JSX";
 import SmtpPage from "./components/dashboard/settings/integrations/SmtpPage";
 import DarwinBoxPage from "./components/dashboard/settings/integrations/DarwinBoxPage";
-import NetSuit from "./components/dashboard/settings/integrations/NetSuit";
+import NetSuit from "./components/dashboard/settings/integrations/EmailNotificationSettings";
 import ApprovalFlowPage from "./components/dashboard/settings/business-settings/ApprovalFlowPage";
 import CurrencyPage from "./components/dashboard/settings/business-settings/CurrencyPage";
 import PaymentTermsPage from "./components/dashboard/settings/business-settings/PaymentTermsPage";
@@ -52,6 +52,7 @@ import SystemLogs from "./components/dashboard/settings/logs/SystemLogs";
 import ApproverType from "./components/dashboard/settings/business-settings/ApproverType";
 import RoleBasedApprovals from "./components/dashboard/rolebasedapprovals/RoleBasedApprovals";
 import EmployeeProfileCard from "./components/dashboard/employeeProfile/EmployeeProfileCard";
+import EmailNotificationSettings from "./components/dashboard/settings/integrations/EmailNotificationSettings";
 
 
 function App() {
@@ -120,7 +121,7 @@ function App() {
           <Route path="/settings/google-sso" element={<GoogleSSO/>} />
           <Route path="/settings/smtp" element={<SmtpPage/>} />
           <Route path="/settings/darwin-box" element={<DarwinBoxPage/>} />
-          <Route path="/settings/netsuit" element={<NetSuit/>} />
+          <Route path="/settings/email-notification" element={<EmailNotificationSettings/>} />
           <Route path="/settings/approval-flow" element={<ApprovalFlowPage/>} />
           <Route path="/settings/approver-type" element={<ApproverType/>} />
 

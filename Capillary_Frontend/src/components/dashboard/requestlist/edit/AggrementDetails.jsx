@@ -6,16 +6,40 @@ import {
     ArrowRight,
     Upload,
     X,
+    Info,
+    ChevronDown,
+    ChevronUp,
 } from "lucide-react";
-import { getAllLegalQuestions } from "../../../../api/service/adminServices";
+import {
+    getAllLegalQuestions,
+    saveAggrementData,
+} from "../../../../api/service/adminServices";
 import { FaFilePdf } from "react-icons/fa";
 import uploadFiles from "../../../../utils/s3BucketConfig";
 
-const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
+const AgreementCompliances = ({
+    formData,
+    setFormData,
+    onNext,
+    onBack,
+    reqId,
+}) => {
+    console.log("FormData", formData)
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [deviations, setDeviations] = useState({});
     const [isLoading, setIsLoading] = useState(true);
+    const [departmentDeviations, setDepartmentDeviations] = useState({});
+    const [riskAccepted, setRiskAccepted] = useState(false);
+    const [expandedDepts, setExpandedDepts] = useState({});
+    const [savingData, setSavingData] = useState(false);
+
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState({
+        title: "",
+        description: "",
+    });
 
     useEffect(() => {
         const initializeData = async () => {
@@ -25,48 +49,83 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
                 const questionData = response.data.data;
                 setQuestions(questionData);
 
-                const existingCompliances = Array.isArray(formData.complinces)
-                    ? formData.complinces 
-                    : [];
-
-                const complianceMap = new Map(
-                    existingCompliances.map((comp) => [comp.questionId, comp])
-                );
-
-                const updatedCompliances = questionData.map((q) => {
-                    const existing = complianceMap.get(q._id);
-                    const hasDeviation = existing?.answer !== q.expectedAnswer;
-
-                    return {
-                        questionId: q._id,
-                        question: q.question,
-                        answer: existing?.answer ?? q.expectedAnswer,
-                        department: q.createdBy.department,
-                        expectedAnswer:q.expectedAnswer,
-                        deviation: hasDeviation 
-                            ? (existing?.deviation || { reason: "", attachments: [] })
-                            : null
-                    };
-                });
-
-                setFormData((prev) => ({
-                    ...prev,
-                    complinces: updatedCompliances,
-                    hasDeviations: updatedCompliances.some(comp => comp.deviation !== null) ? 1 : 0
-                }));
-
                 const initialAnswers = {};
                 const initialDeviations = {};
+                const initialDeptDeviations = {};
+                const initialExpandedDepts = {};
 
-                updatedCompliances.forEach((comp) => {
-                    initialAnswers[comp.questionId] = comp.answer;
-                    if (comp.deviation) {
-                        initialDeviations[comp.questionId] = comp.deviation;
+                const depts = [
+                    ...new Set(questionData.map((q) => q.createdBy.department)),
+                ];
+                depts.forEach((dept) => {
+                    initialExpandedDepts[dept] = true;
+                    initialDeptDeviations[dept] = false;
+                });
+
+                // Convert existing compliances to a map using questionId for easier lookup
+                const existingCompliancesMap = Object.values(formData.complinces || {})
+                    .reduce((acc, compliance) => {
+                        acc[compliance.questionId] = compliance;
+                        return acc;
+                    }, {});
+
+                questionData.forEach((q) => {
+                    const dept = q.createdBy.department;
+
+                    // Look up compliance using questionId
+                    const existingCompliance = existingCompliancesMap[q._id];
+
+                    if (existingCompliance) {
+                        // Use existing compliance data
+                        initialAnswers[q._id] = existingCompliance.answer;
+                        initialDeviations[q._id] = existingCompliance.deviation || {
+                            reason: "",
+                            attachments: [],
+                        };
+
+                        if (existingCompliance.answer !== q.expectedAnswer) {
+                            initialDeptDeviations[dept] = true;
+                        }
+                    } else {
+                        // Use default values from fetched questions
+                        initialAnswers[q._id] = q.expectedAnswer;
+                        initialDeviations[q._id] = {
+                            reason: "",
+                            attachments: [],
+                        };
+
+                        // Update formData with default compliance
+                        setFormData((prev) => ({
+                            ...prev,
+                            complinces: {
+                                ...prev.complinces,
+                                [q._id]: {
+                                    questionId: q._id,
+                                    question: q.question,
+                                    answer: q.expectedAnswer,
+                                    department: q.createdBy.department,
+                                    deviation: null,
+                                    expectedAnswer: q.expectedAnswer,
+                                    description: q.description,
+                                },
+                            },
+                            hasDeviations: 0,
+                            departmentDeviations: initialDeptDeviations,
+                            riskAccepted: false,
+                        }));
                     }
                 });
 
                 setAnswers(initialAnswers);
                 setDeviations(initialDeviations);
+                setDepartmentDeviations(initialDeptDeviations);
+                setExpandedDepts(initialExpandedDepts);
+
+                // Set risk acceptance from formData if exists
+                if (formData.riskAccepted !== undefined) {
+                    setRiskAccepted(formData.riskAccepted);
+                }
+
                 setIsLoading(false);
             } catch (error) {
                 console.error("Error fetching questions:", error);
@@ -77,50 +136,82 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
         initializeData();
     }, []);
 
+    const toggleDepartment = (dept) => {
+        setExpandedDepts((prev) => ({
+            ...prev,
+            [dept]: !prev[dept],
+        }));
+    };
     const handleAnswerChange = (questionId, value) => {
         const question = questions.find((q) => q._id === questionId);
+        const dept = question?.createdBy.department;
         const isDeviation = value !== question?.expectedAnswer;
-
+        console.log("question:",question,"dept",dept,"isDeviation",isDeviation,"value",value)
+    
+        // Update answers
         setAnswers((prev) => ({
             ...prev,
             [questionId]: value,
         }));
-
-        // If switching to non-deviation, clear the deviation
-        if (!isDeviation) {
-            setDeviations((prev) => {
-                const { [questionId]: removed, ...rest } = prev;
-                return rest;
-            });
-        } else if (isDeviation && !deviations[questionId]) {
-            // If switching to deviation and no deviation exists, initialize it
-            setDeviations((prev) => ({
-                ...prev,
-                [questionId]: { reason: "", attachments: [] }
-            }));
-        }
-
+    
         setFormData((prev) => {
-            const updatedCompliances = prev.complinces.map((compliance) =>
-                compliance.questionId === questionId
-                    ? {
-                          ...compliance,
-                          answer: value,
-                          deviation: isDeviation
-                              ? (deviations[questionId] || { reason: "", attachments: [] })
-                              : null
-                      }
-                    : compliance
+            // Create a copy of existing compliances
+            const updatedCompliances = [...(prev.complinces || [])];
+            
+            // Find the index of the compliance with matching questionId
+            const complianceIndex = updatedCompliances.findIndex(
+                (compliance) => compliance.questionId === questionId
             );
-
-            const hasAnyDeviation = updatedCompliances.some(
-                comp => comp.answer !== questions.find(q => q._id === comp.questionId)?.expectedAnswer
+            console.log("complianceIndex",complianceIndex)
+    
+            // Update or add the compliance
+            if (complianceIndex !== -1) {
+                updatedCompliances[complianceIndex] = {
+                    questionId,
+                    question: question.question,
+                    answer: value,
+                    department: dept,
+                    deviation: isDeviation ? deviations[questionId] : null,
+                    expectedAnswer: question.expectedAnswer,
+                    description: question.description,
+                };
+            } else {
+                updatedCompliances.push({
+                    questionId,
+                    question: question.question,
+                    answer: value,
+                    department: dept,
+                    deviation: isDeviation ? deviations[questionId] : null,
+                    expectedAnswer: question.expectedAnswer,
+                    description: question.description,
+                });
+            }
+    
+            // Update department deviations
+            const updatedDepartmentDeviations = { ...prev.departmentDeviations };
+            console.log("updatedDepartmentDeviations",updatedDepartmentDeviations)
+            
+            // Find all questions in this department
+            const departmentQuestions = questions.filter(
+                (q) => q.createdBy.department === dept
             );
+    
+            // Check if any questions in this department now have deviations
+            const hasDepartmentDeviation = departmentQuestions.some((q) => {
+                const currentAnswer = q._id === questionId ? value : answers[q._id];
+                return currentAnswer !== q.expectedAnswer;
+            });
 
+    
+            // Update the department's deviation status
+            updatedDepartmentDeviations[dept] = hasDepartmentDeviation;
+            console.log("updatedDepartmentDeviations",updatedDepartmentDeviations)
+
+    
             return {
                 ...prev,
                 complinces: updatedCompliances,
-                hasDeviations: hasAnyDeviation ? 1 : 0
+                departmentDeviations: updatedDepartmentDeviations,
             };
         });
     };
@@ -138,26 +229,26 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
 
         setFormData((prev) => ({
             ...prev,
-            complinces: prev.complinces.map((compliance) =>
-                compliance.questionId === questionId
-                    ? {
-                          ...compliance,
-                          deviation: updatedDeviation,
-                      }
-                    : compliance
-            ),
+            complinces: {
+                ...prev.complinces,
+                [questionId]: {
+                    ...prev.complinces[questionId],
+                    deviation: updatedDeviation,
+                },
+            },
         }));
     };
 
     const handleFileUpload = async (questionId, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
-                uploadFiles(file,"compliances",reqId)
+                uploadFiles(file, "compliances", reqId)
             );
             const responses = await Promise.all(uploadPromises);
-            console.log("file upload",responses)
 
-            const fileUrls = responses.flatMap((response) => response)
+            const fileUrls = responses.flatMap(
+                (response) => response.data.fileUrls[0]
+            );
             const updatedAttachments = [
                 ...(deviations[questionId]?.attachments || []),
                 ...fileUrls,
@@ -180,58 +271,55 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
         handleDeviationChange(questionId, "attachments", updatedAttachments);
     };
 
+    const showInfo = (title, description) => {
+        setModalContent({ title, description });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleRiskAcceptance = (e) => {
+        const isChecked = e.target.checked;
+        setRiskAccepted(isChecked);
+        setFormData((prev) => ({
+            ...prev,
+            riskAccepted: isChecked,
+        }));
+    };
+
+    const handleSubmit = async () => {
+        try {
+            setSavingData(true);
+            const response = await saveAggrementData(formData, reqId);
+            if (response.status === 200) {
+                onNext();
+            }
+        } catch (error) {
+            console.error("Error saving data:", error);
+        } finally {
+            setSavingData(false);
+        }
+    };
+
     const getCleanFileName = (url) => {
         try {
             let fileName = url.split("/").pop();
-
             fileName = fileName.split("?")[0];
-
             fileName = decodeURIComponent(fileName);
-
             fileName = fileName
                 .replace(/[-_]/g, " ")
                 .split(" ")
                 .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(" ");
-
             fileName = fileName.replace(/\.[^/.]+$/, "");
-
             return fileName;
         } catch (error) {
             console.error("Error parsing filename:", error);
             return "Document";
         }
     };
-
-    const FileDisplay = ({ files, onRemove }) => (
-        <div className="flex flex-wrap gap-2 mt-2">
-            {files.map((fileUrl, index) => (
-                <div
-                    key={index}
-                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-gray-200"
-                >
-                    <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 hover:text-primary"
-                    >
-                        <FaFilePdf size={16} className="text-red-500" />
-                        <span className="text-sm text-gray-600 max-w-[150px] truncate">
-                            {getCleanFileName(fileUrl)}
-                        </span>
-                    </a>
-                    <button
-                        onClick={() => onRemove(fileUrl)}
-                        className="p-1 hover:bg-gray-100 rounded-full"
-                        title="Remove file"
-                    >
-                        <X size={14} className="text-gray-500" />
-                    </button>
-                </div>
-            ))}
-        </div>
-    );
 
     const questionsByDepartment = questions.reduce((acc, q) => {
         const dept = q.createdBy.department;
@@ -240,6 +328,8 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
         return acc;
     }, {});
 
+    console.log("hasDeviations",questions)
+
     const hasDeviations = questions.some(
         (q) => answers[q._id] !== q.expectedAnswer
     );
@@ -247,199 +337,443 @@ const AggrementDetails = ({ formData, setFormData, onNext, onBack, reqId }) => {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
-                Loading...
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         );
     }
 
-    return (
-        <div className="max-w-7xl mx-auto">
-            <div className="space-y-8">
-                {Object.entries(questionsByDepartment).map(
-                    ([department, deptQuestions]) => (
-                        <div
-                            key={department}
-                            className="bg-white rounded-xl shadow-lg overflow-hidden"
-                        >
-                            <div className="bg-primary/10 px-6 py-4">
-                                <h3 className="text-xl font-semibold text-primary">
-                                    {department}
-                                </h3>
-                            </div>
-
-                            <div className="divide-y divide-gray-100">
-                                {deptQuestions.map((question) => {
-                                    const existingAnswer =
-                                        answers[question._id];
-                                    const existingDeviation =
-                                        deviations[question._id];
-
-                                    return (
-                                        <div
-                                            key={question._id}
-                                            className="p-6 hover:bg-gray-50 transition-colors"
-                                        >
-                                            <div className="flex justify-between items-center gap-8">
-                                                <p className="text-lg text-gray-800">
-                                                    {question.question}
-                                                </p>
-                                                <div className="flex items-center gap-6">
-                                                    {["Yes", "No"].map(
-                                                        (option) => (
-                                                            <label
-                                                                key={option}
-                                                                className="inline-flex items-center gap-2 cursor-pointer"
-                                                            >
-                                                                <input
-                                                                    type="radio"
-                                                                    name={
-                                                                        question._id
-                                                                    }
-                                                                    checked={
-                                                                        existingAnswer ===
-                                                                        (option ===
-                                                                            "Yes")
-                                                                    }
-                                                                    onChange={() =>
-                                                                        handleAnswerChange(
-                                                                            question._id,
-                                                                            option ===
-                                                                                "Yes"
-                                                                        )
-                                                                    }
-                                                                    className="w-5 h-5 text-primary"
-                                                                />
-                                                                <span className="text-gray-700">
-                                                                    {option}
-                                                                </span>
-                                                            </label>
-                                                        )
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {existingAnswer !==
-                                                question.expectedAnswer && (
-                                                <div className="mt-4 bg-red-50 rounded-lg p-4 space-y-4">
-                                                    <textarea
-                                                        placeholder="Please explain your deviation..."
-                                                        value={
-                                                            existingDeviation?.reason ||
-                                                            ""
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleDeviationChange(
-                                                                question._id,
-                                                                "reason",
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                                                        rows={3}
-                                                    />
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center justify-between">
-                                                            <label className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border hover:bg-gray-50 cursor-pointer">
-                                                                <Upload
-                                                                    size={20}
-                                                                    className="text-primary"
-                                                                />
-                                                                <span className="text-sm font-medium">
-                                                                    Upload
-                                                                    Documents
-                                                                </span>
-                                                                <input
-                                                                    type="file"
-                                                                    multiple
-                                                                    className="hidden"
-                                                                    onChange={(
-                                                                        e
-                                                                    ) =>
-                                                                        handleFileUpload(
-                                                                            question._id,
-                                                                            e
-                                                                                .target
-                                                                                .files
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </label>
-                                                            <span className="text-sm text-gray-600">
-                                                                {existingDeviation
-                                                                    ?.attachments
-                                                                    ?.length ||
-                                                                    0}{" "}
-                                                                files
-                                                            </span>
-                                                        </div>
-                                                        {existingDeviation
-                                                            ?.attachments
-                                                            ?.length > 0 && (
-                                                            <FileDisplay
-                                                                files={
-                                                                    existingDeviation.attachments
-                                                                }
-                                                                onRemove={(
-                                                                    fileUrl
-                                                                ) =>
-                                                                    handleRemoveFile(
-                                                                        question._id,
-                                                                        fileUrl
-                                                                    )
-                                                                }
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )
-                )}
-
+    const FileDisplay = ({ files, onRemove }) => (
+        <div className="flex flex-wrap gap-2 mt-2">
+            {files.map((fileUrl, index) => (
                 <div
-                    className={`p-6 rounded-xl ${
-                        hasDeviations ? "bg-red-50" : "bg-green-50"
-                    } flex items-center gap-4`}
+                    key={index}
+                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-gray-200 w-full sm:w-auto"
                 >
-                    {hasDeviations ? (
-                        <AlertTriangle className="text-red-500 h-8 w-8" />
-                    ) : (
-                        <CheckCircle className="text-green-500 h-8 w-8" />
-                    )}
-                    <p
-                        className={`font-medium ${
-                            hasDeviations ? "text-red-700" : "text-green-700"
-                        }`}
+                    <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 hover:text-primary flex-1 min-w-0"
                     >
-                        {hasDeviations
-                            ? "Please justify all deviations"
-                            : "All answers are compliant"}
+                        <FaFilePdf
+                            size={14}
+                            className="text-red-500 shrink-0"
+                        />
+                        <span className="text-sm text-gray-600 truncate">
+                            {getCleanFileName(fileUrl)}
+                        </span>
+                    </a>
+                    <button
+                        onClick={() => onRemove(fileUrl)}
+                        className="p-1 hover:bg-gray-100 rounded-full shrink-0"
+                        title="Remove file"
+                    >
+                        <X size={12} className="text-gray-500" />
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="mb-6 bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                        Agreement Compliance Assessment
+                    </h2>
+                    <p className="mt-2 text-gray-600">
+                        Review and respond to compliance questions from
+                        different departments. Any deviations from expected
+                        answers will require justification.
                     </p>
                 </div>
 
-                <div className="flex justify-between pt-4">
+                <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 bg-gray-50">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                            {hasDeviations ? (
+                                <div className="flex items-center gap-2 text-red-600">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    <span className="font-semibold">
+                                        Deviations Present
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-green-600">
+                                    <CheckCircle className="h-5 w-5" />
+                                    <span className="font-semibold">
+                                        All Compliant
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {Object.keys(questionsByDepartment).length}{" "}
+                            departments, {questions.length} total questions
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-6">
+                {Object.entries(questionsByDepartment).map(
+                    ([department, deptQuestions]) => {
+                        const hasDeptDeviation =
+                            departmentDeviations[department] || false;
+                        const isExpanded = expandedDepts[department] || false;
+
+                        return (
+                            <div
+                                key={department}
+                                className="bg-white rounded-xl shadow-md overflow-hidden"
+                            >
+                                <button
+                                    onClick={() => toggleDepartment(department)}
+                                    className={`w-full px-6 py-4 flex justify-between items-center ${
+                                        hasDeptDeviation
+                                            ? "bg-red-50 hover:bg-red-100"
+                                            : "bg-primary/10 hover:bg-primary/15"
+                                    } transition-colors`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <h3 className="text-xl font-semibold text-gray-800">
+                                            {department}
+                                        </h3>
+                                        {hasDeptDeviation && (
+                                            <div className="flex items-center gap-2 bg-red-100 px-3 py-1 rounded-full">
+                                                <AlertTriangle className="text-red-500 h-4 w-4" />
+                                                <span className="text-sm font-medium text-red-600">
+                                                    {
+                                                        deptQuestions.filter(
+                                                            (q) =>
+                                                                answers[
+                                                                    q._id
+                                                                ] !==
+                                                                q.expectedAnswer
+                                                        ).length
+                                                    }{" "}
+                                                    Deviation(s)
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {isExpanded ? (
+                                        <ChevronUp className="h-5 w-5 text-gray-500" />
+                                    ) : (
+                                        <ChevronDown className="h-5 w-5 text-gray-500" />
+                                    )}
+                                </button>
+
+                                {isExpanded && (
+                                    <div className="divide-y divide-gray-100">
+                                        {deptQuestions.map((question) => {
+                                            const existingAnswer =
+                                                answers[question._id];
+                                            const existingDeviation =
+                                                deviations[question._id];
+                                            const isDeviation =
+                                                existingAnswer !==
+                                                question.expectedAnswer;
+
+                                            return (
+                                                <div
+                                                    key={question._id}
+                                                    className={`p-6 hover:bg-gray-50 transition-colors ${
+                                                        isDeviation
+                                                            ? "bg-red-50/50"
+                                                            : ""
+                                                    }`}
+                                                >
+                                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                                                        <div className="flex items-start space-x-2 flex-1">
+                                                            <div className="flex-1">
+                                                                <p className="text-lg text-gray-800 font-medium">
+                                                                    {
+                                                                        question.question
+                                                                    }
+                                                                </p>
+                                                                {question.description && (
+                                                                    <div className="mt-2 flex items-center">
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                showInfo(
+                                                                                    question.question,
+                                                                                    question.description
+                                                                                )
+                                                                            }
+                                                                            className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                                                                        >
+                                                                            <Info
+                                                                                size={
+                                                                                    14
+                                                                                }
+                                                                            />
+                                                                            <span>
+                                                                                View
+                                                                                more
+                                                                                details
+                                                                            </span>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-6 shrink-0">
+                                                            <div
+                                                                className={`flex items-center gap-4 p-3 rounded-lg ${
+                                                                    existingAnswer
+                                                                        ? "bg-green-50/70"
+                                                                        : "bg-red-50/70"
+                                                                }`}
+                                                            >
+                                                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={
+                                                                            question._id
+                                                                        }
+                                                                        checked={
+                                                                            existingAnswer ===
+                                                                            true
+                                                                        }
+                                                                        onChange={() =>
+                                                                            handleAnswerChange(
+                                                                                question._id,
+                                                                                true
+                                                                            )
+                                                                        }
+                                                                        className="w-5 h-5 text-primary"
+                                                                    />
+                                                                    <span className="text-base text-gray-700 font-medium">
+                                                                        Yes
+                                                                    </span>
+                                                                </label>
+                                                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={
+                                                                            question._id
+                                                                        }
+                                                                        checked={
+                                                                            existingAnswer ===
+                                                                            false
+                                                                        }
+                                                                        onChange={() =>
+                                                                            handleAnswerChange(
+                                                                                question._id,
+                                                                                false
+                                                                            )
+                                                                        }
+                                                                        className="w-5 h-5 text-primary"
+                                                                    />
+                                                                    <span className="text-base text-gray-700 font-medium">
+                                                                        No
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {isDeviation && (
+                                                        <div className="mt-5 bg-red-50 rounded-lg p-4 border border-red-100">
+                                                            <h4 className="text-red-700 font-medium mb-3 flex items-center gap-2">
+                                                                <AlertTriangle
+                                                                    size={16}
+                                                                />
+                                                                Justification
+                                                                Required
+                                                            </h4>
+
+                                                            <textarea
+                                                                placeholder="Please provide justification for this deviation..."
+                                                                value={
+                                                                    existingDeviation?.reason ||
+                                                                    ""
+                                                                }
+                                                                onChange={(e) =>
+                                                                    handleDeviationChange(
+                                                                        question._id,
+                                                                        "reason",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                                                                rows={3}
+                                                            />
+
+                                                            <div className="mt-4 space-y-3">
+                                                                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+                                                                    <label className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border hover:bg-gray-50 cursor-pointer w-full xs:w-auto transition-colors">
+                                                                        <Upload
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                            className="text-primary shrink-0"
+                                                                        />
+                                                                        <span className="text-sm font-medium truncate">
+                                                                            Upload
+                                                                            Supporting
+                                                                            Documents
+                                                                        </span>
+                                                                        <input
+                                                                            type="file"
+                                                                            multiple
+                                                                            className="hidden"
+                                                                            onChange={(
+                                                                                e
+                                                                            ) =>
+                                                                                handleFileUpload(
+                                                                                    question._id,
+                                                                                    e
+                                                                                        .target
+                                                                                        .files
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </label>
+                                                                    <span className="text-sm text-gray-600">
+                                                                        {existingDeviation
+                                                                            ?.attachments
+                                                                            ?.length ||
+                                                                            0}{" "}
+                                                                        files
+                                                                        attached
+                                                                    </span>
+                                                                </div>
+
+                                                                {existingDeviation
+                                                                    ?.attachments
+                                                                    ?.length >
+                                                                    0 && (
+                                                                    <FileDisplay
+                                                                        files={
+                                                                            existingDeviation.attachments
+                                                                        }
+                                                                        onRemove={(
+                                                                            fileUrl
+                                                                        ) =>
+                                                                            handleRemoveFile(
+                                                                                question._id,
+                                                                                fileUrl
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                )}
+
+                {/* Risk acceptance section */}
+                {hasDeviations && (
+                    <div className="p-6 bg-white border border-yellow-200 rounded-xl shadow-md">
+                        <div className="flex items-start gap-4">
+                            <AlertTriangle className="text-yellow-500 h-8 w-8 shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                                    Risk Acknowledgment Required
+                                </h4>
+                                <p className="text-gray-700 mb-4">
+                                    I understand that there are deviations from
+                                    the standard compliance requirements. I
+                                    acknowledge and accept any potential risks
+                                    associated with these deviations and take
+                                    full responsibility for them.
+                                </p>
+                                <label className="flex items-center gap-3 cursor-pointer p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                                    <input
+                                        type="checkbox"
+                                        checked={riskAccepted}
+                                        onChange={handleRiskAcceptance}
+                                        className="w-5 h-5 text-primary rounded"
+                                    />
+                                    <span className="text-base font-medium text-gray-800">
+                                        I accept all risks associated with these
+                                        deviations
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex justify-between pt-4 mb-8">
                     <button
                         onClick={onBack}
-                        className="px-4 py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primary transition duration-300 ease-in-out flex items-center gap-2"
+                        className="px-5 py-3 border border-gray-300 bg-white text-gray-700 font-medium rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                         Back to edit
                     </button>
                     <button
-                        onClick={onNext}
-                        className="px-5 py-2 bg-primary text-white font-medium rounded-lg flex items-center gap-2 hover:bg-primary/90"
+                        onClick={handleSubmit}
+                        disabled={
+                            (hasDeviations && !riskAccepted) || savingData
+                        }
+                        className={`px-5 py-3 bg-primary text-white font-medium rounded-lg shadow-md flex items-center gap-2 ${
+                            (hasDeviations && !riskAccepted) || savingData
+                                ? "opacity-50 cursor-not-allowed"
+                                : "hover:bg-primary/90"
+                        }`}
                     >
-                        Preview
-                        <ArrowRight size={20} />
+                        {savingData ? (
+                            <>
+                                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                Continue to Preview
+                                <ArrowRight size={18} />
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+                        <button
+                            onClick={closeModal}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {modalContent.title}
+                        </h3>
+
+                        <p className="text-gray-600">
+                            {modalContent.description}
+                        </p>
+
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={closeModal}
+                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-export default AggrementDetails;
+export default AgreementCompliances;

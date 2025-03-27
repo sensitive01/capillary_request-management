@@ -62,6 +62,7 @@ const PreviewTheReq = () => {
     const [newStatus, setNewStatus] = useState();
     const [reason, setReason] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [reqLogs,setReqLogs] = useState([])
 
     const needsReason = ["Hold", "Reject"].includes(approveStatus);
     const [modalContent, setModalContent] = useState({
@@ -97,6 +98,7 @@ const PreviewTheReq = () => {
 
                 if (response.status === 200) {
                     setRequest(response.data.data);
+                    setReqLogs(response.data.requestorLog)
                 }
             } catch (error) {
                 console.error("Error fetching request:", error);
@@ -130,18 +132,16 @@ const PreviewTheReq = () => {
         }).format(value);
     };
 
-   
-
     const handleGeneratePDF = async () => {
         if (!request) return;
-    
+
         try {
             // Show loading indicator
             setIsGeneratingPDF(true);
-    
+
             // Define margins (in mm)
             const margin = 20; // Increased from 15mm to 20mm for better spacing
-            
+
             // Create a PDF document
             const pdf = new jsPDF({
                 orientation: "portrait",
@@ -149,13 +149,13 @@ const PreviewTheReq = () => {
                 format: "a4",
                 compress: true,
             });
-    
+
             // Get page dimensions
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            const contentWidth = pdfWidth - (margin * 2);
-            const contentHeight = pdfHeight - (margin * 2);
-    
+            const contentWidth = pdfWidth - margin * 2;
+            const contentHeight = pdfHeight - margin * 2;
+
             // Define sections to be on separate pages
             const sections = [
                 { id: "commercial-details", title: "Commercial Details" },
@@ -164,7 +164,7 @@ const PreviewTheReq = () => {
                 { id: "compliance-details", title: "Compliance Details" },
                 { id: "approval-logs", title: "Approval Logs" }, // Added logs section
             ];
-    
+
             // Create a temporary container for the content
             const tempContainer = document.createElement("div");
             tempContainer.style.position = "absolute";
@@ -173,48 +173,54 @@ const PreviewTheReq = () => {
             tempContainer.style.padding = "0";
             tempContainer.style.boxSizing = "border-box";
             document.body.appendChild(tempContainer);
-    
-           
-            
+
             // Center alignment for requestor information
             const centerX = pdfWidth / 2;
             const startY = pdfHeight / 2 - 40; // Start position for centered content
-            
+
             // Title (if available)
             if (request.title) {
                 pdf.setFontSize(18);
                 pdf.setFont("helvetica", "bold");
                 // Calculate text width to center it
-                const titleWidth = pdf.getStringUnitWidth(request.title) * 18 / pdf.internal.scaleFactor;
-                pdf.text(request.title, centerX - (titleWidth / 2), startY);
+                const titleWidth =
+                    (pdf.getStringUnitWidth(request.title) * 18) /
+                    pdf.internal.scaleFactor;
+                pdf.text(request.title, centerX - titleWidth / 2, startY);
             }
-            
+
             // Requestor Information (all centered)
             pdf.setFontSize(14);
             pdf.setFont("helvetica", "bold");
-            pdf.text("Requestor Information", centerX, startY + 25, { align: "center" });
-            
+            pdf.text("Requestor Information", centerX, startY + 25, {
+                align: "center",
+            });
+
             pdf.setFont("helvetica", "normal");
             pdf.setFontSize(12);
-            
+
             // Request ID (centered)
             const reqIdText = `Request ID: ${request.reqid || "N/A"}`;
             pdf.text(reqIdText, centerX, startY + 40, { align: "center" });
-            
+
             // Created At (centered)
-            const createdAtText = `Created At: ${extractDateAndTime(request.createdAt) || "N/A"}`;
+            const createdAtText = `Created At: ${
+                extractDateAndTime(request.createdAt) || "N/A"
+            }`;
             pdf.text(createdAtText, centerX, startY + 55, { align: "center" });
-            
+
             // Requestor ID (centered)
             const requestorIdText = `Requestor ID: ${request.userId || "N/A"}`;
-            pdf.text(requestorIdText, centerX, startY + 70, { align: "center" });
-            
+            pdf.text(requestorIdText, centerX, startY + 70, {
+                align: "center",
+            });
+
             // Requestor Name (centered)
-            const requestorNameText = `Requestor: ${request.userName  || "N/A"}`;
-            pdf.text(requestorNameText, centerX, startY + 80, { align: "center" });
-            
-           
-            
+            const requestorNameText = `Requestor: ${request.userName || "N/A"}`;
+            pdf.text(requestorNameText, centerX, startY + 80, {
+                align: "center",
+            });
+
             // Add page footer
             pdf.setFontSize(10);
             pdf.setFont("helvetica", "normal");
@@ -225,33 +231,40 @@ const PreviewTheReq = () => {
                 pdfHeight - margin,
                 { align: "center" }
             );
-            
+
             // Add divider line above footer
             pdf.setDrawColor(128, 194, 66); // Theme color for divider
             pdf.setLineWidth(0.5);
-            pdf.line(margin, pdfHeight - margin - 10, pdfWidth - margin, pdfHeight - margin - 10);
+            pdf.line(
+                margin,
+                pdfHeight - margin - 10,
+                pdfWidth - margin,
+                pdfHeight - margin - 10
+            );
 
-            
             // Generate each section on a separate page
             for (let i = 0; i < sections.length; i++) {
                 const section = sections[i];
-                
+
                 // Add a new page for each section
                 pdf.addPage();
-    
+
                 // Add section header with styling
                 pdf.setFillColor(128, 194, 66); // Theme color #80c242
-                pdf.rect(0, 0, pdfWidth, 25, 'F');
-                
+                pdf.rect(0, 0, pdfWidth, 25, "F");
+
                 pdf.setFont("helvetica", "bold");
                 pdf.setFontSize(16);
                 pdf.setTextColor(255, 255, 255); // White text on green background
                 pdf.text(section.title, margin, margin);
-                
+
                 // Create content for this section
                 tempContainer.innerHTML = "";
-                tempContainer.innerHTML = generateSectionHTML(section.id, section.title);
-    
+                tempContainer.innerHTML = generateSectionHTML(
+                    section.id,
+                    section.title
+                );
+
                 // Convert this section to canvas
                 const canvas = await html2canvas(tempContainer, {
                     scale: 2,
@@ -259,7 +272,7 @@ const PreviewTheReq = () => {
                     allowTaint: true,
                     backgroundColor: "#ffffff",
                 });
-    
+
                 // Add the image to the PDF with proper margins
                 const imgData = canvas.toDataURL("image/jpeg", 1.0);
                 const imgWidth = canvas.width;
@@ -268,7 +281,7 @@ const PreviewTheReq = () => {
                     contentWidth / imgWidth,
                     (contentHeight - 30) / imgHeight // Subtract header height
                 );
-    
+
                 pdf.addImage(
                     imgData,
                     "JPEG",
@@ -277,7 +290,7 @@ const PreviewTheReq = () => {
                     imgWidth * ratio,
                     imgHeight * ratio
                 );
-    
+
                 // Add page number and footer
                 pdf.setFontSize(10);
                 pdf.setFont("helvetica", "normal");
@@ -287,24 +300,29 @@ const PreviewTheReq = () => {
                     pdfWidth - margin - 30,
                     pdfHeight - margin
                 );
-                
+
                 // Add divider line above footer
                 pdf.setDrawColor(128, 194, 66); // Theme color for divider
                 pdf.setLineWidth(0.5);
-                pdf.line(margin, pdfHeight - margin - 10, pdfWidth - margin, pdfHeight - margin - 10);
+                pdf.line(
+                    margin,
+                    pdfHeight - margin - 10,
+                    pdfWidth - margin,
+                    pdfHeight - margin - 10
+                );
             }
-    
+
             // Download the PDF
             pdf.save(
                 `Request_${request.reqid || "Details"}_${new Date()
                     .toISOString()
                     .slice(0, 10)}.pdf`
             );
-    
+
             // Clean up
             document.body.removeChild(tempContainer);
             setIsGeneratingPDF(false);
-    
+
             // Show success message
             if (toast?.success) {
                 toast.success("PDF generated successfully");
@@ -317,7 +335,7 @@ const PreviewTheReq = () => {
             }
         }
     };
-    
+
     // Helper function to generate HTML for each section
     const generateSectionHTML = (sectionId, sectionTitle) => {
         // Base styles for all sections - updated with theme color and better spacing
@@ -342,7 +360,7 @@ const PreviewTheReq = () => {
             .remarks-box { background-color: #f3f4f6; border-radius: 6px; padding: 10px; margin-top: 8px; font-size: 13px; }
           </style>
         `;
-    
+
         // Header with logo and request information
         const header = `
           <div class="header">
@@ -355,9 +373,9 @@ const PreviewTheReq = () => {
             </div>
           </div>
         `;
-    
+
         let sectionContent = "";
-    
+
         // Generate content based on section ID
         switch (sectionId) {
             case "commercial-details":
@@ -378,7 +396,7 @@ const PreviewTheReq = () => {
             default:
                 sectionContent = "<p>No content available</p>";
         }
-    
+
         return `
           <div class="section-container">
             ${styles}
@@ -387,7 +405,7 @@ const PreviewTheReq = () => {
           </div>
         `;
     };
-    
+
     // Generate HTML for Approval Logs section
     const generateApprovalLogsHTML = () => {
         if (!request || !request.approvals || request.approvals.length === 0) {
@@ -405,40 +423,43 @@ const PreviewTheReq = () => {
                 </div>
             </div>`;
         }
-    
+
         const calculateDuration = (startDate, endDate) => {
-            if (!startDate || !endDate) return { days: "-", hours: "-", minutes: "-" };
-    
+            if (!startDate || !endDate)
+                return { days: "-", hours: "-", minutes: "-" };
+
             const start = new Date(startDate);
             const end = new Date(endDate);
-    
+
             const diffInMs = end - start;
-    
+
             if (diffInMs < 0) return { days: "-", hours: "-", minutes: "-" };
-    
+
             const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
             const hours = Math.floor(
                 (diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
             );
-            const minutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+            const minutes = Math.floor(
+                (diffInMs % (1000 * 60 * 60)) / (1000 * 60)
+            );
+
             return { days, hours, minutes };
         };
-    
+
         const formatDuration = (duration) => {
             if (duration.days === "-") return "Pending";
-    
+
             const parts = [];
             if (duration.days > 0) parts.push(`${duration.days}d`);
             if (duration.hours > 0) parts.push(`${duration.hours}h`);
             if (duration.minutes > 0) parts.push(`${duration.minutes}m`);
-    
+
             return parts.length > 0 ? parts.join(" ") : "Less than 1m";
         };
-    
+
         const getStatusStyleClass = (status) => {
             if (!status) return "status-pending";
-            
+
             switch (status.toLowerCase()) {
                 case "approved":
                     return "status-approved";
@@ -450,22 +471,25 @@ const PreviewTheReq = () => {
                     return "status-pending";
             }
         };
-    
+
         // Format the date/time
         const formatDateTime = (dateTimeStr) => {
             if (!dateTimeStr) return { date: "N/A", time: "N/A" };
-            
+
             try {
                 const date = new Date(dateTimeStr);
                 return {
                     date: date.toLocaleDateString(),
-                    time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    time: date.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    }),
                 };
             } catch (e) {
                 return { date: "N/A", time: "N/A" };
             }
         };
-    
+
         let logsHTML = `
         <div class="section-content" style="width: 100%;">
             <h2>Approval Timeline</h2>
@@ -483,43 +507,66 @@ const PreviewTheReq = () => {
                 </thead>
                 <tbody>
         `;
-    
+
         request.approvals.forEach((log, index) => {
             const receivedDateTime = formatDateTime(log.receivedOn);
             const approvalDateTime = formatDateTime(log.approvalDate);
-            const duration = calculateDuration(log.receivedOn, log.approvalDate);
+            const duration = calculateDuration(
+                log.receivedOn,
+                log.approvalDate
+            );
             const formattedDuration = formatDuration(duration);
-    
+
             logsHTML += `
             <tr>
                 <td>${index + 1}</td>
                 <td>
                     <div>
-                        <div style="font-weight: 600;">${log.approverName || "N/A"}</div>
-                        <div style="font-size: 12px; color: #6b7280;">${log.departmentName || "N/A"}</div>
-                        <div style="font-size: 12px; color: #6b7280;">${log.approvalId || "N/A"}</div>
+                        <div style="font-weight: 600;">${
+                            log.approverName || "N/A"
+                        }</div>
+                        <div style="font-size: 12px; color: #6b7280;">${
+                            log.departmentName || "N/A"
+                        }</div>
+                        <div style="font-size: 12px; color: #6b7280;">${
+                            log.approvalId || "N/A"
+                        }</div>
                     </div>
                 </td>
                 <td>
                     <div>
-                        <span class="${getStatusStyleClass(log.status)}">${log.status || "Pending"}</span>
-                        ${log.remarks ? `<div class="remarks-box">${log.remarks}</div>` : ''}
+                        <span class="${getStatusStyleClass(log.status)}">${
+                log.status || "Pending"
+            }</span>
+                        ${
+                            log.remarks
+                                ? `<div class="remarks-box">${log.remarks}</div>`
+                                : ""
+                        }
                     </div>
                 </td>
                 <td>
-                    <div style="font-weight: 500;">${receivedDateTime.date}</div>
-                    <div style="font-size: 12px; color: #6b7280;">${receivedDateTime.time}</div>
+                    <div style="font-weight: 500;">${
+                        receivedDateTime.date
+                    }</div>
+                    <div style="font-size: 12px; color: #6b7280;">${
+                        receivedDateTime.time
+                    }</div>
                 </td>
                 <td>
-                    <div style="font-weight: 500;">${approvalDateTime.date}</div>
-                    <div style="font-size: 12px; color: #6b7280;">${approvalDateTime.time}</div>
+                    <div style="font-weight: 500;">${
+                        approvalDateTime.date
+                    }</div>
+                    <div style="font-size: 12px; color: #6b7280;">${
+                        approvalDateTime.time
+                    }</div>
                 </td>
                 <td style="font-weight: 500;">${formattedDuration}</td>
                 <td>${log.nextDepartment || "N/A"}</td>
             </tr>
             `;
         });
-    
+
         logsHTML += `
                 </tbody>
             </table>
@@ -534,15 +581,15 @@ const PreviewTheReq = () => {
             </div>
         </div>
         `;
-    
+
         return logsHTML;
     };
-    
+
     // Generate HTML for Commercial Details section
     const generateCommercialDetailsHTML = () => {
         if (!request || !request.commercials)
             return "<p>No commercial details available</p>";
-    
+
         let commercialHTML = `
           <div class="section-content">
             <h2>Commercials</h2>
@@ -574,7 +621,7 @@ const PreviewTheReq = () => {
               ${createInfoBox("Ship To", request.commercials.shipTo)}
             </div>
         `;
-    
+
         // Add payment terms if available
         if (request.commercials?.paymentTerms?.length > 0) {
             commercialHTML += `
@@ -603,16 +650,16 @@ const PreviewTheReq = () => {
             </table>
           `;
         }
-    
+
         commercialHTML += "</div>";
         return commercialHTML;
     };
-    
+
     // Generate HTML for Procurement Details section
     const generateProcurementDetailsHTML = () => {
         if (!request || !request.procurements)
             return "<p>No procurement details available</p>";
-    
+
         let procurementHTML = `
           <div class="section-content">
             <h2>Vendor Information</h2>
@@ -653,14 +700,14 @@ const PreviewTheReq = () => {
               )}
             </div>
         `;
-    
+
         // Add uploaded files if available
         if (request.procurements?.uploadedFiles) {
             procurementHTML += `
             <h2>Uploaded Files</h2>
             <div class="info-box">
           `;
-    
+
             if (Object.keys(request.procurements.uploadedFiles).length > 0) {
                 procurementHTML += `
               <p class="info-value" style="color: #80c242;">✓ Files uploaded successfully</p>
@@ -669,21 +716,21 @@ const PreviewTheReq = () => {
             } else {
                 procurementHTML += `<p class="info-value">No files uploaded</p>`;
             }
-    
+
             procurementHTML += "</div>";
         }
-    
+
         procurementHTML += "</div>";
         return procurementHTML;
     };
-    
+
     // Generate HTML for Supplies/Services Details section
     const generateSuppliesDetailsHTML = () => {
         if (!request || !request.supplies)
             return "<p>No product/services details available</p>";
-    
+
         let suppliesHTML = `<div class="section-content">`;
-    
+
         // Add services table if available
         if (request.supplies?.services?.length > 0) {
             suppliesHTML += `
@@ -707,7 +754,7 @@ const PreviewTheReq = () => {
                         const price = parseFloat(service.price) || 0;
                         const tax = parseFloat(service.tax) || 0;
                         const total = quantity * price * (1 + tax / 100);
-    
+
                         return `
                     <tr>
                       <td>${service.productName || "N/A"}</td>
@@ -725,7 +772,7 @@ const PreviewTheReq = () => {
             </table>
           `;
         }
-    
+
         // Add total value if available
         if (request.supplies?.totalValue !== undefined) {
             suppliesHTML += `
@@ -737,7 +784,7 @@ const PreviewTheReq = () => {
             </div>
           `;
         }
-    
+
         // Add remarks if available
         if (request.supplies?.remarks) {
             suppliesHTML += `
@@ -747,29 +794,29 @@ const PreviewTheReq = () => {
             </div>
           `;
         }
-    
+
         suppliesHTML += "</div>";
         return suppliesHTML;
     };
-    
+
     // Generate HTML for Compliance Details section
     const generateComplianceDetailsHTML = () => {
         if (!request || !request.complinces)
             return "<p>No compliance details available</p>";
-    
+
         let complianceHTML = `
           <div class="section-content">
             <h2>Compliance Answers</h2>
         `;
-    
+
         if (Object.keys(request.complinces).length > 0) {
             complianceHTML += `<div style="display: grid; grid-template-columns: 1fr; gap: 20px;">`;
-    
+
             Object.entries(request.complinces).forEach(
                 ([questionId, compliance]) => {
                     const isCompliant =
                         compliance.expectedAnswer === compliance.answer;
-    
+
                     complianceHTML += `
               <div style="padding: 18px; border-radius: 8px; ${
                   isCompliant
@@ -829,7 +876,7 @@ const PreviewTheReq = () => {
             `;
                 }
             );
-    
+
             complianceHTML += "</div>";
         } else {
             complianceHTML += `
@@ -837,11 +884,11 @@ const PreviewTheReq = () => {
               <p style="color: #6b7280; margin: 0;">No compliance details available</p>
             </div>`;
         }
-    
+
         complianceHTML += "</div>";
         return complianceHTML;
     };
-    
+
     // Helper function to create info boxes
     const createInfoBox = (label, value) => {
         return `
@@ -1049,15 +1096,13 @@ const PreviewTheReq = () => {
                                             Requestor Details
                                         </span>
                                         <div className="mt-2 space-y-1">
-                                        {request.userId && (
+                                            {request.userId && (
                                                 <div>
                                                     <span className="text-gray-500 text-sm">
                                                         ID:
                                                     </span>
                                                     <div className="text-gray-800 font-semibold">
-                                                        {
-                                                            request.userId
-                                                        }
+                                                        {request.userId}
                                                     </div>
                                                 </div>
                                             )}
@@ -1066,17 +1111,17 @@ const PreviewTheReq = () => {
                                                     Name:
                                                 </span>
                                                 <div className="text-gray-800 font-semibold">
-                                                    {request
-                                                        .userName || "N/A"}
+                                                    {request.userName || "N/A"}
                                                 </div>
                                             </div>
-                                           
+
                                             <div>
                                                 <span className="text-gray-500 text-sm">
                                                     Department:
                                                 </span>
                                                 <div className="text-gray-800 font-semibold">
-                                                    {request.empDepartment || "N/A"}
+                                                    {request.empDepartment ||
+                                                        "N/A"}
                                                 </div>
                                             </div>
                                         </div>
@@ -1210,12 +1255,18 @@ const PreviewTheReq = () => {
                                                     <td className="px-6 py-4 text-left font-medium">
                                                         {term.percentageTerm}%
                                                     </td>
-                                                    <td className="px-6 py-4 capitalize">
-                                                        {term.paymentTerm?.toLowerCase()}
-                                                    </td>
-                                                    <td className="px-6 py-4 capitalize">
-                                                        {term.paymentType?.toLowerCase()}
-                                                    </td>
+                                                    <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
+                                                            {term.paymentTerm?.toLowerCase()}
+                                                            {term.customPaymentTerm
+                                                                ? ` - ${term.customPaymentTerm.toLowerCase()}`
+                                                                : ""}
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
+                                                            {term.paymentType?.toLowerCase()}
+                                                            {term.customPaymentType
+                                                                ? ` - ${term.customPaymentType.toLowerCase()}`
+                                                                : ""}
+                                                        </td>
                                                 </tr>
                                             )
                                         )}
@@ -1591,6 +1642,7 @@ const PreviewTheReq = () => {
                     <RequestLogs
                         createdAt={request.createdAt}
                         logData={request.approvals}
+                        reqLogs = {reqLogs}
                         // poUploadData = {request.poDocuments||""}
                         // invoiceUploadData = {request.invoiceDocumets||""}
                     />
@@ -1616,8 +1668,8 @@ const PreviewTheReq = () => {
             if (response.status === 200) {
                 toast.success(response.data.message);
                 setTimeout(() => {
-                    navigate("/approval-request-list");
-                }, 1500);
+                    window.location.reload(); // Reloads the page after successful approval
+                }, 1000);
             } else if (response.status === 400) {
                 console.log("response", response.response);
                 toast.info(response.response.data.message);
@@ -1626,7 +1678,7 @@ const PreviewTheReq = () => {
                 toast.info(response.response.data.message);
             }
         } catch (err) {
-            console.log("Error in approve the request", err);
+            console.log("Error in approving the request", err);
             toast.error("Invalid workflow order");
         } finally {
             setIsLoading(false);
@@ -1853,15 +1905,8 @@ const PreviewTheReq = () => {
                         {/* Status: Rejected → Release Reject, Hold, Submit */}
                         {request.status === "Rejected" && (
                             <>
-                                {/* <button
-                                    onClick={() => handleRelese("Pending")}
-                                    disabled={isLoading}
-                                    className="px-6 py-2 rounded-lg flex items-center bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <XCircle className="mr-2" /> Release Reject
-                                </button> */}
+                               
                                 <button
-                                    // onClick={() => approveRequest("Hold")}
                                     onClick={() => handleStatus("Hold")}
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1869,7 +1914,6 @@ const PreviewTheReq = () => {
                                     <PauseCircle className="mr-2" /> Hold
                                 </button>
                                 <button
-                                    // onClick={() => approveRequest("Approved")}
                                     onClick={() => handleStatus("Approve")}
                                     disabled={isLoading}
                                     className="px-6 py-2 rounded-lg flex items-center bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1881,7 +1925,8 @@ const PreviewTheReq = () => {
                     </div>
                 )}
 
-                {(request.status === "PO-Pending"||request.status === "Approved") &&
+                {(request.status === "PO-Pending" ||
+                    request.status === "Approved") &&
                     role === "Head of Finance" && (
                         <div className="flex items-center justify-between w-full">
                             {/* Left side - Preview Image */}
@@ -1974,8 +2019,10 @@ const PreviewTheReq = () => {
                         </div>
                     )}
 
-                {request.status === "Invoice-Pending" &&
-                    (role === "Employee" || role === "HOD Department"||role === "Admin") && (
+                {(request.status === "Invoice-Pending"||request.status === "Approved") &&
+                    (role === "Employee" ||
+                        role === "HOD Department" ||
+                        role === "Admin") && (
                         <div className="flex items-center gap-4">
                             <FilePreview
                                 selectedFile={selectedImage}
@@ -2119,7 +2166,7 @@ const PreviewTheReq = () => {
                     </div>
                 </div>
             )}
-                {isModalOpen && (
+            {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
                         <button

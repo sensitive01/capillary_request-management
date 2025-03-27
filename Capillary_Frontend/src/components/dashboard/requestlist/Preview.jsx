@@ -333,9 +333,15 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                         </td>
                                                         <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
                                                             {term.paymentTerm?.toLowerCase()}
+                                                            {term.customPaymentTerm
+                                                                ? ` - ${term.customPaymentTerm.toLowerCase()}`
+                                                                : ""}
                                                         </td>
                                                         <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
                                                             {term.paymentType?.toLowerCase()}
+                                                            {term.customPaymentType
+                                                                ? ` - ${term.customPaymentType.toLowerCase()}`
+                                                                : ""}
                                                         </td>
                                                     </tr>
                                                 )

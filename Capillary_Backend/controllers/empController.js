@@ -342,89 +342,89 @@ exports.createNewEmployee = async (req, res) => {
     res.status(400).json({ message: "Error creating employee", error: err });
   }
 };
-exports.verifyUser = async (req, res) => {
-  try {
-    console.log(req.body);
-    const { email } = req.body;
-    let consolidatedData;
+// exports.verifyUser = async (req, res) => {
+//   try {
+//     console.log(req.body);
+//     const { email } = req.body;
+//     let consolidatedData;
 
-    const panelUserData = await addPanelUsers
-      .findOne(
-        { company_email_id: email },
-        { _id: 1, full_name: 1, department: 1, role: 1 }
-      )
-      .lean(); // Use lean here as well
-    console.log("panelUserData", panelUserData);
+//     const panelUserData = await addPanelUsers
+//       .findOne(
+//         { company_email_id: email },
+//         { _id: 1, full_name: 1, department: 1, role: 1 }
+//       )
+//       .lean(); // Use lean here as well
+//     console.log("panelUserData", panelUserData);
 
-    // Find the employee data
-    const employeeData = await Employee.findOne(
-      { company_email_id: email },
-      { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
-    ).lean(); // Use lean to get plain object
+//     // Find the employee data
+//     const employeeData = await Employee.findOne(
+//       { company_email_id: email },
+//       { _id: 1, full_name: 1, department: 1, hod_email_id: 1 }
+//     ).lean(); // Use lean to get plain object
 
-    const isEmpHod = await Employee.findOne({ hod_email_id: email }).lean(); // Use lean here too
-    console.log("isEmpHod", isEmpHod);
+//     const isEmpHod = await Employee.findOne({ hod_email_id: email }).lean(); // Use lean here too
+//     console.log("isEmpHod", isEmpHod);
 
-    if (panelUserData) {
-      consolidatedData = panelUserData;
-    } else {
-      // Determine role dynamically
-      if (employeeData && !employeeData.role) {
-        consolidatedData = {
-          ...employeeData, // Include existing employee data
-          role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
-        };
-      }
-    }
+//     if (panelUserData) {
+//       consolidatedData = panelUserData;
+//     } else {
+//       // Determine role dynamically
+//       if (employeeData && !employeeData.role) {
+//         consolidatedData = {
+//           ...employeeData, // Include existing employee data
+//           role: isEmpHod ? "HOD Department" : "Employee", // Assign role dynamically
+//         };
+//       }
+//     }
 
-    const full_name = consolidatedData?.full_name || "Unknown User";
+//     const full_name = consolidatedData?.full_name || "Unknown User";
 
-    console.log("Consolidated Employee Data:", consolidatedData);
+//     console.log("Consolidated Employee Data:", consolidatedData);
 
-    const subject = "Login Notification from PO Request Portal";
-    const textContent = "";
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <body>
-        <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
-          <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-            <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
-              <h1>Capillary Technologies - PO Request Portal</h1>
-            </div>
-            <div style="padding: 20px; color: #333;">
-              <p>Hi <strong>${full_name}</strong>,</p>
-              <p>You have successfully logged in to PO Request Portal!</p>
-              <p>If you did not perform this action, please sign out immediately and notify us.</p>
-              <p>Thank you,<br>Capillary Finance</p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+//     const subject = "Login Notification from PO Request Portal";
+//     const textContent = "";
+//     const htmlContent = `
+//       <!DOCTYPE html>
+//       <html>
+//       <body>
+//         <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+//           <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+//             <div style="background-color: #007bff; color: #ffffff; padding: 20px;">
+//               <h1>Capillary Technologies - PO Request Portal</h1>
+//             </div>
+//             <div style="padding: 20px; color: #333;">
+//               <p>Hi <strong>${full_name}</strong>,</p>
+//               <p>You have successfully logged in to PO Request Portal!</p>
+//               <p>If you did not perform this action, please sign out immediately and notify us.</p>
+//               <p>Thank you,<br>Capillary Finance</p>
+//             </div>
+//           </div>
+//         </div>
+//       </body>
+//       </html>
+//     `;
 
-    if (consolidatedData) {
-      // await sendLoginEmail(email, subject, textContent, htmlContent);
-      return res.status(200).json({
-        success: true,
-        message: "Employee verified successfully.",
-        data: consolidatedData,
-      });
-    } else {
-      return res.status(401).json({
-        success: false,
-        message: "Employee not found.",
-      });
-    }
-  } catch (err) {
-    console.log("Error in verifying the employee", err);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error.",
-    });
-  }
-};
+//     if (consolidatedData) {
+//       // await sendLoginEmail(email, subject, textContent, htmlContent);
+//       return res.status(200).json({
+//         success: true,
+//         message: "Employee verified successfully.",
+//         data: consolidatedData,
+//       });
+//     } else {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Employee not found.",
+//       });
+//     }
+//   } catch (err) {
+//     console.log("Error in verifying the employee", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error.",
+//     });
+//   }
+// };
 
 exports.createNewReq = async (req, res) => {
   try {
@@ -529,18 +529,14 @@ exports.createNewReq = async (req, res) => {
   }
 };
 
-
-
-
 exports.getAllEmployeeReq = async (req, res) => {
   try {
     console.log("Welcome to get req", req.params.id);
-    
+
     // Fetch requests for the given user ID
     const reqList = await CreateNewReq.find({ userId: req.params.id })
       .sort({ createdAt: -1 })
       .lean();
-    
 
     if (reqList.length === 0) {
       return res.status(404).json({
@@ -556,10 +552,14 @@ exports.getAllEmployeeReq = async (req, res) => {
       let departmentInfo = {};
 
       if (!latestLevelApproval) {
-        departmentInfo.nextDepartment = firstLevelApproval?.hodDepartment || null;
+        departmentInfo.nextDepartment =
+          firstLevelApproval?.hodDepartment || null;
       } else if (latestLevelApproval.status === "Approved") {
         departmentInfo.nextDepartment = latestLevelApproval.nextDepartment;
-      } else if (latestLevelApproval.status === "Hold" || latestLevelApproval.status === "Rejected") {
+      } else if (
+        latestLevelApproval.status === "Hold" ||
+        latestLevelApproval.status === "Rejected"
+      ) {
         departmentInfo.cDepartment = latestLevelApproval.departmentName;
       }
 
@@ -580,10 +580,6 @@ exports.getAllEmployeeReq = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 exports.getAdminEmployeeReq = async (req, res) => {
   try {
@@ -636,7 +632,6 @@ exports.getAdminEmployeeReq = async (req, res) => {
   }
 };
 
-
 exports.deleteRequest = async (req, res) => {
   try {
     console.log("delete req", req.params.id);
@@ -663,7 +658,38 @@ exports.getIndividualReq = async (req, res) => {
     const reqList = await CreateNewReq.findOne({ _id: req.params.id })
       .sort({ createdAt: -1 })
       .exec();
-    console.log(reqList);
+    console.log("reqList===>", reqList);
+    const empData = await Employee.findOne({ employee_id: reqList.userId });
+    console.log("Employee data", empData);
+
+    let currDepartment;
+
+    if (!reqList?.firstLevelApproval?.approved) {
+      currDepartment = reqList?.firstLevelApproval?.hodDepartment;
+    } else if (reqList.status === "PO-Pending") {
+      currDepartment = "Head Of Finance";
+    } else if (reqList.status === "Invoice-Pending") {
+      currDepartment =`${empData.full_name}-${empData.department}` ;
+    } else if(reqList.status==="Approved"){
+      currDepartment = ""
+    }
+    
+    else {
+      const lastLevalApproval =
+        reqList?.approvals[reqList?.approvals?.length - 1];
+      currDepartment =
+        lastLevalApproval?.nextDepartment || lastLevalApproval?.departmentName;
+    }
+
+    const requestorLog = {
+      requestorId: empData.employee_id,
+      requestorName: empData.full_name,
+      requestorDepartment: empData.department,
+      reqCreatedAt: reqList.createdAt,
+      currentStatus: `${currDepartment} - ${reqList.status}`,
+    };
+
+    console.log("requestorLog", requestorLog);
 
     if (!reqList || reqList.length === 0) {
       return res.status(404).json({
@@ -675,6 +701,7 @@ exports.getIndividualReq = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: reqList,
+      requestorLog,
     });
   } catch (err) {
     console.error("Error in fetching the requests", err);
@@ -764,7 +791,7 @@ exports.uploadApproverExcel = async (req, res) => {
         row.businessUnit &&
         row.departments &&
         row.approverName &&
-        row.approverId&&
+        row.approverId &&
         row.approverEmail
     );
 
@@ -776,21 +803,29 @@ exports.uploadApproverExcel = async (req, res) => {
     }
 
     const processedData = {};
-    data.forEach(({ businessUnit, departments, approverName, approverId,approverEmail }) => {
-      if (!processedData[businessUnit]) {
-        processedData[businessUnit] = { departments: {} };
-      }
-
-      if (!processedData[businessUnit].departments[departments]) {
-        processedData[businessUnit].departments[departments] = [];
-      }
-
-      processedData[businessUnit].departments[departments].push({
-        approverId,
+    data.forEach(
+      ({
+        businessUnit,
+        departments,
         approverName,
-        approverEmail
-      });
-    });
+        approverId,
+        approverEmail,
+      }) => {
+        if (!processedData[businessUnit]) {
+          processedData[businessUnit] = { departments: {} };
+        }
+
+        if (!processedData[businessUnit].departments[departments]) {
+          processedData[businessUnit].departments[departments] = [];
+        }
+
+        processedData[businessUnit].departments[departments].push({
+          approverId,
+          approverName,
+          approverEmail,
+        });
+      }
+    );
 
     const approverDocs = Object.keys(processedData).map((businessUnit) => ({
       businessUnit,
@@ -818,7 +853,6 @@ exports.uploadApproverExcel = async (req, res) => {
   }
 };
 
-
 exports.checkDarwinStatus = async (req, res) => {
   try {
     let darwinData = await DarwinBox.findOne();
@@ -829,9 +863,9 @@ exports.checkDarwinStatus = async (req, res) => {
       await darwinData.save();
     }
 
-    res.status(200).json({ 
-      success: true, 
-      status: darwinData.isDarwinEnabled 
+    res.status(200).json({
+      success: true,
+      status: darwinData.isDarwinEnabled,
     });
   } catch (err) {
     console.error(err);
@@ -853,9 +887,9 @@ exports.updateDarwinStatus = async (req, res) => {
 
     await darwinData.save();
 
-    res.status(200).json({ 
-      success: true, 
-      enabled: darwinData.isDarwinEnabled 
+    res.status(200).json({
+      success: true,
+      enabled: darwinData.isDarwinEnabled,
     });
   } catch (err) {
     console.error(err);

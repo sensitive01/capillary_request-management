@@ -23,7 +23,7 @@ export const fetchDateFilterStatistics = async (empId, role, from, to) => {
   }
 };
 
-export const getStatisticData = async (empId, role, email,multipartRole) => {
+export const getStatisticData = async (empId, role, email, multipartRole) => {
   try {
     const response = await adminServices.get(
       `/request/get-statistic-data/${empId}/${role}/${email}/${multipartRole}`
@@ -283,7 +283,7 @@ export const updateRequest = async (id, formData) => {
   }
 };
 
-export const addNewQuestion = async (userId, newQuestion,role) => {
+export const addNewQuestion = async (userId, newQuestion, role) => {
   try {
     const response = await adminServices.post(
       `/questions/create-new-question/${userId}/${role}`,
@@ -295,7 +295,7 @@ export const addNewQuestion = async (userId, newQuestion,role) => {
   }
 };
 
-export const fetchMyQuestions = async (userId,role) => {
+export const fetchMyQuestions = async (userId, role) => {
   try {
     const response = await adminServices.get(
       `/questions/get-my-question/${userId}/${role}`
@@ -444,7 +444,7 @@ export const fetchIndividualReq = async (id) => {
     return err;
   }
 };
-export const dispalyIsApproved = async (userId, reqId,role) => {
+export const dispalyIsApproved = async (userId, reqId, role) => {
   try {
     const response = await adminServices.get(
       `/request/is-approved/${userId}/${reqId}/${role}`
@@ -638,18 +638,18 @@ export const getNewNotification = async (userId) => {
   }
 };
 
-export const getApprovedReq = async (userId,showPendingOnly) => {
+export const getApprovedReq = async (userId, showPendingOnly) => {
   try {
     const response = await adminServices.get(
       `/request/get-approved-req/${userId}?showPendingOnly=${showPendingOnly}`
     );
-    
+
     return response;
   } catch (err) {
     return err;
   }
 };
-export const getFilteredRequest = async (userId,action) => {
+export const getFilteredRequest = async (userId, action) => {
   try {
     const response = await adminServices.get(
       `/request/get-filtered-req/${userId}/${action}`
@@ -659,7 +659,6 @@ export const getFilteredRequest = async (userId,action) => {
     return err;
   }
 };
-
 
 // api/service/adminServices.js
 export const downloadInvoicePdf = async (id) => {
@@ -957,69 +956,58 @@ export const generatePDF = async (reqId) => {
       `/request/generate-request-pdf/${reqId}`,
       {},
       {
-        responseType: 'blob',
+        responseType: "blob",
         headers: {
-          Accept: 'application/pdf',
-          'Content-Type': 'application/json',
+          Accept: "application/pdf",
+          "Content-Type": "application/json",
         },
         timeout: 30000, // 30 seconds timeout
       }
     );
 
     // Check if the response is a valid PDF
-    const contentType = response.headers?.['content-type'] || response.headers?.get('content-type');
-    if (!contentType || !contentType.includes('application/pdf')) {
-      throw new Error('Received invalid content type from server');
+    const contentType =
+      response.headers?.["content-type"] ||
+      response.headers?.get("content-type");
+    if (!contentType || !contentType.includes("application/pdf")) {
+      throw new Error("Received invalid content type from server");
     }
 
     return response; // Return the full response, not just `data`
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error("Error generating PDF:", error);
     throw error; // Rethrow for handling in the calling function
   }
 };
 
-
-
-
 export const getRoleBasedApprovals = async (userId, role) => {
   try {
     const response = await adminServices.get(
-      `/request/get-role-based-approvals/${userId}/${role}`,
-
+      `/request/get-role-based-approvals/${userId}/${role}`
     );
     return response;
   } catch (err) {
     return err;
   }
 };
-
-
 
 export const addNewVendorsExcel = async (data) => {
   try {
-    const response = await adminServices.post(
-      `/vendors/create-new-vendors`,{data}
-
-    );
+    const response = await adminServices.post(`/vendors/create-new-vendors`, {
+      data,
+    });
     return response;
   } catch (err) {
     return err;
   }
 };
 
-
-
 // ...............................................................................................
-
-
-
 
 export const getAllRequestForPureAdmin = async () => {
   try {
     const response = await adminServices.get(
       `/request/get-all-request-for-admin`
-
     );
     return response;
   } catch (err) {
@@ -1027,8 +1015,37 @@ export const getAllRequestForPureAdmin = async () => {
   }
 };
 
-
-
+export const actionEmailNotifications = async (emailData) => {
+  try {
+    const response = await adminServices.post(
+      `/request/email-notification-action`,
+      { emailData }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+export const getAllEmailsByName = async () => {
+  try {
+    const response = await adminServices.get(
+      `/request/get-email-notification-data`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+export const fetchEmployeesByTopic = async (role,reqId) => {
+  try {
+    const response = await adminServices.get(
+      `/request/tag-employee/${role}/${reqId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
 
 
 

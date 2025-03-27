@@ -7,15 +7,17 @@ const { sendBulkEmails } = require("../utils/otherTestEmail");
 const CreateNewReq = require("../models/createNewReqSchema");
 const Approver = require("../models/approverSchema");
 const { CAPILLARY_JWT_SECRET } = require("../config/variables");
-console.log(CAPILLARY_JWT_SECRET);
+const EmailSettings = require("../models/emailNotificationSchema");
 
 const verifyUser = async (req, res) => {
   try {
-    console.log("Verify user")
+    console.log("Verify user");
     console.log(req.body);
     const { email } = req.body;
     console.log("Email", email);
     let multiRole = 0;
+    const loginMail = await EmailSettings.findOne({ emailId: "1" });
+    console.log("login action email", loginMail);
 
     let consolidatedData;
 
@@ -37,7 +39,12 @@ const verifyUser = async (req, res) => {
       (await Approver.findOne({
         "departments.approvers.approverEmail": email,
       }).lean()) || (await Employee.findOne({ hod_email_id: email }).lean());
-    console.log("isEmpHod", isEmpHod,"isEmpHod && panelUserData",isEmpHod && panelUserData);
+    console.log(
+      "isEmpHod",
+      isEmpHod,
+      "isEmpHod && panelUserData",
+      isEmpHod && panelUserData
+    );
     if (isEmpHod && panelUserData) {
       multiRole = 1;
     }
@@ -67,16 +74,18 @@ const verifyUser = async (req, res) => {
         CAPILLARY_JWT_SECRET,
         { expiresIn: "10h" }
       );
+      if (loginMail.emailStatus) {
+        await sendEmail(email, "login", { full_name });
+      }
 
-      await sendEmail(email, "login", { full_name });
-      console.log("multiRole",multiRole)
+      console.log("multiRole", multiRole);
 
       return res.status(200).json({
         success: true,
         message: "Employee verified successfully.",
         data: consolidatedData,
         token,
-        multiRole
+        multiRole,
       });
     } else {
       console.log("else");
@@ -94,240 +103,26 @@ const verifyUser = async (req, res) => {
   }
 };
 
-// const createNewReq = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { complinces, commercials, procurements, supplies, hasDeviations } =
-//       req.body;
-//     let { vendorName, email, isNewVendor,reqId } = procurements;
-//     const date = new Date();
-
-//     const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
-//       date.getMonth() + 1
-//     ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
-//       Math.floor(Math.random() * 100) + 1
-//     }`;
-//     if(!reqId){
-//       reqId=reqid
-//     }
-//     console.log("reqId",reqId)
-
-//     if (!complinces || !commercials) {
-//       return res
-//         .status(400)
-//         .json({ message: "Missing required compliance or commercial data." });
-//     }
-
-//     let empData = await Employee.findOne(
-//       { employee_id: id },
-//       { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
-//     ).lean();
-//     if (!empData) {
-//       empData = await addPanelUsers.findOne({ _id: id }).lean();
-//     }
-
-//     if (!empData) {
-//       return res
-//         .status(404)
-//         .json({
-//           message: "Employee not found. Please provide a valid employee ID.",
-//         });
-//     }
-
-//     const panelMemberEmail = (
-//       await addPanelUsers
-//         .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
-//         .lean()
-//     ).map((member) => member.company_email_id);
-//     panelMemberEmail.push(commercials.hodEmail);
-//     console.log("panelMemberEmail", panelMemberEmail);
-
-//     const newRequest = new CreateNewReq({
-//       reqid:reqId,
-//       userId: id,
-//       userName: empData.full_name,
-//       commercials,
-//       procurements,
-//       supplies,
-//       complinces,
-//       hasDeviations: hasDeviations ? 1 : 0,
-//       firstLevelApproval: {
-//         hodName: commercials.hod,
-//         hodEmail: commercials.hodEmail,
-//         hodDepartment: commercials.department,
-//         status: "Pending",
-//         approved: false,
-//       },
-//     });
-
-//     await newRequest.save();
-
-//     await sendBulkEmails(
-//       panelMemberEmail,
-//       empData.full_name,
-//       empData.department,
-//       reqId
-//     );
-
-//     if (isNewVendor) {
-//       await sendEmail(email, "vendorOnboarding", { vendorName });
-
-//       const vendorManagementEmails = await addPanelUsers
-//         .find(
-//           {
-//             $or: [
-//               { department: "Vendor Management" },
-//               { role: "Vendor Management" },
-//             ],
-//           },
-//           { company_email_id: 1 }
-//         )
-//         .lean();
-
-//       await Promise.all(
-//         vendorManagementEmails.map(({ company_email_id }) =>
-//           sendEmail(company_email_id, "newVendorOnBoard", {
-//             vendorName,
-//             email,
-//             reqId,
-//           })
-//         )
-//       );
-//     }
-
-//     res.status(201).json({
-//       message: "Request created successfully",
-//       data: newRequest,
-//       approvals: newRequest?.approvals || [],
-//     });
-//   } catch (error) {
-//     console.error("Error creating request:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Error creating request", error: error.message });
-//   }
-// };
-
-// const createNewReq = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { complinces, commercials, procurements, supplies, hasDeviations } = req.body;
-//     let { vendorName, email, isNewVendor, reqId } = procurements;
-
-//     console.log(id)
-//     const date = new Date();
-
-//     // Generate reqId if not provided
-//     const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${Math.floor(Math.random() * 100) + 1}`;
-//     if (!reqId) {
-//       reqId = reqid;
-//     }
-//     console.log("reqId", reqId);
-
-//     // Validation of required data
-//     if (!complinces || !commercials) {
-//       return res.status(400).json({ message: "Missing required compliance or commercial data." });
-//     }
-
-//     // Fetch employee or panel member data
-//     let empData = await Employee.findOne(
-//       { employee_id: id },
-//       { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }
-//     ).lean();
-//     if (!empData) {
-//       empData = await addPanelUsers.findOne({ employee_id: id }).lean();
-//     }
-
-//     if (!empData) {
-//       return res.status(404).json({ message: "Employee not found. Please provide a valid employee ID." });
-//     }
-
-//     // Get panel member emails
-//     const panelMemberEmail = (
-//       await addPanelUsers.find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 }).lean()
-//     ).map((member) => member.company_email_id);
-//     panelMemberEmail.push(commercials.hodEmail);
-//     console.log("panelMemberEmail", panelMemberEmail);
-
-//     // Create new request
-//     const newRequest = new CreateNewReq({
-//       reqid: reqId,
-//       userId: id,
-//       userName: empData.full_name,
-//       commercials,
-//       procurements,
-//       supplies,
-//       complinces,
-//       hasDeviations: hasDeviations ? 1 : 0,
-//       firstLevelApproval: {
-//         hodName: commercials.hod,
-//         hodEmail: commercials.hodEmail,
-//         hodDepartment: commercials.department,
-//         status: "Pending",
-//         approved: false,
-//       },
-//     });
-
-//     await newRequest.save();
-
-//     // Send bulk emails
-//     try {
-//       // await sendBulkEmails(panelMemberEmail, empData.full_name, empData.department, reqId);
-//     } catch (emailError) {
-//       console.error("Error sending bulk emails:", emailError);
-//       // You could implement retry logic here or log the error for future action
-//     }
-
-//     // Send vendor onboarding email if necessary
-//     if (isNewVendor) {
-//       try {
-//         // await sendEmail(email, "vendorOnboarding", { vendorName });
-
-//         const vendorManagementEmails = await addPanelUsers
-//           .find({ $or: [{ department: "Vendor Management" }, { role: "Vendor Management" }] }, { company_email_id: 1 })
-//           .lean();
-
-//         // Send vendor management emails
-//         await Promise.all(
-//           vendorManagementEmails.map(({ company_email_id }) =>
-//             console.log(company_email_id)
-//             // sendEmail(company_email_id, "newVendorOnBoard", { vendorName, email, reqId })
-//           )
-//         );
-//       } catch (emailError) {
-//         console.error("Error sending vendor emails:", emailError);
-//         // Handle email sending failure gracefully
-//       }
-//     }
-
-//     res.status(201).json({
-//       message: "Request created successfully",
-//       data: newRequest,
-//       approvals: newRequest?.approvals || [],
-//     });
-//   } catch (error) {
-//     console.error("Error creating request:", error);
-
-//     // Enhanced error handling
-//     if (error.code === 'ECONNRESET') {
-//       return res.status(503).json({ message: "Temporary connectivity issue, please try again later." });
-//     }
-
-//     res.status(500).json({ message: "Error creating request", error: error.message });
-//   }
-// };
-
 const createNewReq = async (req, res) => {
   try {
     console.log(req.body);
+    const sendBulkMails = await EmailSettings.findOne({ emailId: "2" });
+    const vendorMails = await EmailSettings.findOne({ emailId: "3" });
+    const VendorManagementMails = await EmailSettings.findOne({ emailId: "4" });
+    const requestorMail = await EmailSettings.findOne({ emailId: "5" });
 
     const { id, reqId } = req.params;
-    const { complinces, commercials, procurements, supplies, hasDeviations } =
+    const { complinces, commercials, procurements, supplies, hasDeviations,firstLevelApproval } =
       req.body;
     const reqDatas = await CreateNewReq.findOne(
       { reqid: reqId },
-      { procurements: 1 }
+      { procurements: 1, userId: 1 }
     ).lean();
+
+    const requestorData = await Employee.findOne(
+      { employee_id: reqDatas.userId },
+      { full_name: 1, company_email_id: 1 ,department:1}
+    );
 
     console.log("reqDatas", reqDatas);
 
@@ -359,7 +154,17 @@ const createNewReq = async (req, res) => {
     panelMemberEmail.push(commercials.hodEmail);
 
     let existingRequest = await CreateNewReq.findOne({ reqid: reqId });
-    console.log("existingRequest", existingRequest);
+    console.log("existingRequest", existingRequest,firstLevelApproval);
+    // const autoApprovalRecord = {
+    //   departmentName: requestorData.department,
+    //   status: "Pending",
+    //   approverName: reqDatas.full_name,
+    //   approvalId: reqDatas.userId ,
+    //   approvalDate:"" ,
+    //   remarks: "",
+    //   nextDepartment: firstLevelApproval.hodDepartment,
+    //   receivedOn:new Date()
+    // };
 
     if (existingRequest) {
       existingRequest.commercials = commercials;
@@ -368,17 +173,20 @@ const createNewReq = async (req, res) => {
       existingRequest.complinces = complinces;
       existingRequest.hasDeviations = hasDeviations ? 1 : 0;
       existingRequest.isCompleted = true;
+      // existingRequest.approvals.push(autoApprovalRecord)
 
       await existingRequest.save();
-      try {
-        await sendBulkEmails(
-          panelMemberEmail,
-          empData.full_name,
-          empData.department,
-          reqId
-        );
-      } catch (emailError) {
-        console.error("Error sending bulk emails:", emailError);
+      if (sendBulkMails.emailStatus) {
+        try {
+          await sendBulkEmails(
+            panelMemberEmail,
+            empData.full_name,
+            empData.department,
+            reqId
+          );
+        } catch (emailError) {
+          console.error("Error sending bulk emails:", emailError);
+        }
       }
       let { vendorName, email, isNewVendor } = procurements;
       console.log(
@@ -392,7 +200,19 @@ const createNewReq = async (req, res) => {
       if (isNewVendor) {
         console.log("Iaminside the vendor auti send mails");
         try {
-          await sendEmail(email, "vendorOnboarding", { vendorName });
+          const reqEmail = requestorData.company_email_id;
+
+          if (vendorMails.emailStatus) {
+            await sendEmail(email, "vendorOnboarding", { vendorName });
+          }
+          if (requestorMail.emailStatus) {
+            await sendEmail(reqEmail, "vendorOnboardingRequestorTemplate", {
+              vendorName,
+              email,
+              reqId,
+              requestorName: requestorData.full_name,
+            });
+          }
 
           const vendorManagementEmails = await addPanelUsers
             .find(
@@ -405,17 +225,17 @@ const createNewReq = async (req, res) => {
               { company_email_id: 1 }
             )
             .lean();
-
-          await Promise.all(
-            vendorManagementEmails.map(
-              ({ company_email_id }) =>
+          if (VendorManagementMails.emailStatus) {
+            await Promise.all(
+              vendorManagementEmails.map(({ company_email_id }) =>
                 sendEmail(company_email_id, "newVendorOnBoard", {
                   vendorName: vendorName,
                   email,
                   reqId,
-                }) // Removed `await`
-            )
-          );
+                })
+              )
+            );
+          }
         } catch (emailError) {
           console.error("Error sending vendor emails:", emailError);
         }
@@ -431,7 +251,7 @@ const createNewReq = async (req, res) => {
         reqid: reqId,
         userId: id,
         userName: empData.full_name,
-        empDepartment:empData.department,
+        empDepartment: empData.department,
         commercials,
         procurements,
         supplies,
@@ -448,24 +268,28 @@ const createNewReq = async (req, res) => {
       });
 
       await newRequest.save();
-
-      try {
-        await sendBulkEmails(
-          panelMemberEmail,
-          empData.full_name,
-          empData.department,
-          reqId
-        );
-      } catch (emailError) {
-        console.error("Error sending bulk emails:", emailError);
+      if (sendBulkMails.emailStatus) {
+        try {
+          await sendBulkEmails(
+            panelMemberEmail,
+            empData.full_name,
+            empData.department,
+            reqId
+          );
+        } catch (emailError) {
+          console.error("Error sending bulk emails:", emailError);
+        }
       }
+
       let { vendorName, email, isNewVendor, reqId } = procurements;
       console.log(vendorName, email, isNewVendor, reqId);
 
       if (isNewVendor) {
         console.log("Iaminside the vendor auti send mails");
         try {
-          await sendEmail(email, "vendorOnboarding", { vendorName });
+          if (vendorMails.emailStatus) {
+            await sendEmail(email, "vendorOnboarding", { vendorName });
+          }
 
           const vendorManagementEmails = await addPanelUsers
             .find(
@@ -478,17 +302,19 @@ const createNewReq = async (req, res) => {
               { company_email_id: 1 }
             )
             .lean();
+            if(VendorManagementMails.emailStatus){
+              await Promise.all(
+                vendorManagementEmails.map(
+                  ({ company_email_id }) =>
+                    sendEmail(company_email_id, "newVendorOnBoard", {
+                      vendorName: reqDatas.procurements.reqDatas,
+                      email: reqDatas.procurements.email,
+                      reqId,
+                    }) 
+                )
+              );
 
-          await Promise.all(
-            vendorManagementEmails.map(
-              ({ company_email_id }) =>
-                sendEmail(company_email_id, "newVendorOnBoard", {
-                  vendorName: reqDatas.procurements.reqDatas,
-                  email: reqDatas.procurements.email,
-                  reqId,
-                }) // Removed `await`
-            )
-          );
+            }
         } catch (emailError) {
           console.error("Error sending vendor emails:", emailError);
         }

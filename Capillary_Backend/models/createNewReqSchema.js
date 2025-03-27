@@ -9,6 +9,9 @@ const commentSchema = new mongoose.Schema({
   attachmentUrl: { type: String },
   topic: { type: String },
   timestamp: { type: Date, default: Date.now },
+  taggedEmployeeId: { type: String },
+  taggedEmployeeName: { type: String },
+  taggedEmployeeEmail:{ type: String }
 });
 
 const paymentTermSchema = new mongoose.Schema({
@@ -16,6 +19,8 @@ const paymentTermSchema = new mongoose.Schema({
   percentageAmount: { type: String, default: "" },
   paymentType: { type: String },
   paymentTerm: { type: String },
+  customPaymentTerm: { type: String },
+  customPaymentType: { type: String },
 });
 
 const commercialsSchema = new mongoose.Schema({
@@ -45,9 +50,11 @@ const procurementsSchema = new mongoose.Schema({
   //     of: [String],
   //   },
   // ],
-  uploadedFiles: [{
-    type: Object  // Change from Map to Object to allow dynamic keys
-  }],
+  uploadedFiles: [
+    {
+      type: Object, // Change from Map to Object to allow dynamic keys
+    },
+  ],
 
   vendor: { type: String },
   vendorName: { type: String },
@@ -84,7 +91,7 @@ const complianceItemSchema = new mongoose.Schema({
   questionId: { type: String },
   question: { type: String },
   answer: { type: Boolean },
-  expectedAnswer:{ type: Boolean },
+  expectedAnswer: { type: Boolean },
   department: { type: String },
   deviation: { type: mongoose.Schema.Types.Mixed },
   hasDeviations: { type: Boolean, default: false },
@@ -108,7 +115,7 @@ const createnewReqSchema = new mongoose.Schema(
     reqid: { type: String },
     userId: { type: String },
     userName: { type: String },
-    empDepartment:{ type: String },
+    empDepartment: { type: String },
     commercials: { type: commercialsSchema },
     procurements: { type: procurementsSchema },
     supplies: { type: suppliesSchema },
@@ -116,6 +123,12 @@ const createnewReqSchema = new mongoose.Schema(
     commentLogs: [commentSchema],
     complinces: { type: [complianceItemSchema] }, // Array of compliance items
     hasDeviations: { type: Number, default: 0 },
+    departmentDeviations: {
+      type: Map,
+      of: Boolean,
+      default: {},
+    },
+    riskAccepted: { type: Boolean, default: false },
     approvals: { type: [approvalSchema], default: [] },
     approvedOn: { type: Date },
     firstLevelApproval: {
@@ -135,7 +148,7 @@ const createnewReqSchema = new mongoose.Schema(
       },
       poLink: { type: String },
     },
-    isCompleted:{type:Boolean,default:false},
+    isCompleted: { type: Boolean, default: false },
     invoiceDocumets: [
       {
         uploadedBy: {
@@ -144,8 +157,9 @@ const createnewReqSchema = new mongoose.Schema(
           department: { type: String },
           uploadedOn: { type: Date },
           receivedConfirmation: { type: Date },
+          invoiceLink: { type: String },
+          notes: { type: String },
         },
-        invoiceLink: { type: String },
       },
     ],
   },

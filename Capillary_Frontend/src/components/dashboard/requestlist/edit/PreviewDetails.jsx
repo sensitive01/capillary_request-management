@@ -41,59 +41,63 @@ const Preview = ({ formData, onSubmit, onBack }) => {
         }).format(value);
     };
 
-       const renderUploadedFiles = (uploadedFiles) => {
-           if (!uploadedFiles || uploadedFiles.length === 0) {
-               return null;
-           }
-       
-           // Transform the data structure
-           const fileCategories = uploadedFiles.reduce((acc, fileGroup) => {
-               // Get all keys (categories) from the file group
-               Object.entries(fileGroup).forEach(([category, urls]) => {
-                   acc[category] = urls;
-               });
-               return acc;
-           }, {});
-       
-           return (
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                   {Object.entries(fileCategories).map(([category, files], index) => (
-                       <div
-                           key={index}
-                           className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
-                       >
-                           <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
-                               {category.replace(/_/g, ' ')}
-                           </h4>
-                           <div className="grid grid-cols-3 gap-2">
-                               {files.map((file, fileIndex) => (
-                                   <div
-                                       key={fileIndex}
-                                       className="flex flex-col items-center bg-gray-50 rounded p-2"
-                                   >
-                                       <a
-                                           href={file}
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
-                                       >
-                                           <img
-                                               src={pfdIcon}
-                                               alt={`${category} file ${fileIndex + 1}`}
-                                               className="w-10 h-10 object-cover mb-2"
-                                           />
-                                           <span className="block">
-                                               File {fileIndex + 1}
-                                           </span>
-                                       </a>
-                                   </div>
-                               ))}
-                           </div>
-                       </div>
-                   ))}
-               </div>
-           );
-       };
+    const renderUploadedFiles = (uploadedFiles) => {
+        if (!uploadedFiles || uploadedFiles.length === 0) {
+            return null;
+        }
+
+        // Transform the data structure
+        const fileCategories = uploadedFiles.reduce((acc, fileGroup) => {
+            // Get all keys (categories) from the file group
+            Object.entries(fileGroup).forEach(([category, urls]) => {
+                acc[category] = urls;
+            });
+            return acc;
+        }, {});
+
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(fileCategories).map(
+                    ([category, files], index) => (
+                        <div
+                            key={index}
+                            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                        >
+                            <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
+                                {category.replace(/_/g, " ")}
+                            </h4>
+                            <div className="grid grid-cols-3 gap-2">
+                                {files.map((file, fileIndex) => (
+                                    <div
+                                        key={fileIndex}
+                                        className="flex flex-col items-center bg-gray-50 rounded p-2"
+                                    >
+                                        <a
+                                            href={file}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
+                                        >
+                                            <img
+                                                src={pfdIcon}
+                                                alt={`${category} file ${
+                                                    fileIndex + 1
+                                                }`}
+                                                className="w-10 h-10 object-cover mb-2"
+                                            />
+                                            <span className="block">
+                                                File {fileIndex + 1}
+                                            </span>
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="max-w-8xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
@@ -247,11 +251,17 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                     <td className="px-6 py-4 text-left font-medium">
                                                         {term.percentageTerm}%
                                                     </td>
-                                                    <td className="px-6 py-4 capitalize">
+                                                    <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
                                                         {term.paymentTerm?.toLowerCase()}
+                                                        {term.customPaymentTerm
+                                                            ? ` - ${term.customPaymentTerm.toLowerCase()}`
+                                                            : ""}
                                                     </td>
-                                                    <td className="px-6 py-4 capitalize">
+                                                    <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
                                                         {term.paymentType?.toLowerCase()}
+                                                        {term.customPaymentType
+                                                            ? ` - ${term.customPaymentType.toLowerCase()}`
+                                                            : ""}
                                                     </td>
                                                 </tr>
                                             )
@@ -507,14 +517,16 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                         <div
                                             key={questionId}
                                             className={`p-4 rounded-lg ${
-                                                compliance.expectedAnswer!==compliance.answer
+                                                compliance.expectedAnswer !==
+                                                compliance.answer
                                                     ? "bg-red-50 border border-red-200"
                                                     : "bg-green-50 border border-green-200"
                                             }`}
                                         >
                                             <h3
                                                 className={`text-lg font-semibold ${
-                                                    compliance.expectedAnswer!==compliance.answer
+                                                    compliance.expectedAnswer !==
+                                                    compliance.answer
                                                         ? "text-red-800"
                                                         : "text-green-800"
                                                 }`}
@@ -523,7 +535,8 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                             </h3>
                                             <p
                                                 className={`mt-2 font-medium ${
-                                                    compliance.expectedAnswer!==compliance.answer
+                                                    compliance.expectedAnswer !==
+                                                    compliance.answer
                                                         ? "text-red-600"
                                                         : "text-green-600"
                                                 }`}
@@ -538,19 +551,23 @@ const Preview = ({ formData, onSubmit, onBack }) => {
                                                     {compliance.department}
                                                 </p>
                                             )}
-                                            {compliance.deviation && compliance.expectedAnswer!==compliance.answer&& (
-                                                <div className="mt-2 p-3 bg-red-100 rounded">
-                                                    <p className="text-sm text-red-700">
-                                                        <strong>
-                                                            Deviation Reason:
-                                                        </strong>{" "}
-                                                        {
-                                                            compliance.deviation
-                                                                .reason
-                                                        }
-                                                    </p>
-                                                </div>
-                                            )}
+                                            {compliance.deviation &&
+                                                compliance.expectedAnswer !==
+                                                    compliance.answer && (
+                                                    <div className="mt-2 p-3 bg-red-100 rounded">
+                                                        <p className="text-sm text-red-700">
+                                                            <strong>
+                                                                Deviation
+                                                                Reason:
+                                                            </strong>{" "}
+                                                            {
+                                                                compliance
+                                                                    .deviation
+                                                                    .reason
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                )}
 
                                             {compliance?.deviation?.attachments
                                                 ?.length > 0 && (
