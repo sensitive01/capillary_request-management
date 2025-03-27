@@ -74,7 +74,7 @@ const verifyUser = async (req, res) => {
         CAPILLARY_JWT_SECRET,
         { expiresIn: "10h" }
       );
-      if (loginMail.emailStatus) {
+      if (loginMail?.emailStatus) {
         await sendEmail(email, "login", { full_name });
       }
 
