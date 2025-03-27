@@ -3644,9 +3644,8 @@ const saveAggrementData = async (req, res) => {
       return res.status(400).json({ message: "Invalid formData" });
     }
 
-    let { complinces } = formData;
+    let complinces = Object.values(formData.complinces); // Convert object to array
 
-    // Ensure complinces is an array
     if (!Array.isArray(complinces)) {
       return res.status(400).json({ message: "Invalid compliance data" });
     }
@@ -3657,8 +3656,8 @@ const saveAggrementData = async (req, res) => {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    let departmentDeviations = new Map(); // Initialize as a Map
-    let riskAccepted = false; // Track if risk is accepted
+    let departmentDeviations = new Map();
+    let riskAccepted = false;
 
     complinces.forEach(({ department, answer, expectedAnswer }) => {
       if (answer !== expectedAnswer) {
@@ -3669,7 +3668,6 @@ const saveAggrementData = async (req, res) => {
       }
     });
 
-    // Convert Map to plain object for MongoDB
     updateData.departmentDeviations = Object.fromEntries(departmentDeviations);
     updateData.complinces = complinces;
     updateData.hasDeviations = riskAccepted ? 1 : 0;
@@ -3683,6 +3681,7 @@ const saveAggrementData = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 
