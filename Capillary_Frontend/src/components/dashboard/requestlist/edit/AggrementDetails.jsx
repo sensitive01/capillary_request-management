@@ -24,7 +24,7 @@ const AgreementCompliances = ({
     onBack,
     reqId,
 }) => {
-    console.log("FormData", formData)
+    console.log("FormData", formData);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [deviations, setDeviations] = useState({});
@@ -63,11 +63,12 @@ const AgreementCompliances = ({
                 });
 
                 // Convert existing compliances to a map using questionId for easier lookup
-                const existingCompliancesMap = Object.values(formData.complinces || {})
-                    .reduce((acc, compliance) => {
-                        acc[compliance.questionId] = compliance;
-                        return acc;
-                    }, {});
+                const existingCompliancesMap = Object.values(
+                    formData.complinces || {}
+                ).reduce((acc, compliance) => {
+                    acc[compliance.questionId] = compliance;
+                    return acc;
+                }, {});
 
                 questionData.forEach((q) => {
                     const dept = q.createdBy.department;
@@ -78,10 +79,11 @@ const AgreementCompliances = ({
                     if (existingCompliance) {
                         // Use existing compliance data
                         initialAnswers[q._id] = existingCompliance.answer;
-                        initialDeviations[q._id] = existingCompliance.deviation || {
-                            reason: "",
-                            attachments: [],
-                        };
+                        initialDeviations[q._id] =
+                            existingCompliance.deviation || {
+                                reason: "",
+                                attachments: [],
+                            };
 
                         if (existingCompliance.answer !== q.expectedAnswer) {
                             initialDeptDeviations[dept] = true;
@@ -146,24 +148,33 @@ const AgreementCompliances = ({
         const question = questions.find((q) => q._id === questionId);
         const dept = question?.createdBy.department;
         const isDeviation = value !== question?.expectedAnswer;
-        console.log("question:",question,"dept",dept,"isDeviation",isDeviation,"value",value)
-    
+        console.log(
+            "question:",
+            question,
+            "dept",
+            dept,
+            "isDeviation",
+            isDeviation,
+            "value",
+            value
+        );
+
         // Update answers
         setAnswers((prev) => ({
             ...prev,
             [questionId]: value,
         }));
-    
+
         setFormData((prev) => {
             // Create a copy of existing compliances
             const updatedCompliances = [...(prev.complinces || [])];
-            
+
             // Find the index of the compliance with matching questionId
             const complianceIndex = updatedCompliances.findIndex(
                 (compliance) => compliance.questionId === questionId
             );
-            console.log("complianceIndex",complianceIndex)
-    
+            console.log("complianceIndex", complianceIndex);
+
             // Update or add the compliance
             if (complianceIndex !== -1) {
                 updatedCompliances[complianceIndex] = {
@@ -186,28 +197,35 @@ const AgreementCompliances = ({
                     description: question.description,
                 });
             }
-    
+
             // Update department deviations
-            const updatedDepartmentDeviations = { ...prev.departmentDeviations };
-            console.log("updatedDepartmentDeviations",updatedDepartmentDeviations)
-            
+            const updatedDepartmentDeviations = {
+                ...prev.departmentDeviations,
+            };
+            console.log(
+                "updatedDepartmentDeviations",
+                updatedDepartmentDeviations
+            );
+
             // Find all questions in this department
             const departmentQuestions = questions.filter(
                 (q) => q.createdBy.department === dept
             );
-    
+
             // Check if any questions in this department now have deviations
             const hasDepartmentDeviation = departmentQuestions.some((q) => {
-                const currentAnswer = q._id === questionId ? value : answers[q._id];
+                const currentAnswer =
+                    q._id === questionId ? value : answers[q._id];
                 return currentAnswer !== q.expectedAnswer;
             });
 
-    
             // Update the department's deviation status
             updatedDepartmentDeviations[dept] = hasDepartmentDeviation;
-            console.log("updatedDepartmentDeviations",updatedDepartmentDeviations)
+            console.log(
+                "updatedDepartmentDeviations",
+                updatedDepartmentDeviations
+            );
 
-    
             return {
                 ...prev,
                 complinces: updatedCompliances,
@@ -328,7 +346,7 @@ const AgreementCompliances = ({
         return acc;
     }, {});
 
-    console.log("hasDeviations",questions)
+    console.log("hasDeviations", questions);
 
     const hasDeviations = questions.some(
         (q) => answers[q._id] !== q.expectedAnswer
@@ -684,9 +702,7 @@ const AgreementCompliances = ({
                                 <h4 className="text-xl font-semibold text-gray-800 mb-3">
                                     Risk Acknowledgment Required
                                 </h4>
-                                <p className="text-gray-700 mb-4">
-                                The information provided above is accurate to the best of my knowledge and has the necessary agreement/legal confirmation. However, if any discrepancies or non-compliance with policies are identified in the future, I acknowledge that the associated risks and responsibilities will be taken by me.
-                                </p>
+
                                 <label className="flex items-center gap-3 cursor-pointer p-4 bg-yellow-50 rounded-lg border border-yellow-100">
                                     <input
                                         type="checkbox"
@@ -695,8 +711,15 @@ const AgreementCompliances = ({
                                         className="w-5 h-5 text-primary rounded"
                                     />
                                     <span className="text-base font-medium text-gray-800">
-                                        I accept all risks associated with these
-                                        deviations
+                                        The information provided above is
+                                        accurate to the best of my knowledge and
+                                        has the necessary agreement/legal
+                                        confirmation. However, if any
+                                        discrepancies or non-compliance with
+                                        policies are identified in the future, I
+                                        acknowledge that the associated risks
+                                        and responsibilities
+                                        will be taken by me.
                                     </span>
                                 </label>
                             </div>

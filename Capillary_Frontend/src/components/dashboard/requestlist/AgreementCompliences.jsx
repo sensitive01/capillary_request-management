@@ -80,12 +80,11 @@ const AgreementCompliances = ({
                 const initialDeptDeviations = {};
                 const initialExpandedDepts = {};
 
-               
                 const depts = [
                     ...new Set(questionData.map((q) => q.createdBy.department)),
                 ];
                 depts.forEach((dept) => {
-                    initialExpandedDepts[dept] = true; 
+                    initialExpandedDepts[dept] = true;
                     initialDeptDeviations[dept] = false;
                 });
 
@@ -101,7 +100,6 @@ const AgreementCompliances = ({
                                 attachments: [],
                             };
 
-                  
                         if (existingCompliance.answer !== q.expectedAnswer) {
                             initialDeptDeviations[dept] = true;
                         }
@@ -345,7 +343,6 @@ const AgreementCompliances = ({
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
-       
             <div className="mb-6 bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="p-6 border-b border-gray-200">
                     <h2 className="text-2xl font-bold text-gray-800">
@@ -382,7 +379,6 @@ const AgreementCompliances = ({
                             departments, {questions.length} total questions
                         </p>
                     </div>
-
                 </div>
             </div>
 
@@ -654,9 +650,7 @@ const AgreementCompliances = ({
                                 <h4 className="text-xl font-semibold text-gray-800 mb-3">
                                     Risk Acknowledgment Required
                                 </h4>
-                                <p className="text-gray-700 mb-4">
-                                The information provided above is accurate to the best of my knowledge and has the necessary agreement/legal confirmation. However, if any discrepancies or non-compliance with policies are identified in the future, I acknowledge that the associated risks and responsibilities will be taken by me.
-                                </p>
+
                                 <label className="flex items-center gap-3 cursor-pointer p-4 bg-yellow-50 rounded-lg border border-yellow-100">
                                     <input
                                         type="checkbox"
@@ -665,8 +659,15 @@ const AgreementCompliances = ({
                                         className="w-5 h-5 text-primary rounded"
                                     />
                                     <span className="text-base font-medium text-gray-800">
-                                        I accept all risks associated with these
-                                        deviations
+                                        The information provided above is
+                                        accurate to the best of my knowledge and
+                                        has the necessary agreement/legal
+                                        confirmation. However, if any
+                                        discrepancies or non-compliance with
+                                        policies are identified in the future, I
+                                        acknowledge that the associated risks
+                                        and responsibilities
+                                        will be taken by me.
                                     </span>
                                 </label>
                             </div>
