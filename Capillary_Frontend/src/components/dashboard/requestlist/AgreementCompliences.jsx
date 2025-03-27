@@ -655,11 +655,7 @@ const AgreementCompliances = ({
                                     Risk Acknowledgment Required
                                 </h4>
                                 <p className="text-gray-700 mb-4">
-                                    I understand that there are deviations from
-                                    the standard compliance requirements. I
-                                    acknowledge and accept any potential risks
-                                    associated with these deviations and take
-                                    full responsibility for them.
+                                The information provided above is accurate to the best of my knowledge and has the necessary agreement/legal confirmation. However, if any discrepancies or non-compliance with policies are identified in the future, I acknowledge that the associated risks and responsibilities will be taken by me.
                                 </p>
                                 <label className="flex items-center gap-3 cursor-pointer p-4 bg-yellow-50 rounded-lg border border-yellow-100">
                                     <input
