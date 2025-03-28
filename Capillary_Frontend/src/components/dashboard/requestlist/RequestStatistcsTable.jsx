@@ -36,6 +36,7 @@ const RequestStatistcsTable = () => {
     const [filterAction, setFilterAction] = useState([]);
     const [newStatus, setNewStatus] = useState("");
     const [showAllData, setShowAllData] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("");
 
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
@@ -56,13 +57,7 @@ const RequestStatistcsTable = () => {
 
     useEffect(() => {
         if (action === "Pending-Request") {
-            setFilterAction([
-                "Pending",
-                "Hold",
-                "Rejected",
-                "PO-Pending",
-                "Invoice-Pending",
-            ]);
+            setFilterAction(["Pending", "PO-Pending", "Invoice-Pending"]);
         } else if (action === "Approved-Request") {
             setFilterAction("Approved");
         } else if (action === "Completed-Request") {
@@ -74,6 +69,10 @@ const RequestStatistcsTable = () => {
             setFilterAction("Approved");
         }
     }, [action]);
+
+    const handleStatusFilterChange = (e) => {
+        setStatusFilter(e.target.value);
+    };
 
     const fetchReqTable = async (showAll = false) => {
         setIsLoading(true);
@@ -134,8 +133,7 @@ const RequestStatistcsTable = () => {
                                     response.data.reqData.filter((items) =>
                                         [
                                             "Pending",
-                                            "Hold",
-                                            "Reject",
+
                                             "PO-Pending",
                                             "Invoice-Pending",
                                         ].includes(
@@ -155,11 +153,10 @@ const RequestStatistcsTable = () => {
                                             items.approvals.some(
                                                 (app, index, arr) => {
                                                     const isPending =
-                                                        (app.nextDepartment ===
-                                                            role
-                                                             &&
-                                                            app.approvalId !==
-                                                                userId) &&
+                                                        app.nextDepartment ===
+                                                            role &&
+                                                        app.approvalId !==
+                                                            userId &&
                                                         app.status ===
                                                             "Approved";
 
@@ -176,14 +173,13 @@ const RequestStatistcsTable = () => {
                                     );
 
                                 const filteredByHodEmail =
-                                    response.data.reqData.filter(
-                                        (items) =>
-                                            items.firstLevelApproval &&
-                                            items.firstLevelApproval
-                                                .hodEmail === email &&
-                                            items.firstLevelApproval.status !==
-                                                "Approved"
-                                    );
+                                response.data.reqData.filter(
+                                    (items) =>
+                                      items.firstLevelApproval &&
+                                      items.firstLevelApproval.hodEmail === email &&
+                                      !["Approved", "Hold", "Rejected"].includes(items.firstLevelApproval.status) 
+                                  );
+                                  
 
                                 const combinedData = [
                                     ...filteredByApprovals,
@@ -245,6 +241,7 @@ const RequestStatistcsTable = () => {
     useEffect(() => {
         let filtered = [...users];
 
+        // Date filter
         if (dateFilters.fromDate || dateFilters.toDate) {
             filtered = filtered.filter((user) => {
                 const createdDate = user.createdAt
@@ -272,6 +269,32 @@ const RequestStatistcsTable = () => {
             });
         }
 
+        // Status filter
+        if (statusFilter) {
+            filtered = filtered.filter((user) => {
+                // Check different status possibilities
+                if (user.status === statusFilter) return true;
+
+                // For approval-related views, check nested approvals
+                if (user.approvals) {
+                    return user.approvals.some(
+                        (approval) => approval.status === statusFilter
+                    );
+                }
+
+                // Check first level approval for some views
+                if (
+                    user.firstLevelApproval &&
+                    user.firstLevelApproval.status === statusFilter
+                ) {
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
+        // Search term filter (keeping the existing logic)
         if (searchTerm.trim() !== "") {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter((user) => {
@@ -337,7 +360,7 @@ const RequestStatistcsTable = () => {
 
         setFilteredUsers(filtered);
         setCurrentPage(1);
-    }, [users, searchTerm, dateFilters]);
+    }, [users, searchTerm, dateFilters, statusFilter]);
 
     const handleFilterToggle = (showAll) => {
         setShowAllData(showAll);
@@ -415,6 +438,7 @@ const RequestStatistcsTable = () => {
             toDate: "",
         });
         setSearchTerm("");
+        setStatusFilter(""); // Add status filter reset
         setShowFilters(false);
     };
 
@@ -648,7 +672,7 @@ const RequestStatistcsTable = () => {
                         <div className="mt-4 w-full md:w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-0 md:right-8 z-10">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-xs font-medium text-gray-700">
-                                    Date Range
+                                    Filters
                                 </h3>
                                 <button
                                     onClick={clearFilters}
@@ -657,31 +681,57 @@ const RequestStatistcsTable = () => {
                                     <X className="h-3 w-3" />
                                 </button>
                             </div>
-                            <div className="space-y-2">
-                                <div>
-                                    <label className="text-xs text-gray-600 mb-1 block">
-                                        From
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="fromDate"
-                                        value={dateFilters.fromDate}
-                                        onChange={handleDateFilterChange}
-                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    />
+
+                            {/* Date Range Filters */}
+                            <div className="mb-3">
+                                <h4 className="text-xs font-medium text-gray-700 mb-2">
+                                    Date Range
+                                </h4>
+                                <div className="space-y-2">
+                                    <div>
+                                        <label className="text-xs text-gray-600 mb-1 block">
+                                            From
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="fromDate"
+                                            value={dateFilters.fromDate}
+                                            onChange={handleDateFilterChange}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-600 mb-1 block">
+                                            To
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="toDate"
+                                            value={dateFilters.toDate}
+                                            onChange={handleDateFilterChange}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs text-gray-600 mb-1 block">
-                                        To
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="toDate"
-                                        value={dateFilters.toDate}
-                                        onChange={handleDateFilterChange}
-                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    />
-                                </div>
+                            </div>
+
+                            {/* Status Filter */}
+                            <div>
+                                <h4 className="text-xs font-medium text-gray-700 mb-2">
+                                    Status
+                                </h4>
+                                <select
+                                    value={statusFilter}
+                                    onChange={handleStatusFilterChange}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Rejected">Rejected</option>
+
+                                    <option value="Approved">Approved</option>
+                                </select>
                             </div>
                         </div>
                     )}

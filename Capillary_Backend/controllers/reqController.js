@@ -282,7 +282,7 @@ const getStatisticData = async (req, res) => {
     let completedRequest = 0;
     let totalApprovals = 0;
 
-    const reqData = await CreateNewReq.find();
+    const reqData = await CreateNewReq.find({ isCompleted: true });
 
     if (role === "Admin" && consolidatedData.department === "Admin") {
       adminAllTotalRequests = reqData.length;
@@ -335,18 +335,24 @@ const getStatisticData = async (req, res) => {
         let count = 0;
 
         const pendingRequests = request.approvals.filter((app) => {
+          // Ensure request is not on hold or rejected
+          if (request.status === "Hold" || request.status === "Rejected") {
+            return false;
+          }
+
           const isForEmployeeDept =
             app.departmentName === consolidatedData.department;
           const isPending =
             app.status === "Approved" && app.approvalId === empId;
-          request.approvals.some((prevApp) => {
+
+          const hasPrevApproval = request.approvals.some((prevApp) => {
             console.log("prevApp", prevApp);
             return (
               prevApp.nextDepartment === role && prevApp.status === "Approved"
             );
           });
 
-          return isForEmployeeDept && isPending;
+          return isForEmployeeDept && isPending && hasPrevApproval;
         });
 
         // pendingApprovals = pendingRequests.length;
@@ -529,7 +535,26 @@ const getStatisticData = async (req, res) => {
         isCompleted: true,
       });
 
-      console.log("pendingApprovals", pendingApprovals);
+      console.log("pendingApprovalData", pendingApprovalData);
+
+      let pendingCount = 0;
+      const pendingApprovalsdata = await CreateNewReq.find({
+        isCompleted: true,
+        status: { $nin: ["Hold", "Rejected"] }, // Exclude 'Hold' and 'Rejected' statuses
+      });
+      const data = pendingApprovalsdata.map((req) => {
+        const { approvals, firstLevelApproval, status } = req;
+        const lastLevelApprovals = approvals[approvals.length - 1];
+
+        if (
+          firstLevelApproval.hodEmail === consolidatedData.company_email_id &&
+          firstLevelApproval.approved === false
+        ) {
+          pendingCount++;
+        } else if (lastLevelApprovals?.nextDepartment === role) {
+          lastLevelApprovals++;
+        }
+      });
 
       const completedApprovalData = await CreateNewReq.find({
         $or: [
@@ -542,7 +567,8 @@ const getStatisticData = async (req, res) => {
         isCompleted: true,
       });
 
-      pendingApprovals = pendingApprovalData.length;
+      // pendingApprovals = pendingApprovalData.length;
+      pendingApprovals = pendingCount;
       completedApprovals = completedApprovalData.length;
 
       // pendingApprovals = Math.max(0, totalApprovals - completedApprovals);
@@ -3681,9 +3707,6 @@ const saveAggrementData = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-
 
 const generateRequestPdfData = async (request, res) => {
   try {

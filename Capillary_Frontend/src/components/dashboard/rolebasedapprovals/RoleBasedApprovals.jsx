@@ -481,28 +481,7 @@ const RoleBasedApprovals = () => {
                             )}
                           </td>
 
-                          {/* <td className="px-6 py-4 text-sm text-gray-500">
-                            {user.status !== "Approved" && (
-                              <div className="flex justify-center items-center space-x-2">
-                                <button
-                                  className="text-blue-500 hover:text-blue-700"
-                                  onClick={(e) => handleEdit(e, user._id)}
-                                >
-                                  <Edit className="h-5 w-5" />
-                                </button>
-                                <button
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setReqId(user._id);
-                                    setIsDelete(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-5 w-5" />
-                                </button>
-                              </div>
-                            )}
-                          </td> */}
+                          
                           {renderActionColumn(user)}
                         </tr>
                       ))

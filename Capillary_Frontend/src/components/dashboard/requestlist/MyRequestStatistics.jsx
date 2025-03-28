@@ -103,7 +103,7 @@ const MyRequestStatistics = () => {
     const role = localStorage.getItem("role");
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
-    const [allUsers, setAllUsers] = useState([]); // Store all users for "All" view
+    const [allUsers, setAllUsers] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -111,7 +111,8 @@ const MyRequestStatistics = () => {
     const [isDelete, setIsDelete] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [isShowModal, setIsShowModal] = useState(false);
-    const [viewMode, setViewMode] = useState("action"); // "action" or "all"
+    const [viewMode, setViewMode] = useState("action");
+    const [statusFilter, setStatusFilter] = useState("");
 
     const [reqId, setReqId] = useState(null);
     const [dateFilters, setDateFilters] = useState({
@@ -125,19 +126,31 @@ const MyRequestStatistics = () => {
     // Update filtered users when search term changes
     useEffect(() => {
         const dataToFilter = viewMode === "action" ? users : allUsers;
-        const filtered = dataToFilter.filter(
-            (user) =>
+
+        // Apply multiple filters
+        const filtered = dataToFilter.filter((user) => {
+            const matchesSearch =
                 user.reqid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 user.userName
                     ?.toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
                 user.commercials?.businessUnit
                     ?.toLowerCase()
-                    .includes(searchTerm.toLowerCase())
-        );
+                    .includes(searchTerm.toLowerCase());
+
+            // Status filter logic
+            const matchesStatus = !statusFilter || user.status === statusFilter;
+
+            return matchesSearch && matchesStatus;
+        });
+
         setFilteredUsers(filtered);
-        setCurrentPage(1); // Reset to first page when search changes
-    }, [searchTerm, users, allUsers, viewMode]);
+        setCurrentPage(1);
+    }, [searchTerm, users, allUsers, viewMode, statusFilter]);
+    const handleStatusFilterChange = (e) => {
+        setStatusFilter(e.target.value);
+    };
+
 
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -533,7 +546,7 @@ const MyRequestStatistics = () => {
                         <div className="mt-4 w-full md:w-80 p-3 bg-white rounded-lg shadow-sm border border-gray-200 absolute right-0 md:right-8 z-10">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-xs font-medium text-gray-700">
-                                    Date Range
+                                    Filters
                                 </h3>
                                 <button
                                     onClick={clearFilters}
@@ -542,31 +555,62 @@ const MyRequestStatistics = () => {
                                     <X className="h-3 w-3" />
                                 </button>
                             </div>
-                            <div className="space-y-2">
-                                <div>
-                                    <label className="text-xs text-gray-600 mb-1 block">
-                                        From
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="fromDate"
-                                        value={dateFilters.fromDate}
-                                        onChange={handleDateFilterChange}
-                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    />
+
+                            {/* Date Range Filters */}
+                            <div className="mb-3">
+                                <h4 className="text-xs font-medium text-gray-700 mb-2">
+                                    Date Range
+                                </h4>
+                                <div className="space-y-2">
+                                    <div>
+                                        <label className="text-xs text-gray-600 mb-1 block">
+                                            From
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="fromDate"
+                                            value={dateFilters.fromDate}
+                                            onChange={handleDateFilterChange}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-600 mb-1 block">
+                                            To
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="toDate"
+                                            value={dateFilters.toDate}
+                                            onChange={handleDateFilterChange}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs text-gray-600 mb-1 block">
-                                        To
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="toDate"
-                                        value={dateFilters.toDate}
-                                        onChange={handleDateFilterChange}
-                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
-                                    />
-                                </div>
+                            </div>
+
+                            {/* Status Filter */}
+                            <div>
+                                <h4 className="text-xs font-medium text-gray-700 mb-2">
+                                    Status
+                                </h4>
+                                <select
+                                    value={statusFilter}
+                                    onChange={handleStatusFilterChange}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="PO-Pending">
+                                        PO-Pending
+                                    </option>
+                                    <option value="Invoice-Pending">
+                                        Invoice-Pending
+                                    </option>
+                                    <option value="Approved">Approved</option>
+                                </select>
                             </div>
                         </div>
                     )}
