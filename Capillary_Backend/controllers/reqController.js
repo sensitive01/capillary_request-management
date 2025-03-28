@@ -372,7 +372,30 @@ const getStatisticData = async (req, res) => {
 
         completedApprovals += approvalsForEmployee2.length;
       });
-      pendingApprovals = totalApprovals - completedApprovals;
+
+
+
+      let pendingCount = 0;
+      const pendingApprovalsdata = await CreateNewReq.find({
+        isCompleted: true,
+        status: { $nin: ["Hold", "Rejected"] }, // Exclude 'Hold' and 'Rejected' statuses
+      });
+      const data = pendingApprovalsdata.map((req) => {
+        const { approvals, firstLevelApproval, status } = req;
+        const lastLevelApprovals = approvals[approvals.length - 1];
+
+        if (
+          firstLevelApproval.hodEmail === consolidatedData.company_email_id &&
+          firstLevelApproval.approved === false
+        ) {
+          pendingCount++;
+        } else if (lastLevelApprovals?.nextDepartment === role) {
+          lastLevelApprovals++;
+        }
+      });
+
+      pendingApprovals = pendingCount;
+
 
       console.log("totalApprovals:", totalApprovals);
       console.log("pendingApprovals:", pendingApprovals);
@@ -480,48 +503,7 @@ const getStatisticData = async (req, res) => {
       totalApprovals = reqDataStatics.length;
       completedApprovals = 0;
 
-      // reqData.forEach((request) => {
-      //   console.log("request----", request);
-
-      //   if (!request.approvals || request.approvals.length === 0) {
-      //     console.log("No approvals found for request ID:", request.reqid);
-      //     return;
-      //   }
-
-      //   let count = 0;
-
-      //   const pendingRequests = request.approvals.filter((app) => {
-      //     const isForEmployeeDept =
-      //       app.departmentName === consolidatedData.department;
-      //     console.log("isForEmployeeDept", isForEmployeeDept);
-
-      //     const isPending =
-      //       app.status === "Approved" && app.approvalId !== empId;
-
-      //     if (isForEmployeeDept && isPending) {
-      //       count++;
-      //     }
-
-      //     return isForEmployeeDept && isPending;
-      //   });
-
-      //   console.log("pendingRequests--", pendingRequests);
-
-      //   const approvalsForEmployee2 = request.approvals.filter((app) => {
-      //     const isApprovedByEmp =
-      //       app.approvalId === empId && app.status === "Approved";
-      //     const isFirstLevelApproved =
-      //       request.firstLevelApproval?.hodEmail ===
-      //         consolidatedData.company_email_id &&
-      //       request.firstLevelApproval?.approved;
-
-      //     return isApprovedByEmp || isFirstLevelApproved;
-      //   });
-      //   console.log("completedApprovals", completedApprovals);
-
-      //   completedApprovals += approvalsForEmployee2.length;
-      // });
-
+     
       const pendingApprovalData = await CreateNewReq.find({
         $or: [
           {
