@@ -2500,7 +2500,7 @@ const getReports = async (req, res) => {
 
       if (request.status === "Pending") {
         pendingRequests++; // Increment pending requests count
-      } else if (request.status === "Reject") {
+      } else if (request.status === "Rejected") {
         rejectedRequests++; // Increment rejected requests count
       } else if (request.status === "Hold") {
         holdRequests++;
