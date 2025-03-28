@@ -2508,7 +2508,7 @@ const getReports = async (req, res) => {
         approvedRequests++
       }else if(request.status === "PO-Pending"){
         poPendingRequest++
-      }else if(request.status === "PO-Pending"){
+      }else if(request.status === "Invoice-Pending"){
         invoicePending++
       }
     });
