@@ -11,6 +11,7 @@ import {
 import LoadingSpinner from "../../spinner/LoadingSpinner";
 import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
+import { exportAllRequestsToExcel } from "../../../utils/reqExportExel";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -25,7 +26,7 @@ const currencies = [
 ];
 
 const RequestStatistcsTable = () => {
-    const { action } = useParams();
+    let { action ,fromDate,toDate} = useParams();
     console.log("Action", action);
     const userId = localStorage.getItem("capEmpId");
     const role = localStorage.getItem("role");
@@ -237,78 +238,78 @@ const RequestStatistcsTable = () => {
     useEffect(() => {
         fetchReqTable(showAllData);
     }, [userId, role, action, filterAction, email, department, showAllData]);
-
     useEffect(() => {
         let filtered = [...users];
-
-        // Date filter
-        if (dateFilters.fromDate || dateFilters.toDate) {
+    
+        // Convert route parameters to dates if they exist
+        const routeFromDate = fromDate && fromDate !== 'null' ? new Date(fromDate) : null;
+        const routeToDate = toDate && toDate !== 'null' ? new Date(toDate) : null;
+    
+        // Combine route parameters with local date filters
+        const finalFromDate = routeFromDate || (dateFilters.fromDate ? new Date(dateFilters.fromDate) : null);
+        const finalToDate = routeToDate || (dateFilters.toDate ? new Date(dateFilters.toDate) : null);
+    
+        console.log("Route fromDate:", routeFromDate, "Route toDate:", routeToDate);
+        console.log("Local fromDate:", dateFilters.fromDate, "Local toDate:", dateFilters.toDate);
+        console.log("Final fromDate:", finalFromDate, "Final toDate:", finalToDate);
+    
+        if (finalFromDate || finalToDate) {
             filtered = filtered.filter((user) => {
-                const createdDate = user.createdAt
-                    ? new Date(user.createdAt)
-                    : null;
-
-                if (!createdDate) return true;
-
-                if (dateFilters.fromDate && dateFilters.toDate) {
-                    const fromDate = new Date(dateFilters.fromDate);
-                    const toDate = new Date(dateFilters.toDate);
-
-                    toDate.setHours(23, 59, 59, 999);
-                    return createdDate >= fromDate && createdDate <= toDate;
-                } else if (dateFilters.fromDate) {
-                    const fromDate = new Date(dateFilters.fromDate);
-                    return createdDate >= fromDate;
-                } else if (dateFilters.toDate) {
-                    const toDate = new Date(dateFilters.toDate);
-                    toDate.setHours(23, 59, 59, 999);
-                    return createdDate <= toDate;
+                const createdDate = user.createdAt ? new Date(user.createdAt) : null;
+                if (!createdDate) return false;
+    
+                if (finalFromDate && finalToDate) {
+                    // Set the time to the end of the day for the toDate
+                    const adjustedToDate = new Date(finalToDate);
+                    adjustedToDate.setHours(23, 59, 59, 999);
+                    
+                    return createdDate >= finalFromDate && createdDate <= adjustedToDate;
+                } else if (finalFromDate) {
+                    return createdDate >= finalFromDate;
+                } else if (finalToDate) {
+                    const adjustedToDate = new Date(finalToDate);
+                    adjustedToDate.setHours(23, 59, 59, 999);
+                    return createdDate <= adjustedToDate;
                 }
-
+    
                 return true;
             });
         }
-
-        // Status filter
+    
+        // Apply status filter
         if (statusFilter) {
             filtered = filtered.filter((user) => {
-                // Check different status possibilities
                 if (user.status === statusFilter) return true;
-
-                // For approval-related views, check nested approvals
                 if (user.approvals) {
                     return user.approvals.some(
                         (approval) => approval.status === statusFilter
                     );
                 }
-
-                // Check first level approval for some views
                 if (
                     user.firstLevelApproval &&
                     user.firstLevelApproval.status === statusFilter
                 ) {
                     return true;
                 }
-
                 return false;
             });
         }
-
-        // Search term filter (keeping the existing logic)
+    
+        // Apply search term filter
         if (searchTerm.trim() !== "") {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter((user) => {
                 const safeCheck = (obj, path) => {
                     if (!obj) return false;
-
+    
                     if (typeof obj === "string") {
                         return obj.toLowerCase().includes(term);
                     }
-
+    
                     if (Array.isArray(obj)) {
                         return obj.some((item) => safeCheck(item, ""));
                     }
-
+    
                     if (path) {
                         const props = path.split(".");
                         let current = obj;
@@ -320,33 +321,27 @@ const RequestStatistcsTable = () => {
                             ? current.toLowerCase().includes(term)
                             : false;
                     }
-
+    
                     return Object.values(obj).some((value) => {
                         if (typeof value === "string") {
                             return value.toLowerCase().includes(term);
-                        } else if (
-                            typeof value === "object" &&
-                            value !== null
-                        ) {
+                        } else if (typeof value === "object" && value !== null) {
                             return safeCheck(value, "");
                         }
                         return false;
                     });
                 };
-
-                if (user.reqid && user.reqid.toLowerCase().includes(term))
-                    return true;
-                if (user.userName && user.userName.toLowerCase().includes(term))
-                    return true;
-                if (user.status && user.status.toLowerCase().includes(term))
-                    return true;
-
+    
+                if (user.reqid && user.reqid.toLowerCase().includes(term)) return true;
+                if (user.userName && user.userName.toLowerCase().includes(term)) return true;
+                if (user.status && user.status.toLowerCase().includes(term)) return true;
+    
                 if (safeCheck(user.commercials, "")) return true;
                 if (safeCheck(user.procurements, "")) return true;
                 if (safeCheck(user.supplies, "")) return true;
                 if (safeCheck(user.firstLevelApproval, "")) return true;
                 if (safeCheck(user.approvals, "")) return true;
-
+    
                 return (
                     safeCheck(user.commercials, "department") ||
                     safeCheck(user.commercials, "businessUnit") ||
@@ -357,12 +352,15 @@ const RequestStatistcsTable = () => {
                 );
             });
         }
-
+    
         setFilteredUsers(filtered);
         setCurrentPage(1);
-    }, [users, searchTerm, dateFilters, statusFilter]);
+    }, [users, searchTerm, dateFilters, statusFilter, fromDate, toDate]);
+
 
     const handleFilterToggle = (showAll) => {
+        fromDate = ""
+        toDate=""
         setShowAllData(showAll);
     };
 
@@ -391,28 +389,7 @@ const RequestStatistcsTable = () => {
     const endIndex = startIndex + itemsPerPage;
     const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
-    const exportToExcel = () => {
-        const exportData = filteredUsers.map((user) => ({
-            "SL No": user.sno,
-            "Request ID": user.reqid,
-            "Business Unit": user.commercials?.businessUnit || "NA",
-            Entity: user.commercials?.entity,
-            Site: user.commercials?.site,
-            Vendor: user.procurements?.vendor,
-            Amount: formatCurrency(
-                user.supplies?.totalValue,
-                user.supplies?.selectedCurrency
-            ),
-            Requestor: user.requestor || "Employee",
-            Department: user.commercials?.department,
-            Status: user.status || "Pending",
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Requests");
-        XLSX.writeFile(wb, "RequestList.xlsx");
-    };
+   
 
     const formatCurrency = (value, currencyCode) => {
         if (!value) return "N/A";
@@ -599,7 +576,7 @@ const RequestStatistcsTable = () => {
                             </button>
                             <button
                                 className="flex-1 flex justify-center items-center px-2 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                onClick={exportToExcel}
+                                onClick={() => exportAllRequestsToExcel(users)}
                             >
                                 <Download className="h-3 w-3 mr-1" />
                                 Export
@@ -651,7 +628,7 @@ const RequestStatistcsTable = () => {
                             </button>
                             <button
                                 className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                onClick={exportToExcel}
+                                onClick={() => exportAllRequestsToExcel(users)}
                             >
                                 <Download className="h-4 w-4 mr-2" />
                                 Export

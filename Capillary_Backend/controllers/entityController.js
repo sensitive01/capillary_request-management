@@ -18,6 +18,23 @@ exports.createEntity = async (req, res) => {
   }
 };
 
+exports.getEntityNames = async (req, res) => {
+  try {
+    const entities = await Entity.distinct("entityName");
+    const departments = await Employee.distinct("department");
+
+    res.status(200).json({
+      success: true,
+      entities,
+      departments,
+    });
+  } catch (error) {
+    console.error("Error fetching entities and departments:", error);
+    res.status(500).json({ success: false, message: "Failed to retrieve data" });
+  }
+};
+
+
 // Read all entities
 // exports.getAllEntities = async (req, res) => {
 //   try {

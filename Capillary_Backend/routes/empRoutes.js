@@ -26,7 +26,8 @@ const {
   getAllApprovalDatas,
   uploadApproverExcel,
   checkDarwinStatus,
-  updateDarwinStatus
+  updateDarwinStatus,
+  getAllEmployeeData
 
 } = require("../controllers/empController");
 
@@ -79,6 +80,8 @@ router.get("/get-all-req/:id", getAllEmployeeReq);
 router.get("/get-all-req-admin", getAdminEmployeeReq);
 router.get("/panel-member-get-all", getPanelMembers);
 router.get("/get-panel-members/:id", getIndividualPanelMembers);
+router.get("/get-all-employee", getAllEmployeeData);
+
 
 router.get("/darwin-status", checkDarwinStatus);
 router.get("/get-approval-datas", getAllApprovalDatas);

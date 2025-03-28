@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  Edit,
-  Trash2,
-  Search,
-  Download,
-  Plus,
-  Filter,
-  FileText,
-  X,
-} from "lucide-react";
+import { Edit, Trash2, Search, Download, Plus, Filter, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   deleteReq,
+  getApprovedReq,
   getRoleBasedApprovals,
+  // getAllRoleBasedApprovals,
 } from "../../../api/service/adminServices";
 import Pagination from "../requestlist/Pagination";
 import LoadingSpinner from "../../spinner/LoadingSpinner";
@@ -32,6 +25,8 @@ const currencies = [
 const RoleBasedApprovals = () => {
   const userId = localStorage.getItem("capEmpId");
   const role = localStorage.getItem("role");
+  const multiRole = localStorage.getItem("multiRole");
+
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
@@ -43,7 +38,7 @@ const RoleBasedApprovals = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDelete, setIsDelete] = useState(false);
   const [reqId, setReqId] = useState(null);
-
+  const [showAllData, setShowAllData] = useState(false);
   const [dateFilters, setDateFilters] = useState({
     fromDate: "",
     toDate: "",
@@ -51,29 +46,36 @@ const RoleBasedApprovals = () => {
 
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    const fetchReqTable = async () => {
-      setIsLoading(true);
+  const fetchReqTable = async (fetchAll = false) => {
+    setIsLoading(true);
 
-      try {
-        const response = await getRoleBasedApprovals(userId, role);
-        console.log("response", response);
-        if (response.status === 200) {
-          setUsers(response.data.processedReqData);
-          setFilteredUsers(response.data.processedReqData);
-        }
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-      } finally {
-        // Add a small delay to prevent flash of loading state
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
+    try {
+      let response;
+      if (fetchAll) {
+        response = await getApprovedReq(userId, "All");
+      } else {
+        response = await getRoleBasedApprovals(userId, role);
       }
-    };
 
-    fetchReqTable();
-  }, [userId, role]);
+      console.log("response", response);
+      if (response.status === 200) {
+        setUsers(response.data.processedReqData || response.data.reqData);
+        setFilteredUsers(
+          response.data.processedReqData || response.data.reqData
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    }
+  };
+
+  useEffect(() => {
+    fetchReqTable(showAllData);
+  }, [userId, role, showAllData]);
 
   useEffect(() => {
     const filterUsers = () => {
@@ -160,6 +162,7 @@ const RoleBasedApprovals = () => {
   };
 
   const handlePageChange = (page) => {
+    const totalPages = Math.ceil(filteredUsers?.length / itemsPerPage);
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
       setSelectedUsers([]);
@@ -170,8 +173,8 @@ const RoleBasedApprovals = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentUsers = filteredUsers?.slice(startIndex, endIndex);
+
   const renderActionColumn = (user) => {
-    // If status is Approved, don't show any actions
     if (user.status === "Approved") {
       return (
         <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
@@ -180,7 +183,6 @@ const RoleBasedApprovals = () => {
       );
     }
 
-    // If request is not completed (Draft), show edit and delete options for all users
     if (!user.isCompleted) {
       return (
         <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
@@ -206,12 +208,15 @@ const RoleBasedApprovals = () => {
       );
     }
 
-    // Role-specific actions for completed requests
-    if (role === "Admin" || role === "Head of Finance"||role === "HOD Department") {
+    if (
+      role === "Admin" ||
+      role === "Head of Finance" ||
+      role === "HOD Department" ||
+      multiRole == 1
+    ) {
       return (
         <td className="px-2 py-2 md:px-6 md:py-4 text-sm text-gray-500">
           <div className="flex justify-center items-center space-x-2">
-            {/* Both Admin and Head of Finance can edit */}
             <button
               className="text-blue-500 hover:text-blue-700"
               onClick={(e) => handleEdit(e, user._id)}
@@ -219,7 +224,6 @@ const RoleBasedApprovals = () => {
               <Edit className="h-4 w-4 md:h-5 md:w-5" />
             </button>
 
-            {/* Only Admin can delete completed requests */}
             {role === "Admin" && (
               <button
                 className="text-red-500 hover:text-red-700"
@@ -236,15 +240,13 @@ const RoleBasedApprovals = () => {
         </td>
       );
     } else {
-      // For regular employees with completed requests
       return (
         <td className="text-sm text-gray-500 text-center md:px-6 md:py-4 px-2 py-2">
           <button
             className="px-2 py-1 bg-primary text-white rounded-md hover:bg-primary text-xs md:text-sm"
             onClick={(e) => {
               e.stopPropagation();
-              setIsShowModal(true);
-              setReqId(user._id);
+              // Add logic for requesting edit
             }}
           >
             Request Edit
@@ -279,6 +281,26 @@ const RoleBasedApprovals = () => {
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  !showAllData
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+                onClick={() => setShowAllData(false)}
+              >
+                Pending
+              </button>
+              <button
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  showAllData
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+                onClick={() => setShowAllData(true)}
+              >
+                All
+              </button>
               <button
                 className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                 onClick={() => setShowFilters(!showFilters)}
@@ -369,12 +391,6 @@ const RoleBasedApprovals = () => {
                       >
                         Business Unit
                       </th>
-                      {/* <th
-                        scope="col"
-                        className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
-                      >
-                        Entity
-                      </th> */}
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[15%]"
@@ -387,14 +403,12 @@ const RoleBasedApprovals = () => {
                       >
                         Amount
                       </th>
-
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
                       >
                         Status
                       </th>
-
                       <th
                         scope="col"
                         className="sticky top-0 px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider w-[10%]"
@@ -431,9 +445,6 @@ const RoleBasedApprovals = () => {
                               </span>
                             </div>
                           </td>
-                          {/* <td className="px-4 py-4 text-sm text-gray-500">
-                            {user.commercials?.businessUnit || "NA"}
-                          </td> */}
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div>
                               <span className="block font-medium">
@@ -463,7 +474,6 @@ const RoleBasedApprovals = () => {
                               user.supplies?.selectedCurrency
                             )}
                           </td>
-
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {user.isCompleted ? (
                               <>
@@ -480,8 +490,6 @@ const RoleBasedApprovals = () => {
                               <span className="text-red-500">Draft</span>
                             )}
                           </td>
-
-                          
                           {renderActionColumn(user)}
                         </tr>
                       ))

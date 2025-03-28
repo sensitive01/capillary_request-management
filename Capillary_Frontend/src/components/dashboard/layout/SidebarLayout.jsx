@@ -109,7 +109,7 @@ const SidebarLayout = () => {
       { icon: Flag, title: "Reports", path: "/genarate-report-page" },
       { icon: HelpCircle, title: "Questions", path: "/questions" },
       { icon: Settings, title: "Settings", path: "/settings" },
-      { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
+      // { icon: FileText, title: "Documents / File Manager", path: "/invoice" },
     ],
     Employee: [
       { icon: Home, title: "Dashboard", path: "/dashboard" },
@@ -204,7 +204,7 @@ const SidebarLayout = () => {
       {isMobile && (
         <button
           onClick={toggleSidebar}
-          className="fixed top-16 left-4 z-30 bg-white p-2 rounded-md shadow-md"
+          className="fixed top-10 left-2 z-30 bg-white p-2 rounded-md shadow-md"
           aria-label="Toggle sidebar"
         >
           {isSidebarOpen ? (
@@ -216,7 +216,7 @@ const SidebarLayout = () => {
       )}
 
       {/* Main Layout */}
-      <div className="flex flex-1 mt-16 scrollbar-none overflow-y-scroll">
+      <div className="flex flex-1 mt-10 scrollbar-none overflow-y-scroll">
         {/* Sidebar for desktop */}
         <div
           className={`${
@@ -228,7 +228,7 @@ const SidebarLayout = () => {
           } bg-white border-r border-gray-200 scrollbar-none overflow-y-scroll`}
         >
           <div className="flex flex-col py-6">
-            <div className="grid grid-cols-1 gap-4 mt-5">
+            <div className="grid grid-cols-1 gap-4 mt-5 mb-10">
               {sidebarItems.map((item, index) => (
                 <SidebarItem
                   key={index}

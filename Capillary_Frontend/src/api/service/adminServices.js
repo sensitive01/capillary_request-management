@@ -11,10 +11,10 @@ export const verifyUser = async (email) => {
   }
 };
 
-export const fetchDateFilterStatistics = async (empId, role, from, to) => {
+export const fetchDateFilterStatistics = async (  empId, role, email,multipartRole, from, to) => {
   try {
     const response = await adminServices.post(
-      `/request/filter-by-date/${empId}/${role}`,
+      `/request/filter-by-date/${empId}/${role}/${email}/${multipartRole}`,
       { from, to }
     );
     return response;
@@ -1048,7 +1048,50 @@ export const fetchEmployeesByTopic = async (role,reqId) => {
 };
 
 
+export const getEmployeeDataForApi = async (role,reqId) => {
+  try {
+    const response = await adminServices.get(
+      `/employees/get-all-employee`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+export const getAllApiData = async () => {
+  try {
+    const response = await adminServices.get(
+      `/credantials/get-all-api-data`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
 
+
+export const updateApiCredentialValidity = async (apiId,status) => {
+  try {
+    const response = await adminServices.put(
+      `/credantials/update-api-status/${apiId}`,{status}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const getEntityName = async () => {
+  try {
+    const response = await adminServices.get(
+      `/entity/get-entity-name`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
 
 
 // ...............................................................................................

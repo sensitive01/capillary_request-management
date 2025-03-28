@@ -896,3 +896,21 @@ exports.updateDarwinStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+exports.getAllEmployeeData = async (req, res) => {
+  try {
+    const empData = await Employee.find(
+      {},
+      { employee_id: 1, full_name: 1, company_email_id: 1, _id: 0 }
+    );
+
+    res.status(200).json({
+      success: true,
+      empData,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

@@ -1,21 +1,33 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const apiCrediantails = new mongoose.Schema({
+const apiCredentialsSchema = new mongoose.Schema(
+  {
     email: {
-        type: String,
-        required: true,
-        unique: true
+      type: String,
+    },
+    employeeId: {
+      type: String,
+    },
+    purpose: {
+      type: String,
+    },
+    full_name: {
+      type: String,
+    },
+    company_email_id: {
+      type: String,
     },
     secretKey: {
-        type: String,
-        required: true
+      type: String,
     },
-    password: {
-        type: String,
-        required: true
-    }
-}, { timestamps: true });
+    apiKey: {
+      type: String,
+    },
+    valid: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
 
-const Crediantials = mongoose.model('apiCrediantails', apiCrediantails);
+const Credentials = mongoose.model("apiCredentials", apiCredentialsSchema);
 
-module.exports = Crediantials;
+module.exports = Credentials;

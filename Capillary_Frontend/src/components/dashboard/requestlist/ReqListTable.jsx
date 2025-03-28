@@ -20,6 +20,7 @@ import {
 import Pagination from "./Pagination";
 import * as XLSX from "xlsx";
 import LoadingSpinner from "../../spinner/LoadingSpinner";
+import { exportAllRequestsToExcel } from "../../../utils/reqExportExel";
 
 const currencies = [
     { code: "USD", symbol: "$", locale: "en-US" },
@@ -202,28 +203,7 @@ const ReqListTable = () => {
         }
     };
 
-    const exportToExcel = () => {
-        const exportData = filteredUsers.map((user) => ({
-            "SL No": user.sno,
-            "Request ID": user.reqid,
-            "Business Unit": user.commercials?.businessUnit || "NA",
-            Entity: user.commercials?.entity,
-            Site: user.commercials?.site,
-            Vendor: user.procurements?.vendor,
-            Amount: formatCurrency(
-                user.supplies?.totalValue,
-                user.supplies?.selectedCurrency
-            ),
-            Requestor: user.requestor || "Employee",
-            Department: user.commercials?.department,
-            Status: user.status || "Pending",
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Requests");
-        XLSX.writeFile(wb, "RequestList.xlsx");
-    };
+   
 
     const handleEdit = (e, id) => {
         e.stopPropagation();
@@ -374,7 +354,8 @@ const ReqListTable = () => {
                             </button>
                             <button
                                 className="flex-1 flex justify-center items-center px-2 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                onClick={exportToExcel}
+                                // onClick={exportToExcel}
+                                onClick={() => exportAllRequestsToExcel(users)}
                             >
                                 <Download className="h-3 w-3 mr-1" />
                                 Export
@@ -407,7 +388,9 @@ const ReqListTable = () => {
                             </button>
                             <button
                                 className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                onClick={exportToExcel}
+                                // onClick={exportToExcel}
+                                onClick={() => exportAllRequestsToExcel(users)}
+
                             >
                                 <Download className="h-4 w-4 mr-2" />
                                 Export

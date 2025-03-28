@@ -53,20 +53,6 @@ const Settings = () => {
           description: "Enable disable Email notification",
           path: "/settings/email-notification",
         },
-      ],
-    },
-    {
-      title: "Business Settings",
-      description: "Manage core business configurations",
-      items: [
-        {
-          title: "Approval Flow",
-          icon: GitBranch,
-          bgColor: "bg-primary/10",
-          textColor: "text-primary",
-          description: "Configure approval workflows",
-          path: "/settings/approval-flow",
-        },
         {
           title: "Approver Type",
           icon: GitBranch,
@@ -75,46 +61,61 @@ const Settings = () => {
           description: "Configure approval workflows",
           path: "/settings/approver-type",
         },
-        {
-          title: "Currency",
-          icon: Coins,
-          bgColor: "bg-amber-50",
-          textColor: "text-amber-600",
-          description: "Set currency preferences",
-          path: "/settings/currency",
-        },
-        {
-          title: "Payment Terms",
-          icon: Clock,
-          bgColor: "bg-rose-50",
-          textColor: "text-rose-600",
-          description: "Define payment schedules",
-          path: "/settings/payment-terms",
-        },
-        {
-          title: "Payment Type",
-          icon: CreditCard,
-          bgColor: "bg-emerald-50",
-          textColor: "text-emerald-600",
-          description: "Configure payment methods",
-          path: "/settings/payment-type",
-        },
       ],
     },
-    {
-      title: "System",
-      description: "System monitoring and logs",
-      items: [
-        {
-          title: "Logs",
-          icon: ScrollText,
-          bgColor: "bg-slate-50",
-          textColor: "text-slate-600",
-          description: "View system logs",
-          path: "/settings/system-logs",
-        },
-      ],
-    },
+    // {
+    //   title: "Business Settings",
+    //   description: "Manage core business configurations",
+    //   items: [
+    //     {
+    //       title: "Approval Flow",
+    //       icon: GitBranch,
+    //       bgColor: "bg-primary/10",
+    //       textColor: "text-primary",
+    //       description: "Configure approval workflows",
+    //       path: "/settings/approval-flow",
+    //     },
+        
+    //     {
+    //       title: "Currency",
+    //       icon: Coins,
+    //       bgColor: "bg-amber-50",
+    //       textColor: "text-amber-600",
+    //       description: "Set currency preferences",
+    //       path: "/settings/currency",
+    //     },
+    //     {
+    //       title: "Payment Terms",
+    //       icon: Clock,
+    //       bgColor: "bg-rose-50",
+    //       textColor: "text-rose-600",
+    //       description: "Define payment schedules",
+    //       path: "/settings/payment-terms",
+    //     },
+    //     {
+    //       title: "Payment Type",
+    //       icon: CreditCard,
+    //       bgColor: "bg-emerald-50",
+    //       textColor: "text-emerald-600",
+    //       description: "Configure payment methods",
+    //       path: "/settings/payment-type",
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "System",
+    //   description: "System monitoring and logs",
+    //   items: [
+    //     {
+    //       title: "Logs",
+    //       icon: ScrollText,
+    //       bgColor: "bg-slate-50",
+    //       textColor: "text-slate-600",
+    //       description: "View system logs",
+    //       path: "/settings/system-logs",
+    //     },
+    //   ],
+    // },
   ];
 
   const StatCard = ({

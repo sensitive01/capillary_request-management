@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { deleteReq, getApprovedReq } from "../../../api/service/adminServices";
 import Pagination from "../requestlist/Pagination";
 import LoadingSpinner from "../../spinner/LoadingSpinner";
+import { exportAllRequestsToExcel } from "../../../utils/reqExportExel";
 
 const currencies = [
   { code: "USD", symbol: "$", locale: "en-US" },
@@ -120,10 +121,11 @@ const Approvals = () => {
         const employeeMatch = user.commercials?.department
           ?.toLowerCase()
           .includes(searchString);
-        
+
         // Status filter logic
-        const statusMatch = !statusFilter || 
-          (statusFilter === "Draft" && !user.isCompleted) || 
+        const statusMatch =
+          !statusFilter ||
+          (statusFilter === "Draft" && !user.isCompleted) ||
           (statusFilter && user.status === statusFilter);
 
         return (reqIdMatch || nameMatch || employeeMatch) && statusMatch;
@@ -379,7 +381,10 @@ const Approvals = () => {
                 <Filter className="h-4 w-4 mr-2" />
                 Filter
               </button>
-              <button className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <button
+                className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                onClick={() => exportAllRequestsToExcel(users)}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </button>

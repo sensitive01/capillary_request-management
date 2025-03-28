@@ -373,8 +373,6 @@ const getStatisticData = async (req, res) => {
         completedApprovals += approvalsForEmployee2.length;
       });
 
-
-
       let pendingCount = 0;
       const pendingApprovalsdata = await CreateNewReq.find({
         isCompleted: true,
@@ -395,7 +393,6 @@ const getStatisticData = async (req, res) => {
       });
 
       pendingApprovals = pendingCount;
-
 
       console.log("totalApprovals:", totalApprovals);
       console.log("pendingApprovals:", pendingApprovals);
@@ -503,7 +500,6 @@ const getStatisticData = async (req, res) => {
       totalApprovals = reqDataStatics.length;
       completedApprovals = 0;
 
-     
       const pendingApprovalData = await CreateNewReq.find({
         $or: [
           {
@@ -598,17 +594,262 @@ const getStatisticData = async (req, res) => {
   }
 };
 
+// const filterByDateStatitics = async (req, res) => {
+//   try {
+//     const { empId, role } = req.params;
+//     const { from, to } = req.body;
+
+//     let consolidatedData;
+
+//     const panelUserData = await addPanelUsers
+//       .findOne(
+//         { _id: empId },
+//         { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
+//       )
+//       .lean();
+
+//     if (panelUserData) {
+//       consolidatedData = { ...panelUserData };
+//     } else {
+//       const employeeData = await empModel
+//         .findOne(
+//           { _id: empId },
+//           {
+//             _id: 1,
+//             full_name: 1,
+//             department: 1,
+//             hod_email_id: 1,
+//             company_email_id: 1,
+//           }
+//         )
+//         .lean();
+
+//       const isEmpHod = await empModel
+//         .findOne({
+//           hod_email_id: employeeData?.company_email_id,
+//         })
+//         .lean();
+
+//       if (employeeData && !employeeData.role) {
+//         consolidatedData = {
+//           ...employeeData,
+//           role: isEmpHod ? "HOD Department" : "Employee",
+//         };
+//       }
+//     }
+
+//     if (!consolidatedData) {
+//       return res.status(404).json({ message: "Employee not found" });
+//     }
+
+//     let adminAllTotalRequests = 0;
+//     let adminAllPendingRequests = 0;
+//     let adminAllCompletedRequests = 0;
+//     let departmentBudgetByCurrency = {};
+
+//     let myRequests = 0;
+//     let myApprovals = 0;
+//     let pendingApprovals = 0;
+//     let completedApprovals = 0;
+//     let pendingRequest = 0;
+//     let deptCompleteReq = 0;
+//     let completedRequest = 0;
+//     let totalApprovals = 0;
+
+//     const reqData = await CreateNewReq.find({
+//       createdAt: {
+//         $gte: new Date(from),
+//         $lte: new Date(to),
+//       },
+//     });
+
+//     if (role === "Admin") {
+//       adminAllTotalRequests = reqData.length;
+//       adminAllPendingRequests = reqData.filter(
+//         (req) => req.status === "Pending"
+//       ).length;
+//       adminAllCompletedRequests = reqData.filter(
+//         (req) => req.status === "Approved"
+//       ).length;
+
+//       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+//         if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+//           const { selectedCurrency, totalValue } = req.supplies;
+//           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+//         }
+//         return acc;
+//       }, {});
+//     } else if (
+//       role === "Business Finance" ||
+//       role === "HOF" ||
+//       role === "Vendor Management" ||
+//       role === "Info Security" ||
+//       role === "Legal Team"
+//     ) {
+//       const myRequestData = reqData.filter((req) => req.userId === empId);
+//       myRequests = myRequestData.length;
+
+//       const reqDataStatics = reqData.filter((req) =>
+//         req.approvals.some(
+//           (app) => app.nextDepartment === consolidatedData.department
+//         )
+//       );
+
+//       totalApprovals = reqData.length;
+
+//       reqData.forEach((request) => {
+//         if (!request.approvals || request.approvals.length === 0) {
+//           return;
+//         }
+
+//         const pendingRequests = request.approvals.filter((app) => {
+//           const isForEmployeeDept =
+//             app.nextDepartment === consolidatedData.department;
+//           const isPending =
+//             app.status === "Approved" &&
+//             !request.approvals.some(
+//               (prevApp) =>
+//                 prevApp.departmentName === consolidatedData.department &&
+//                 prevApp.status === "Approved"
+//             );
+
+//           return isForEmployeeDept && isPending;
+//         });
+
+//         pendingApprovals += pendingRequests.length;
+
+//         let hasCountedApproval = false;
+
+//         request.approvals.forEach((app, index, approvals) => {
+//           if (hasCountedApproval) return;
+
+//           const isApproved =
+//             app.departmentName === consolidatedData.department &&
+//             app.status === "Approved";
+
+//           const hasMatchingPrevDept = approvals.some(
+//             (prevApp, prevIndex) =>
+//               prevIndex < index && prevApp.nextDepartment === role
+//           );
+
+//           if (isApproved && hasMatchingPrevDept) {
+//             completedApprovals += 1;
+//             hasCountedApproval = true;
+//           }
+//         });
+//       });
+
+//       console.log("Total Pending Approvals:", pendingApprovals);
+//       console.log("Total Completed Approvals:", completedApprovals);
+
+//       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+//         if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+//           const { selectedCurrency, totalValue } = req.supplies;
+//           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+//         }
+//         return acc;
+//       }, {});
+//     } else if (role === "Employee") {
+//       const myRequestData = reqData.filter((req) => req.userId === empId);
+//       myRequests = myRequestData.length;
+
+//       myRequestData.forEach((request) => {
+//         if (request.status === "Approved") {
+//           completedApprovals++;
+//         } else {
+//           pendingApprovals++;
+//         }
+//       });
+//     } else if (consolidatedData.role === "HOD Department") {
+//       const myRequestData = reqData.filter((req) => req.userId === empId);
+//       myRequests = myRequestData.length;
+
+//       myRequestData.forEach((request) => {
+//         if (request.status === "Approved") {
+//           completedRequest++;
+//         } else {
+//           pendingRequest++;
+//         }
+//       });
+
+//       const hodApprovals = await CreateNewReq.find(
+//         { "firstLevelApproval.hodDepartment": consolidatedData.department },
+//         { firstLevelApproval: 1 }
+//       ).lean();
+//       totalApprovals = hodApprovals.length;
+
+//       hodApprovals.forEach((request) => {
+//         if (request.firstLevelApproval?.status === "Approved") {
+//           myApprovals++;
+//         } else {
+//           pendingApprovals++;
+//         }
+//       });
+
+//       const completedApprovalsData = await CreateNewReq.find({
+//         "firstLevelApproval.hodDepartment": consolidatedData.department,
+//         status: "Approved",
+//       }).lean();
+
+//       deptCompleteReq = completedApprovalsData.length;
+
+//       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+//         if (
+//           req.supplies?.totalValue &&
+//           req.supplies?.selectedCurrency &&
+//           req.firstLevelApproval?.hodDepartment === consolidatedData.department
+//         ) {
+//           const { selectedCurrency, totalValue } = req.supplies;
+//           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+//         }
+//         return acc;
+//       }, {});
+//     }
+
+//     Object.keys(departmentBudgetByCurrency).forEach((currency) => {
+//       departmentBudgetByCurrency[currency] =
+//         Math.round(departmentBudgetByCurrency[currency] * 100) / 100;
+//     });
+
+//     res.status(200).json({
+//       role: consolidatedData.role,
+//       adminAllTotalRequests,
+//       adminAllPendingRequests,
+//       adminAllCompletedRequests,
+//       departmentBudgetByCurrency,
+//       myRequests,
+//       myApprovals,
+//       completedApprovals,
+//       pendingApprovals,
+//       pendingRequest,
+//       deptCompleteReq,
+//       completedRequest,
+//       totalApprovals,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Error in getting the statistics" });
+//   }
+// };
+// Helper function to calculate budget
+
 const filterByDateStatitics = async (req, res) => {
   try {
-    const { empId, role } = req.params;
+    const { empId, role, email, multipartRole } = req.params;
     const { from, to } = req.body;
 
     let consolidatedData;
 
     const panelUserData = await addPanelUsers
       .findOne(
-        { _id: empId },
-        { _id: 1, full_name: 1, department: 1, role: 1, employee_id: 1 }
+        { employee_id: empId },
+        {
+          _id: 1,
+          full_name: 1,
+          department: 1,
+          role: 1,
+          employee_id: 1,
+          company_email_id: 1,
+        }
       )
       .lean();
 
@@ -617,7 +858,7 @@ const filterByDateStatitics = async (req, res) => {
     } else {
       const employeeData = await empModel
         .findOne(
-          { _id: empId },
+          { employee_id: empId },
           {
             _id: 1,
             full_name: 1,
@@ -628,11 +869,15 @@ const filterByDateStatitics = async (req, res) => {
         )
         .lean();
 
-      const isEmpHod = await empModel
-        .findOne({
-          hod_email_id: employeeData?.company_email_id,
-        })
-        .lean();
+      const isEmpHod =
+        (await Approver.findOne({
+          "departments.approvers.approverEmail": email,
+        }).lean()) ||
+        (await empModel
+          .findOne({
+            hod_email_id: employeeData?.company_email_id,
+          })
+          .lean());
 
       if (employeeData && !employeeData.role) {
         consolidatedData = {
@@ -641,6 +886,7 @@ const filterByDateStatitics = async (req, res) => {
         };
       }
     }
+    console.log("consolidatedData", consolidatedData);
 
     if (!consolidatedData) {
       return res.status(404).json({ message: "Employee not found" });
@@ -665,9 +911,9 @@ const filterByDateStatitics = async (req, res) => {
         $gte: new Date(from),
         $lte: new Date(to),
       },
+      isCompleted: true,
     });
-
-    if (role === "Admin") {
+    if (role === "Admin" && consolidatedData.department === "Admin") {
       adminAllTotalRequests = reqData.length;
       adminAllPendingRequests = reqData.filter(
         (req) => req.status === "Pending"
@@ -684,70 +930,113 @@ const filterByDateStatitics = async (req, res) => {
         return acc;
       }, {});
     } else if (
-      role === "Business Finance" ||
-      role === "HOF" ||
-      role === "Vendor Management" ||
-      role === "Info Security" ||
-      role === "Legal Team"
+      (role === "Business Finance" ||
+        role === "Head of Finance" ||
+        role === "Vendor Management" ||
+        role === "Info Security" ||
+        role === "Legal Team") &&
+      multipartRole != 1
     ) {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
+      pendingRequest = myRequestData.filter(
+        (req) => req.status === "Pending" || req.status === "PO-Pending"
+      ).length;
 
-      const reqDataStatics = reqData.filter((req) =>
-        req.approvals.some(
-          (app) => app.nextDepartment === consolidatedData.department
-        )
+      const reqDataStatics = reqData.filter(
+        (req) =>
+          req.approvals.some((app) => app.nextDepartment === role) ||
+          req.firstLevelApproval?.hodEmail === consolidatedData.company_email_id
       );
 
-      totalApprovals = reqData.length;
+      console.log("reqDataStatics", reqDataStatics);
+
+      totalApprovals = reqDataStatics.length;
 
       reqData.forEach((request) => {
+        console.log("request----", request);
+
         if (!request.approvals || request.approvals.length === 0) {
-          return;
+          console.log("No approvals found for request ID:", request.reqid);
+          return; // Skip this iteration if approvals are missing
         }
 
+        let count = 0;
+
         const pendingRequests = request.approvals.filter((app) => {
-          const isForEmployeeDept =
-            app.nextDepartment === consolidatedData.department;
-          const isPending =
-            app.status === "Approved" &&
-            !request.approvals.some(
-              (prevApp) =>
-                prevApp.departmentName === consolidatedData.department &&
-                prevApp.status === "Approved"
-            );
-
-          return isForEmployeeDept && isPending;
-        });
-
-        pendingApprovals += pendingRequests.length;
-
-        let hasCountedApproval = false;
-
-        request.approvals.forEach((app, index, approvals) => {
-          if (hasCountedApproval) return;
-
-          const isApproved =
-            app.departmentName === consolidatedData.department &&
-            app.status === "Approved";
-
-          const hasMatchingPrevDept = approvals.some(
-            (prevApp, prevIndex) =>
-              prevIndex < index && prevApp.nextDepartment === role
-          );
-
-          if (isApproved && hasMatchingPrevDept) {
-            completedApprovals += 1;
-            hasCountedApproval = true;
+          // Ensure request is not on hold or rejected
+          if (request.status === "Hold" || request.status === "Rejected") {
+            return false;
           }
+
+          const isForEmployeeDept =
+            app.departmentName === consolidatedData.department;
+          const isPending =
+            app.status === "Approved" && app.approvalId === empId;
+
+          const hasPrevApproval = request.approvals.some((prevApp) => {
+            console.log("prevApp", prevApp);
+            return (
+              prevApp.nextDepartment === role && prevApp.status === "Approved"
+            );
+          });
+
+          return isForEmployeeDept && isPending && hasPrevApproval;
         });
+
+        // pendingApprovals = pendingRequests.length;
+
+        console.log("pendingRequests--", pendingRequests);
+
+        const approvalsForEmployee2 = request.approvals.filter((app) => {
+          const isApprovedByEmp =
+            app.approvalId === empId && app.status === "Approved";
+          const isFirstLevelApproved =
+            request.firstLevelApproval?.hodEmail ===
+              consolidatedData.company_email_id &&
+            request.firstLevelApproval?.approved;
+
+          return isApprovedByEmp || isFirstLevelApproved;
+        });
+
+        completedApprovals += approvalsForEmployee2.length;
       });
 
-      console.log("Total Pending Approvals:", pendingApprovals);
-      console.log("Total Completed Approvals:", completedApprovals);
+      let pendingCount = 0;
+      const pendingApprovalsdata = await CreateNewReq.find({
+        createdAt: {
+          $gte: new Date(from),
+          $lte: new Date(to),
+        },
+        isCompleted: true,
+        status: { $nin: ["Hold", "Rejected"] }, // Exclude 'Hold' and 'Rejected' statuses
+      });
+      const data = pendingApprovalsdata.map((req) => {
+        const { approvals, firstLevelApproval, status } = req;
+        const lastLevelApprovals = approvals[approvals.length - 1];
+
+        if (
+          firstLevelApproval.hodEmail === consolidatedData.company_email_id &&
+          firstLevelApproval.approved === false
+        ) {
+          pendingCount++;
+        } else if (lastLevelApprovals?.nextDepartment === role) {
+          lastLevelApprovals++;
+        }
+      });
+
+      pendingApprovals = pendingCount;
+
+      console.log("totalApprovals:", totalApprovals);
+      console.log("pendingApprovals:", pendingApprovals);
+      console.log("completedApprovals:", completedApprovals);
 
       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
-        if (req.supplies?.totalValue && req.supplies?.selectedCurrency) {
+        if (
+          req.supplies?.totalValue &&
+          req.isCompleted &&
+          req.supplies?.selectedCurrency
+        ) {
           const { selectedCurrency, totalValue } = req.supplies;
           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
         }
@@ -760,11 +1049,11 @@ const filterByDateStatitics = async (req, res) => {
       myRequestData.forEach((request) => {
         if (request.status === "Approved") {
           completedApprovals++;
-        } else {
+        } else if (request.isCompleted) {
           pendingApprovals++;
         }
       });
-    } else if (consolidatedData.role === "HOD Department") {
+    } else if (role === "HOD Department" || role === "Admin") {
       const myRequestData = reqData.filter((req) => req.userId === empId);
       myRequests = myRequestData.length;
 
@@ -777,7 +1066,14 @@ const filterByDateStatitics = async (req, res) => {
       });
 
       const hodApprovals = await CreateNewReq.find(
-        { "firstLevelApproval.hodDepartment": consolidatedData.department },
+        {
+          createdAt: {
+            $gte: new Date(from),
+            $lte: new Date(to),
+          },
+          "firstLevelApproval.hodEmail": email,
+          isCompleted: true,
+        },
         { firstLevelApproval: 1 }
       ).lean();
       totalApprovals = hodApprovals.length;
@@ -791,7 +1087,11 @@ const filterByDateStatitics = async (req, res) => {
       });
 
       const completedApprovalsData = await CreateNewReq.find({
-        "firstLevelApproval.hodDepartment": consolidatedData.department,
+        createdAt: {
+          $gte: new Date(from),
+          $lte: new Date(to),
+        },
+        "firstLevelApproval.hodEmail": email,
         status: "Approved",
       }).lean();
 
@@ -801,7 +1101,125 @@ const filterByDateStatitics = async (req, res) => {
         if (
           req.supplies?.totalValue &&
           req.supplies?.selectedCurrency &&
-          req.firstLevelApproval?.hodDepartment === consolidatedData.department
+          req.firstLevelApproval?.hodEmail === email &&
+          req.isCompleted
+        ) {
+          const { selectedCurrency, totalValue } = req.supplies;
+          acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
+        }
+        return acc;
+      }, {});
+    } else if (
+      (role === "Business Finance" ||
+        role === "Head of Finance" ||
+        role === "Vendor Management" ||
+        role === "Info Security" ||
+        role === "Legal Team") &&
+      multipartRole == 1
+    ) {
+      console.log("I am in multirole");
+
+      const myRequestData = reqData.filter((req) => req.userId === empId);
+      myRequests = myRequestData.length;
+
+      pendingRequest = myRequestData.filter(
+        (req) => req.status === "Pending"
+      ).length;
+
+      console.log(
+        "role-consolidatedData.company_email_id",
+        role,
+        consolidatedData.company_email_id
+      );
+      const reqDataStatics = await CreateNewReq.find({
+        createdAt: {
+          $gte: new Date(from),
+          $lte: new Date(to),
+        },
+        $or: [
+          { "approvals.nextDepartment": role },
+          { "firstLevelApproval.hodEmail": consolidatedData.company_email_id },
+        ],
+        isCompleted: true,
+      });
+
+      console.log("reqDataStatics", reqDataStatics);
+
+      totalApprovals = reqDataStatics.length;
+      completedApprovals = 0;
+
+      const pendingApprovalData = await CreateNewReq.find({
+        createdAt: {
+          $gte: new Date(from),
+          $lte: new Date(to),
+        },
+        $or: [
+          {
+            "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+            "firstLevelApproval.approved": false,
+          },
+          {
+            "approvals.nextDepartment": { $eq: role },
+          },
+        ],
+        isCompleted: true,
+      });
+
+      console.log("pendingApprovalData", pendingApprovalData);
+
+      let pendingCount = 0;
+      const pendingApprovalsdata = await CreateNewReq.find({
+        createdAt: {
+          $gte: new Date(from),
+          $lte: new Date(to),
+        },
+        isCompleted: true,
+        status: { $nin: ["Hold", "Rejected"] }, // Exclude 'Hold' and 'Rejected' statuses
+      });
+      const data = pendingApprovalsdata.map((req) => {
+        const { approvals, firstLevelApproval, status } = req;
+        const lastLevelApprovals = approvals[approvals.length - 1];
+
+        if (
+          firstLevelApproval.hodEmail === consolidatedData.company_email_id &&
+          firstLevelApproval.approved === false
+        ) {
+          pendingCount++;
+        } else if (lastLevelApprovals?.nextDepartment === role) {
+          lastLevelApprovals++;
+        }
+      });
+
+      const completedApprovalData = await CreateNewReq.find({
+        createdAt: {
+          $gte: new Date(from),
+          $lte: new Date(to),
+        },
+        $or: [
+          {
+            "firstLevelApproval.hodEmail": consolidatedData.company_email_id,
+            "firstLevelApproval.approved": true,
+          },
+          { "approvals.nextDepartment": role },
+        ],
+        isCompleted: true,
+      });
+
+      // pendingApprovals = pendingApprovalData.length;
+      pendingApprovals = pendingCount;
+      completedApprovals = completedApprovalData.length;
+
+      // pendingApprovals = Math.max(0, totalApprovals - completedApprovals);
+
+      console.log("totalApprovals:", totalApprovals);
+      console.log("pendingApprovals:", pendingApprovals);
+      console.log("completedApprovals:", completedApprovals);
+
+      departmentBudgetByCurrency = reqData.reduce((acc, req) => {
+        if (
+          req.supplies?.totalValue &&
+          req.isCompleted &&
+          req.supplies?.selectedCurrency
         ) {
           const { selectedCurrency, totalValue } = req.supplies;
           acc[selectedCurrency] = (acc[selectedCurrency] || 0) + totalValue;
@@ -831,10 +1249,11 @@ const filterByDateStatitics = async (req, res) => {
       totalApprovals,
     });
   } catch (err) {
+    console.error("Error in getting the statistics", err);
     res.status(500).json({ message: "Error in getting the statistics" });
   }
 };
-// Helper function to calculate budget
+
 const calculateBudget = (reqData, department = null) => {
   return reqData.reduce((acc, req) => {
     if (
@@ -2069,7 +2488,11 @@ const getReports = async (req, res) => {
     let totalRequests = 0;
     let pendingRequests = 0;
     let rejectedRequests = 0;
+    let approvedRequests = 0;
+    let holdRequests = 0;
     let departmentBudgetByCurrency = 0;
+    let poPendingRequest=0
+    let invoicePending = 0
 
     // Loop through the data and count based on the 'status'
     reqData.forEach((request) => {
@@ -2079,6 +2502,14 @@ const getReports = async (req, res) => {
         pendingRequests++; // Increment pending requests count
       } else if (request.status === "Reject") {
         rejectedRequests++; // Increment rejected requests count
+      } else if (request.status === "Hold") {
+        holdRequests++;
+      } else if (request.status === "Approved") {
+        approvedRequests++
+      }else if(request.status === "PO-Pending"){
+        poPendingRequest++
+      }else if(request.status === "PO-Pending"){
+        invoicePending++
       }
     });
 
@@ -2101,6 +2532,11 @@ const getReports = async (req, res) => {
       pendingRequests,
       rejectedRequests,
       departmentBudgetByCurrency,
+      invoicePending,
+      approvedRequests,
+      poPendingRequest,
+      approvedRequests,
+      holdRequests
     });
   } catch (err) {
     console.log("Error in getting the reports", err);

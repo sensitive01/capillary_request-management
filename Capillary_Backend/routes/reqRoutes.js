@@ -67,7 +67,7 @@ router.put('/save-aggrement-data/:reqId', reqController.saveAggrementData);
 router.post('/send-reminder/:reqId', reqController.sendNudgeNotification); 
 router.post('/add-request', reqController.addReqForm); 
 router.post('/send-edit-request-mail/:empId/:reqId',reqController.editSendRequestMail)
-router.post('/filter-by-date/:empId/:role',reqController.filterByDateStatitics)
+router.post('/filter-by-date/:empId/:role/:email/:multipartRole',reqController.filterByDateStatitics)
 
 
 

@@ -280,7 +280,7 @@ const Procurements = ({
             setShowModal(false);
             setNewVendor({ name: "", email: "", isNewVendor: false });
         } else {
-            toast.error("Please fill in all fields.");
+            toast.error("Plea.se fill in all fields");
         }
     };
 

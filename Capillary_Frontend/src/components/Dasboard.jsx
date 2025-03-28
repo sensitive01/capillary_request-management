@@ -46,8 +46,8 @@ const Dashboard = () => {
   const email = localStorage.getItem("email");
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
-    fromDate: "",
-    toDate: "",
+    fromDate: null,
+    toDate: null,
   });
   const [isFilterActive, setIsFilterActive] = useState(false);
 
@@ -130,8 +130,7 @@ const Dashboard = () => {
       setIsFilterActive(true);
       try {
         const response = await fetchDateFilterStatistics(
-          empId,
-          role,
+          empId, role, email,multipartRole,
           dateRange.fromDate,
           dateRange.toDate
         );
@@ -278,7 +277,7 @@ const Dashboard = () => {
         bgColor="bg-emerald-50 hover:bg-emerald-100"
         textColor="text-emerald-600"
         onClick={() =>
-          navigate("/approval-request-list/show-request-statistcs/My-Approvals")
+          navigate(`/approval-request-list/show-request-statistcs/My-Approvals/${dateRange.fromDate}/${dateRange.toDate}`)
         }
       />
 
@@ -290,7 +289,7 @@ const Dashboard = () => {
         textColor="text-amber-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+            `/approval-request-list/show-request-statistcs/Pending-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -302,7 +301,7 @@ const Dashboard = () => {
         textColor="text-purple-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Total-Approvals"
+            `/approval-request-list/show-request-statistcs/Total-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -319,7 +318,7 @@ const Dashboard = () => {
         textColor="text-blue-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Total-Request"
+            `/approval-request-list/show-request-statistcs/Total-Request/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -331,7 +330,7 @@ const Dashboard = () => {
         textColor="text-orange-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Request"
+            `/approval-request-list/show-request-statistcs/Pending-Request/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -343,7 +342,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Approved-Request"
+            `/approval-request-list/show-request-statistcs/Approved-Request/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -396,7 +395,7 @@ const Dashboard = () => {
         textColor="text-green-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Approved-Approvals"
+            `/approval-request-list/show-request-statistcs/Approved-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -409,7 +408,7 @@ const Dashboard = () => {
         textColor="text-yellow-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+            `/approval-request-list/show-request-statistcs/Pending-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -421,7 +420,7 @@ const Dashboard = () => {
         textColor="text-indigo-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Total-Approvals"
+            `/approval-request-list/show-request-statistcs/Total-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -473,7 +472,7 @@ const Dashboard = () => {
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
         onClick={() =>
-          navigate("/approval-request-list/show-request-statistcs/My-Approvals")
+          navigate(`/approval-request-list/show-request-statistcs/My-Approvals/${dateRange.fromDate}/${dateRange.toDate}`)
         }
       />
 
@@ -485,7 +484,7 @@ const Dashboard = () => {
         textColor="text-yellow-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+            `/approval-request-list/show-request-statistcs/Pending-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -498,7 +497,7 @@ const Dashboard = () => {
         textColor="text-indigo-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Total-Approvals"
+            `/approval-request-list/show-request-statistcs/Total-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -582,7 +581,7 @@ const Dashboard = () => {
         bgColor="bg-green-50 hover:bg-green-100"
         textColor="text-green-600"
         onClick={() =>
-          navigate("/approval-request-list/show-request-statistcs/My-Approvals")
+          navigate(`/approval-request-list/show-request-statistcs/My-Approvals/${dateRange.fromDate}/${dateRange.toDate}`)
         }
       />
 
@@ -594,7 +593,7 @@ const Dashboard = () => {
         textColor="text-yellow-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Pending-Approvals"
+            `/approval-request-list/show-request-statistcs/Pending-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />
@@ -607,7 +606,7 @@ const Dashboard = () => {
         textColor="text-indigo-600"
         onClick={() =>
           navigate(
-            "/approval-request-list/show-request-statistcs/Total-Approvals"
+            `/approval-request-list/show-request-statistcs/Total-Approvals/${dateRange.fromDate}/${dateRange.toDate}`
           )
         }
       />

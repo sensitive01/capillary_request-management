@@ -42,8 +42,7 @@ import MyRequestStatistics from "./components/dashboard/requestlist/MyRequestSta
 import Settings from "./components/dashboard/settings/Settings";
 import GoogleSSO from "./components/dashboard/settings/integrations/GoogleSSO.JSX";
 import SmtpPage from "./components/dashboard/settings/integrations/SmtpPage";
-import DarwinBoxPage from "./components/dashboard/settings/integrations/DarwinBoxPage";
-import NetSuit from "./components/dashboard/settings/integrations/EmailNotificationSettings";
+import RestApiPage from "./components/dashboard/settings/integrations/RestApiPage";
 import ApprovalFlowPage from "./components/dashboard/settings/business-settings/ApprovalFlowPage";
 import CurrencyPage from "./components/dashboard/settings/business-settings/CurrencyPage";
 import PaymentTermsPage from "./components/dashboard/settings/business-settings/PaymentTermsPage";
@@ -80,7 +79,7 @@ function App() {
           <Route path="/role-based-approvals-list" element={<RoleBasedApprovals/>} />
 
           <Route path="/req-list-table/show-request-statistcs/:action" element={<MyRequestStatistics/>} />
-          <Route path="/approval-request-list/show-request-statistcs/:action" element={<RequestStatistcsTable/>} />
+          <Route path="/approval-request-list/show-request-statistcs/:action/:fromDate/:toDate" element={<RequestStatistcsTable/>} />
 
           <Route path="/approval-request-list/preview-one-req/:id" element={<PreviewTheReq/>} />
 
@@ -120,7 +119,7 @@ function App() {
           <Route path="/settings" element={<Settings/>} />
           <Route path="/settings/google-sso" element={<GoogleSSO/>} />
           <Route path="/settings/smtp" element={<SmtpPage/>} />
-          <Route path="/settings/darwin-box" element={<DarwinBoxPage/>} />
+          <Route path="/settings/darwin-box" element={<RestApiPage/>} />
           <Route path="/settings/email-notification" element={<EmailNotificationSettings/>} />
           <Route path="/settings/approval-flow" element={<ApprovalFlowPage/>} />
           <Route path="/settings/approver-type" element={<ApproverType/>} />
