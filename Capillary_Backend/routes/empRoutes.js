@@ -27,7 +27,8 @@ const {
   uploadApproverExcel,
   checkDarwinStatus,
   updateDarwinStatus,
-  getAllEmployeeData
+  getAllEmployeeData,
+  addNewApproverData
 
 } = require("../controllers/empController");
 
@@ -86,6 +87,9 @@ router.get("/get-all-employee", getAllEmployeeData);
 router.get("/darwin-status", checkDarwinStatus);
 router.get("/get-approval-datas", getAllApprovalDatas);
 router.put("/update-darwin-status", updateDarwinStatus);
+
+router.post("/add-new-approver-data", addNewApproverData);
+
 
 
 router.post("/upload-csv-file", upload.single("file"), uploadApproverExcel);

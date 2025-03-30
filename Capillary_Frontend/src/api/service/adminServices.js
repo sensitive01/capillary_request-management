@@ -1094,4 +1094,27 @@ export const getEntityName = async () => {
 };
 
 
+export const searchReports = async (data) => {
+  try {
+    const response = await adminServices.post(
+      `/request/get-searched-data`,{data}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const addNewApprover = async (data) => {
+  try {
+    const response = await adminServices.post(
+      `/employees/add-new-approver-data`,{data}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
 // ...............................................................................................

@@ -3,6 +3,7 @@ const Employee = require("../models/empModel");
 const addPanelUser = require("../models/addPanelUsers");
 const Approver = require("../models/approverSchema");
 const darwinBox = require("../models/isDarwinEnabled");
+const CreateNewReq = require("../models/createNewReqSchema");
 
 // Create a new entity
 exports.createEntity = async (req, res) => {
@@ -20,8 +21,8 @@ exports.createEntity = async (req, res) => {
 
 exports.getEntityNames = async (req, res) => {
   try {
-    const entities = await Entity.distinct("entityName");
-    const departments = await Employee.distinct("department");
+    const entities = await CreateNewReq.distinct("commercials.entity");
+    const departments = await CreateNewReq.distinct("commercials.department");
 
     res.status(200).json({
       success: true,

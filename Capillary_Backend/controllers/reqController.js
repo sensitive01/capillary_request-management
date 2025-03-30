@@ -2481,7 +2481,7 @@ const sendNudgeNotification = async (req, res) => {
 
 const getReports = async (req, res) => {
   try {
-    const reqData = await CreateNewReq.find();
+    const reqData = await CreateNewReq.find({isCompleted:true});
     console.log("ReqData", reqData);
 
     // Initialize counters
@@ -5105,7 +5105,110 @@ const tagMessageToEmployee = async (req, res) => {
   }
 };
 
+const getSearchedData = async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log("Welcome to searched data", data);
+
+    const { entity, department, status, fromDate, toDate } = data;
+    
+    // Build the dynamic match query (only include fields that are passed)
+    const matchQuery = { isCompleted: true };
+
+    if (entity) matchQuery["commercials.entity"] = entity;
+    if (department) matchQuery["commercials.department"] = department;
+    if (status) matchQuery.status = status;
+
+    if (fromDate && toDate) {
+      matchQuery.createdAt = { $gte: new Date(fromDate), $lte: new Date(toDate) };
+    } else if (fromDate) {
+      matchQuery.createdAt = { $gte: new Date(fromDate) };
+    } else if (toDate) {
+      matchQuery.createdAt = { $lte: new Date(toDate) };
+    }
+
+    // Fetch the data using aggregation
+    const reqData = await CreateNewReq.aggregate([
+      { $match: matchQuery },  // Apply dynamic filters
+      {
+        $group: {
+          _id: {
+            entity: "$commercials.entity",
+            department: "$commercials.department",
+            currency: "$supplies.selectedCurrency",
+          },
+          totalRequests: { $sum: 1 },
+          pendingRequests: { 
+            $sum: { $cond: [{ $in: ["$status", ["Pending", "Invoice-Pending", "PO-Pending"]] }, 1, 0] } 
+          },
+          approvedRequest:{ $sum: { $cond: [{ $eq: ["$status", "Approved"] }, 1, 0] } },
+          holdRequests: { $sum: { $cond: [{ $eq: ["$status", "Hold"] }, 1, 0] } },
+          rejectedRequests: { $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] } },
+          totalFund: { $sum: "$supplies.totalValue" },
+          pendingFund: { 
+            $sum: { $cond: [{ $in: ["$status", ["Pending", "Invoice-Pending", "PO-Pending"]] }, "$supplies.totalValue", 0] } 
+          },
+          rejectedFund: { 
+            $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, "$supplies.totalValue", 0] } 
+          },
+          approvedFund: { 
+            $sum: { $cond: [{ $eq: ["$status", "Approved"] }, "$supplies.totalValue", 0] } 
+          },
+          holdFund: { 
+            $sum: { $cond: [{ $eq: ["$status", "Hold"] }, "$supplies.totalValue", 0] } 
+          },
+        },
+      },
+      { $sort: { "_id.entity": 1, "_id.department": 1, "_id.currency": 1 } },
+      {
+        $project: {
+          _id: 0,
+          entity: "$_id.entity",
+          department: "$_id.department",
+          currency: "$_id.currency",
+          totalRequests: 1,
+          pendingRequests: 1,
+          holdRequests: 1,
+          rejectedRequests: 1,
+          totalFund: 1,
+          pendingFund: 1,
+          rejectedFund: 1,
+          approvedFund: 1,
+          holdFund: 1,
+        },
+      },
+    ]);
+
+    console.log("Aggregated Data:", reqData);
+    res.status(200).json({ success: true, data: reqData });
+
+  } catch (err) {
+    console.log("Error in getting the data", err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = {
+  getSearchedData,
   tagMessageToEmployee,
   getAllEmailData,
   emailNotificationAction,

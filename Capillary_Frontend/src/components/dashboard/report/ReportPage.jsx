@@ -15,8 +15,21 @@ import {
   getReqReports,
   // searchReports,
   getEntityName,
+  searchReports,
   // getDepartments,
 } from "../../../api/service/adminServices";
+
+const currencies = [
+  { code: "USD", symbol: "$", locale: "en-US" },
+  { code: "EUR", symbol: "€", locale: "de-DE" },
+  { code: "GBP", symbol: "£", locale: "en-GB" },
+  { code: "INR", symbol: "₹", locale: "en-IN" },
+  { code: "AED", symbol: "د.إ", locale: "ar-AE" },
+  { code: "IDR", symbol: "Rp", locale: "id-ID" },
+  { code: "MYR", symbol: "RM", locale: "ms-MY" },
+  { code: "SGD", symbol: "S$", locale: "en-SG" },
+  { code: "PHP", symbol: "₱", locale: "fil-PH" },
+];
 
 const ReportPage = () => {
   // State for report data
@@ -88,7 +101,7 @@ const ReportPage = () => {
     try {
       const response = await searchReports(searchCriteria);
       if (response.status === 200) {
-        setTableData(response.data);
+        setTableData(response.data.data);
       }
     } catch (error) {
       console.error("Error searching reports:", error);
@@ -96,33 +109,22 @@ const ReportPage = () => {
   };
 
   // Format currency with proper symbol
-  const formatCurrency = (amount, currency) => {
-    if (!amount || !currency) return "0";
+  const formatCurrencyValue = (value, currencyCode) => {
+    if (!value) return 0;
+    const currency = currencies.find((c) => c.code === currencyCode);
+    if (!currency) return value;
 
-    const formatters = {
-      USD: new Intl.NumberFormat("en-US", {
+    try {
+      return new Intl.NumberFormat(currency.locale, {
         style: "currency",
-        currency: "USD",
-      }),
-      EUR: new Intl.NumberFormat("de-DE", {
-        style: "currency",
-        currency: "EUR",
-      }),
-      GBP: new Intl.NumberFormat("en-GB", {
-        style: "currency",
-        currency: "GBP",
-      }),
-      INR: new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-      }),
-      AED: new Intl.NumberFormat("ar-AE", {
-        style: "currency",
-        currency: "AED",
-      }),
-    };
-
-    return formatters[currency]?.format(amount) || amount;
+        currency: currency.code,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (error) {
+      console.error("Currency formatting error:", error);
+      return value;
+    }
   };
 
   // Calculate total budget
@@ -132,7 +134,7 @@ const ReportPage = () => {
     return (
       Object.entries(budgetByCurrency)
         .filter(([_, amount]) => amount != null)
-        .map(([currency, amount]) => formatCurrency(amount, currency))
+        .map(([currency, amount]) => formatCurrencyValue(amount, currency))
         .join(" + ") || "0"
     );
   };
@@ -306,10 +308,12 @@ const ReportPage = () => {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             >
               <option value="">Select Status</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
-              <option value="hold">Hold</option>
+              <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Hold">Hold</option>
+              <option value="PO-Pending">PO Pending</option>
+              <option value="Invoice-Pending">Invoice Pending</option>
             </select>
           </div>
 
@@ -353,74 +357,89 @@ const ReportPage = () => {
       {/* Results Table */}
       {tableData.length > 0 && (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SL
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Entity
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Department
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Requests
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Approved
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rejected
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pending
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hold
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Funds
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rejected Funds
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hold Funds
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pending Funds
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {tableData.map((row, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3">{row.entityName}</td>
-                  <td className="px-4 py-3">{row.departmentName}</td>
-                  <td className="px-4 py-3">{row.totalRequests}</td>
-                  <td className="px-4 py-3">{row.approvedRequests}</td>
-                  <td className="px-4 py-3">{row.rejectedRequests}</td>
-                  <td className="px-4 py-3">{row.pendingRequests}</td>
-                  <td className="px-4 py-3">{row.holdRequests}</td>
-                  <td className="px-4 py-3">
-                    {formatCurrency(row.totalFunds, row.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatCurrency(row.rejectedFunds, row.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatCurrency(row.holdFunds, row.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatCurrency(row.pendingFunds, row.currency)}
-                  </td>
+          {/* Add this div wrapper for horizontal scrolling */}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-max">
+              {" "}
+              {/* min-w-max ensures the table doesn't shrink */}
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    SL
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Entity
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Department
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Requests
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Approved
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rejected
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Pending
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hold
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Currency
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Funds
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rejected Funds
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hold Funds
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Pending Funds
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Approved Funds
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {tableData.map((row, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">{index + 1}</td>
+                    <td className="px-4 py-3">{row.entity}</td>
+                    <td className="px-4 py-3">{row.department}</td>
+                    <td className="px-4 py-3">{row.totalRequests || 0}</td>
+                    <td className="px-4 py-3">{row.approvedRequest || 0}</td>
+                    <td className="px-4 py-3">{row.rejectedRequests || 0}</td>
+                    <td className="px-4 py-3">{row.pendingRequests || 0}</td>
+                    <td className="px-4 py-3">{row.holdRequests || 0}</td>
+                    <td className="px-4 py-3">{row.currency}</td>
+                    <td className="px-4 py-3">
+                      {formatCurrencyValue(row.totalFund, row.currency)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatCurrencyValue(row.rejectedFund, row.currency)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatCurrencyValue(row.holdFund, row.currency)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatCurrencyValue(row.pendingFund, row.currency)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatCurrencyValue(row.approvedFund, row.currency)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

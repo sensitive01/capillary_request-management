@@ -44,6 +44,8 @@ router.post('/generate-request-pdf/:reqId', reqController.generateRequestPdfData
 router.post('/edit-commercial-data/:empId/:reqId', reqController.editCommercialData);
 
 router.post('/email-notification-action', reqController.emailNotificationAction);
+router.post('/get-searched-data', reqController.getSearchedData);
+
 
 
 

@@ -669,12 +669,10 @@ exports.getIndividualReq = async (req, res) => {
     } else if (reqList.status === "PO-Pending") {
       currDepartment = "Head Of Finance";
     } else if (reqList.status === "Invoice-Pending") {
-      currDepartment =`${empData.full_name}-${empData.department}` ;
-    } else if(reqList.status==="Approved"){
-      currDepartment = ""
-    }
-    
-    else {
+      currDepartment = `${empData.full_name}-${empData.department}`;
+    } else if (reqList.status === "Approved") {
+      currDepartment = "";
+    } else {
       const lastLevalApproval =
         reqList?.approvals[reqList?.approvals?.length - 1];
       currDepartment =
@@ -770,6 +768,81 @@ exports.getAllApprovalDatas = async (req, res) => {
     res.status(200).json({ success: true, approvalData });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+exports.addNewApproverData = async (req, res) => {
+  try {
+    console.log("Welcome to add new approval data", req.body);
+
+    const { businessUnit, departmentName, approvers } = req.body.data;
+
+    if (
+      !businessUnit ||
+      !departmentName ||
+      !approvers ||
+      approvers.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
+    }
+
+    // Check if the business unit exists
+    let approverData = await Approver.findOne({ businessUnit });
+
+    if (!approverData) {
+      // If business unit does not exist, create a new entry
+      approverData = new Approver({
+        businessUnit,
+        departments: [
+          {
+            name: departmentName.trim(),
+            approvers,
+          },
+        ],
+      });
+
+      await approverData.save();
+      return res
+        .status(201)
+        .json({
+          success: true,
+          message: "New Business Unit created",
+          data: approverData,
+        });
+    }
+
+    // If business unit exists, check if the department exists
+    let department = approverData.departments.find(
+      (dept) => dept.name.trim() === departmentName.trim()
+    );
+
+    if (!department) {
+      // If department does not exist, add a new department with the approvers
+      approverData.departments.push({
+        name: departmentName.trim(),
+        approvers,
+      });
+    } else {
+      // If department exists, add the new approver to the existing department
+      department.approvers.push(...approvers);
+    }
+
+    // Save the updated data
+    await approverData.save();
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Approver data updated successfully",
+        data: approverData,
+      });
+  } catch (err) {
+    console.error("Error adding approver data:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -896,7 +969,6 @@ exports.updateDarwinStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 exports.getAllEmployeeData = async (req, res) => {
   try {

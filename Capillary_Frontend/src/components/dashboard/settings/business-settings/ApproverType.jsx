@@ -5,6 +5,7 @@ import {
   getAllApprovalData,
   uploadCSVFile,
   updateDarwinStatus,
+  addNewApprover
 } from "../../../../api/service/adminServices";
 
 const ApproverManagement = () => {
@@ -134,7 +135,7 @@ const ApproverManagement = () => {
     }
   };
 
-  const handleAddApprover = (e) => {
+  const handleAddApprover = async(e) => {
     e.preventDefault();
     const newEntry = {
       businessUnit: newApprover.businessUnit,
@@ -144,23 +145,22 @@ const ApproverManagement = () => {
           approverId: newApprover.approverId,
           approverName: newApprover.approverName,
           approverEmail: newApprover.approverEmail,
-          role: newApprover.role,
         },
       ],
     };
 
     setApprovalData((prev) => [newEntry, ...prev]);
+    const response = await addNewApprover(newEntry);
     setNewApprover({
       businessUnit: "",
       department: "",
       approverName: "",
       approverId: "",
       approverEmail: "",
-      role: "Approver",
     });
   };
 
-  const handleDeleteApprover = (businessUnit, departmentName, approverId) => {
+  const handleDeleteApprover = async(businessUnit, departmentName, approverId) => {
     setApprovalData((prev) =>
       prev
         .map((entry) => {
@@ -265,7 +265,6 @@ const ApproverManagement = () => {
                   <li>approverId</li>
                   <li>approverName</li>
                   <li>approverEmail</li>
-                  <li>role</li>
                 </ul>
                 <div className="flex justify-end space-x-3">
                   <button
@@ -359,21 +358,7 @@ const ApproverManagement = () => {
               className="p-2 border rounded-md"
               required
             />
-            <select
-              value={newApprover.role}
-              onChange={(e) =>
-                setNewApprover((prev) => ({
-                  ...prev,
-                  role: e.target.value,
-                }))
-              }
-              className="p-2 border rounded-md"
-              required
-            >
-              <option value="Approver">Approver</option>
-              <option value="Admin">Admin</option>
-              <option value="Supervisor">Supervisor</option>
-            </select>
+         
             <button
               type="submit"
               className="bg-primary text-white p-2 rounded-md hover:bg-primary/90"
@@ -393,7 +378,6 @@ const ApproverManagement = () => {
                   <th className="p-3 text-left border">Approver Name</th>
                   <th className="p-3 text-left border">Approver ID</th>
                   <th className="p-3 text-left border">Approver Email</th>
-                  <th className="p-3 text-left border">Role</th>
                   <th className="p-3 text-left border">Actions</th>
                 </tr>
               </thead>
@@ -409,7 +393,6 @@ const ApproverManagement = () => {
                     <td className="p-3 border">{item.approverName}</td>
                     <td className="p-3 border">{item.approverId}</td>
                     <td className="p-3 border">{item.approverEmail}</td>
-                    <td className="p-3 border">{item.role || "Approver"}</td>
                     <td className="p-3 border">
                       <div className="flex space-x-2">
                         <button
