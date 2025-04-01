@@ -63,7 +63,7 @@ const PreviewTheReq = () => {
     const [newStatus, setNewStatus] = useState();
     const [reason, setReason] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [reqLogs,setReqLogs] = useState([])
+    const [reqLogs, setReqLogs] = useState([]);
 
     const needsReason = ["Hold", "Reject"].includes(approveStatus);
     const [modalContent, setModalContent] = useState({
@@ -99,7 +99,7 @@ const PreviewTheReq = () => {
 
                 if (response.status === 200) {
                     setRequest(response.data.data);
-                    setReqLogs(response.data.requestorLog)
+                    setReqLogs(response.data.requestorLog);
                 }
             } catch (error) {
                 console.error("Error fetching request:", error);
@@ -914,19 +914,18 @@ const PreviewTheReq = () => {
         if (!uploadedFiles || uploadedFiles.length === 0) {
             return null;
         }
-           const handleShowFile = async (fileUrl) => {
-                try {
-                    const response = await showFileUrl(fileUrl);
-                    if (response.status===200) {
-               
-                        window.open(response.data.presignedUrl, "_blank");
-                    } else {
-                        console.error("No presigned URL received");
-                    }
-                } catch (error) {
-                    console.error("Error fetching presigned URL:", error);
+        const handleShowFile = async (fileUrl) => {
+            try {
+                const response = await showFileUrl(fileUrl);
+                if (response.status === 200) {
+                    window.open(response.data.presignedUrl, "_blank");
+                } else {
+                    console.error("No presigned URL received");
                 }
-            };
+            } catch (error) {
+                console.error("Error fetching presigned URL:", error);
+            }
+        };
 
         // Transform the data structure
         const fileCategories = uploadedFiles.reduce((acc, fileGroup) => {
@@ -955,7 +954,7 @@ const PreviewTheReq = () => {
                                         className="flex flex-col items-center bg-gray-50 rounded p-2"
                                     >
                                         <button
-                                        onClick={()=>handleShowFile(file)}
+                                            onClick={() => handleShowFile(file)}
                                             // href={file}
                                             // target="_blank"
                                             // rel="noopener noreferrer"
@@ -1035,6 +1034,18 @@ const PreviewTheReq = () => {
 
     const renderRequestPreview = () => {
         if (!request) return null;
+        const handleShowFile = async (fileUrl) => {
+            try {
+                const response = await showFileUrl(fileUrl);
+                if (response.status === 200) {
+                    window.open(response.data.presignedUrl, "_blank");
+                } else {
+                    console.error("No presigned URL received");
+                }
+            } catch (error) {
+                console.error("Error fetching presigned URL:", error);
+            }
+        };
 
         return (
             <div className="space-y-8" id="request-preview-content">
@@ -1182,43 +1193,6 @@ const PreviewTheReq = () => {
                                     </div>
                                 </div>
 
-                                {/* <div className="grid md:grid-cols-4 gap-4">
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <span className="text-gray-600 font-medium">
-                                            Payment Mode
-                                        </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials.paymentMode}
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <span className="text-gray-600 font-medium">
-                                            Credit Card Selected
-                                        </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials
-                                                .isCreditCardSelected
-                                                ? "Yes"
-                                                : "No"}
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-50 w-a p-4 rounded-lg">
-                                        <span className="text-gray-600 font-medium">
-                                            Bill To
-                                        </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials.billTo}
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <span className="text-gray-600 font-medium">
-                                            Ship To
-                                        </span>
-                                        <div className="text-gray-800 font-semibold mt-1">
-                                            {request.commercials.shipTo}
-                                        </div>
-                                    </div>
-                                </div> */}
                                 <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                                     <div className="bg-gray-50 p-6 rounded-lg w-full">
                                         <span className="text-gray-600 font-medium">
@@ -1271,17 +1245,17 @@ const PreviewTheReq = () => {
                                                         {term.percentageTerm}%
                                                     </td>
                                                     <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
-                                                            {term.paymentTerm?.toLowerCase()}
-                                                            {term.customPaymentTerm
-                                                                ? ` - ${term.customPaymentTerm.toLowerCase()}`
-                                                                : ""}
-                                                        </td>
-                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
-                                                            {term.paymentType?.toLowerCase()}
-                                                            {term.customPaymentType
-                                                                ? ` - ${term.customPaymentType.toLowerCase()}`
-                                                                : ""}
-                                                        </td>
+                                                        {term.paymentTerm?.toLowerCase()}
+                                                        {term.customPaymentTerm
+                                                            ? ` - ${term.customPaymentTerm.toLowerCase()}`
+                                                            : ""}
+                                                    </td>
+                                                    <td className="px-3 sm:px-6 py-3 sm:py-4 capitalize">
+                                                        {term.paymentType?.toLowerCase()}
+                                                        {term.customPaymentType
+                                                            ? ` - ${term.customPaymentType.toLowerCase()}`
+                                                            : ""}
+                                                    </td>
                                                 </tr>
                                             )
                                         )}
@@ -1608,17 +1582,19 @@ const PreviewTheReq = () => {
                                                                     key={i}
                                                                     className="text-xs sm:text-sm"
                                                                 >
-                                                                    <a
-                                                                        href={
-                                                                            attachment
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            handleShowFile(
+                                                                                attachment
+                                                                                    .data
+                                                                                    .fileUrls[i]
+                                                                            )
                                                                         }
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
                                                                         className="text-red-600 hover:text-red-800 underline"
                                                                     >
                                                                         Attachment{" "}
                                                                         {i + 1}
-                                                                    </a>
+                                                                    </button>
                                                                 </li>
                                                             )
                                                         )}
@@ -1657,7 +1633,7 @@ const PreviewTheReq = () => {
                     <RequestLogs
                         createdAt={request.createdAt}
                         logData={request.approvals}
-                        reqLogs = {reqLogs}
+                        reqLogs={reqLogs}
                         // poUploadData = {request.poDocuments||""}
                         // invoiceUploadData = {request.invoiceDocumets||""}
                     />
@@ -1920,7 +1896,6 @@ const PreviewTheReq = () => {
                         {/* Status: Rejected → Release Reject, Hold, Submit */}
                         {request.status === "Rejected" && (
                             <>
-                               
                                 <button
                                     onClick={() => handleStatus("Hold")}
                                     disabled={isLoading}
@@ -2034,7 +2009,8 @@ const PreviewTheReq = () => {
                         </div>
                     )}
 
-                {(request.status === "Invoice-Pending"||request.status === "Approved") &&
+                {(request.status === "Invoice-Pending" ||
+                    request.status === "Approved") &&
                     (role === "Employee" ||
                         role === "HOD Department" ||
                         role === "Admin") && (
