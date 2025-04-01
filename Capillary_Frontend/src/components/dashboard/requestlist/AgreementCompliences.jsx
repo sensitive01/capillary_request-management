@@ -641,8 +641,7 @@ const AgreementCompliances = ({
                     }
                 )}
 
-                {/* Risk acceptance section */}
-                {hasDeviations && (
+          
                     <div className="p-6 bg-white border border-yellow-200 rounded-xl shadow-md">
                         <div className="flex items-start gap-4">
                             <AlertTriangle className="text-yellow-500 h-8 w-8 shrink-0 mt-0.5" />
@@ -673,7 +672,6 @@ const AgreementCompliances = ({
                             </div>
                         </div>
                     </div>
-                )}
 
                 <div className="flex justify-between pt-4 mb-8">
                     <button
@@ -686,10 +684,10 @@ const AgreementCompliances = ({
                     <button
                         onClick={handleSubmit}
                         disabled={
-                            (hasDeviations && !riskAccepted) || savingData
+                            ( !riskAccepted) || savingData
                         }
                         className={`px-5 py-3 bg-primary text-white font-medium rounded-lg shadow-md flex items-center gap-2 ${
-                            (hasDeviations && !riskAccepted) || savingData
+                            ( !riskAccepted) || savingData
                                 ? "opacity-50 cursor-not-allowed"
                                 : "hover:bg-primary/90"
                         }`}

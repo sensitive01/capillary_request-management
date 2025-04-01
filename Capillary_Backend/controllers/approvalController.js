@@ -685,16 +685,7 @@ const approveRequest = async (req, res) => {
             reqid: reqData.reqid,
           });
         }
-        await sendEmail(
-          requesterData.company_email_id,
-          "poUploadedNotificationTemplate",
-          {
-            reqid: reqData.reqid,
-            requestorName: requesterData.full_name,
-            employeeName: approverData.full_name,
-            department: approverData.department,
-          }
-        );
+       
       } else {
         console.log("Am in else bloack", approvalRecord);
 

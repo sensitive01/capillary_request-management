@@ -26,6 +26,7 @@ const currencies = [
 ];
 
 const Preview = ({ formData, onSubmit, onBack }) => {
+    console.log("Preview formData",formData)
     const [showDialog, setShowDialog] = useState(false);
     const formatCurrency = (value) => {
         const currency = currencies.find(

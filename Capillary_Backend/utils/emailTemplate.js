@@ -203,6 +203,10 @@ const emailTemplates = {
                 <li>Please ensure that the invoice is uploaded to proceed with further processing.</li>
                 <li>Verify the details of the PO before proceeding.</li>
               </ul>
+              <p>Click below to view or download the PO:</p>
+              <p>
+                <a href="{{pdfLink}}" style="color: #ffffff; background-color: #007bff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View PO PDF</a>
+              </p>
               <p>Ensuring timely invoice submission is crucial to avoid delays.</p>
               <p>If you have any questions or require assistance, feel free to reach out.</p>
               <p>Best Regards,</p>
@@ -214,6 +218,7 @@ const emailTemplates = {
       </html>
     `,
   },
+  
   chatNotificationTemplate: {
     subject: "New Chat Message Received",
     html: `

@@ -24,13 +24,15 @@ const AgreementCompliances = ({
     onBack,
     reqId,
 }) => {
-    console.log("FormData", formData);
+    console.log("FormData", formData.riskAccepted);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [deviations, setDeviations] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [departmentDeviations, setDepartmentDeviations] = useState({});
-    const [riskAccepted, setRiskAccepted] = useState(false);
+    const [riskAccepted, setRiskAccepted] = useState(
+        formData.riskAccepted || false
+    );
     const [expandedDepts, setExpandedDepts] = useState({});
     const [savingData, setSavingData] = useState(false);
 
@@ -47,6 +49,7 @@ const AgreementCompliances = ({
                 setIsLoading(true);
                 const response = await getAllLegalQuestions();
                 const questionData = response.data.data;
+                console.log("questionData", questionData);
                 setQuestions(questionData);
 
                 const initialAnswers = {};
@@ -54,6 +57,7 @@ const AgreementCompliances = ({
                 const initialDeptDeviations = {};
                 const initialExpandedDepts = {};
 
+                // Create all departments and set expanded state
                 const depts = [
                     ...new Set(questionData.map((q) => q.createdBy.department)),
                 ];
@@ -62,71 +66,71 @@ const AgreementCompliances = ({
                     initialDeptDeviations[dept] = false;
                 });
 
-                // Convert existing compliances to a map using questionId for easier lookup
-                const existingCompliancesMap = Object.values(
-                    formData.complinces || {}
-                ).reduce((acc, compliance) => {
-                    acc[compliance.questionId] = compliance;
-                    return acc;
-                }, {});
+                // Start with existing compliances or an empty object
+                const existingCompliances = formData.complinces || {};
+                const updatedCompliances = { ...existingCompliances };
 
+                // Process each question
                 questionData.forEach((q) => {
                     const dept = q.createdBy.department;
+                    const qId = q._id;
 
-                    // Look up compliance using questionId
-                    const existingCompliance = existingCompliancesMap[q._id];
-
-                    if (existingCompliance) {
-                        // Use existing compliance data
-                        initialAnswers[q._id] = existingCompliance.answer;
-                        initialDeviations[q._id] =
-                            existingCompliance.deviation || {
-                                reason: "",
-                                attachments: [],
-                            };
-
-                        if (existingCompliance.answer !== q.expectedAnswer) {
-                            initialDeptDeviations[dept] = true;
-                        }
-                    } else {
-                        // Use default values from fetched questions
-                        initialAnswers[q._id] = q.expectedAnswer;
-                        initialDeviations[q._id] = {
+                    // Check if this question already exists in formData
+                    if (existingCompliances[qId]) {
+                        // Use existing form data
+                        const existingData = existingCompliances[qId];
+                        initialAnswers[qId] = existingData.answer;
+                        initialDeviations[qId] = existingData.deviation || {
                             reason: "",
                             attachments: [],
                         };
 
-                        // Update formData with default compliance
-                        setFormData((prev) => ({
-                            ...prev,
-                            complinces: {
-                                ...prev.complinces,
-                                [q._id]: {
-                                    questionId: q._id,
-                                    question: q.question,
-                                    answer: q.expectedAnswer,
-                                    department: q.createdBy.department,
-                                    deviation: null,
-                                    expectedAnswer: q.expectedAnswer,
-                                    description: q.description,
-                                },
-                            },
-                            hasDeviations: 0,
-                            departmentDeviations: initialDeptDeviations,
-                            riskAccepted: false,
-                        }));
+                        // Update department deviation status
+                        if (existingData.answer !== q.expectedAnswer) {
+                            initialDeptDeviations[dept] = true;
+                        }
+
+                        // Make sure the question is in updated compliances
+                        updatedCompliances[qId] = existingData;
+                    } else {
+                        // Create new compliance data for this question
+                        initialAnswers[qId] = q.expectedAnswer;
+                        initialDeviations[qId] = {
+                            reason: "",
+                            attachments: [],
+                        };
+
+                        // Add this question to compliances with default values
+                        updatedCompliances[qId] = {
+                            questionId: qId,
+                            question: q.question,
+                            answer: q.expectedAnswer,
+                            department: dept,
+                            deviation: null,
+                            expectedAnswer: q.expectedAnswer,
+                            description: q.description,
+                        };
                     }
                 });
 
+                // Set local state
                 setAnswers(initialAnswers);
                 setDeviations(initialDeviations);
                 setDepartmentDeviations(initialDeptDeviations);
                 setExpandedDepts(initialExpandedDepts);
 
-                // Set risk acceptance from formData if exists
-                if (formData.riskAccepted !== undefined) {
-                    setRiskAccepted(formData.riskAccepted);
-                }
+                // Update formData with the finalized compliances
+                setFormData((prev) => ({
+                    ...prev,
+                    complinces: updatedCompliances,
+                    hasDeviations: Object.values(initialDeptDeviations).some(
+                        (v) => v
+                    )
+                        ? 1
+                        : 0,
+                    departmentDeviations: initialDeptDeviations,
+                    riskAccepted: formData.riskAccepted || false,
+                }));
 
                 setIsLoading(false);
             } catch (error) {
@@ -144,20 +148,11 @@ const AgreementCompliances = ({
             [dept]: !prev[dept],
         }));
     };
+
     const handleAnswerChange = (questionId, value) => {
         const question = questions.find((q) => q._id === questionId);
         const dept = question?.createdBy.department;
         const isDeviation = value !== question?.expectedAnswer;
-        console.log(
-            "question:",
-            question,
-            "dept",
-            dept,
-            "isDeviation",
-            isDeviation,
-            "value",
-            value
-        );
 
         // Update answers
         setAnswers((prev) => ({
@@ -166,46 +161,24 @@ const AgreementCompliances = ({
         }));
 
         setFormData((prev) => {
-            // Create a copy of existing compliances
-            const updatedCompliances = [...(prev.complinces || [])];
+            // Create a copy of existing compliances (as an object)
+            const updatedCompliances = { ...(prev.complinces || {}) };
 
-            // Find the index of the compliance with matching questionId
-            const complianceIndex = updatedCompliances.findIndex(
-                (compliance) => compliance.questionId === questionId
-            );
-            console.log("complianceIndex", complianceIndex);
-
-            // Update or add the compliance
-            if (complianceIndex !== -1) {
-                updatedCompliances[complianceIndex] = {
-                    questionId,
-                    question: question.question,
-                    answer: value,
-                    department: dept,
-                    deviation: isDeviation ? deviations[questionId] : null,
-                    expectedAnswer: question.expectedAnswer,
-                    description: question.description,
-                };
-            } else {
-                updatedCompliances.push({
-                    questionId,
-                    question: question.question,
-                    answer: value,
-                    department: dept,
-                    deviation: isDeviation ? deviations[questionId] : null,
-                    expectedAnswer: question.expectedAnswer,
-                    description: question.description,
-                });
-            }
+            // Update the compliance
+            updatedCompliances[questionId] = {
+                questionId,
+                question: question.question,
+                answer: value,
+                department: dept,
+                deviation: isDeviation ? deviations[questionId] : null,
+                expectedAnswer: question.expectedAnswer,
+                description: question.description,
+            };
 
             // Update department deviations
             const updatedDepartmentDeviations = {
                 ...prev.departmentDeviations,
             };
-            console.log(
-                "updatedDepartmentDeviations",
-                updatedDepartmentDeviations
-            );
 
             // Find all questions in this department
             const departmentQuestions = questions.filter(
@@ -221,15 +194,16 @@ const AgreementCompliances = ({
 
             // Update the department's deviation status
             updatedDepartmentDeviations[dept] = hasDepartmentDeviation;
-            console.log(
-                "updatedDepartmentDeviations",
-                updatedDepartmentDeviations
-            );
 
             return {
                 ...prev,
                 complinces: updatedCompliances,
                 departmentDeviations: updatedDepartmentDeviations,
+                hasDeviations: Object.values(updatedDepartmentDeviations).some(
+                    (v) => v
+                )
+                    ? 1
+                    : 0,
             };
         });
     };
@@ -310,7 +284,21 @@ const AgreementCompliances = ({
     const handleSubmit = async () => {
         try {
             setSavingData(true);
-            const response = await saveAggrementData(formData, reqId);
+
+            // Make sure we're saving the complete updated form data
+            const dataToSave = {
+                ...formData,
+                complinces: { ...formData.complinces },
+                hasDeviations: Object.values(departmentDeviations).some(
+                    (v) => v
+                )
+                    ? 1
+                    : 0,
+                departmentDeviations: { ...departmentDeviations },
+                riskAccepted: riskAccepted,
+            };
+
+            const response = await saveAggrementData(dataToSave, reqId);
             if (response.status === 200) {
                 onNext();
             }
@@ -693,39 +681,35 @@ const AgreementCompliances = ({
                     }
                 )}
 
-                {/* Risk acceptance section */}
-                {hasDeviations && (
-                    <div className="p-6 bg-white border border-yellow-200 rounded-xl shadow-md">
-                        <div className="flex items-start gap-4">
-                            <AlertTriangle className="text-yellow-500 h-8 w-8 shrink-0 mt-0.5" />
-                            <div>
-                                <h4 className="text-xl font-semibold text-gray-800 mb-3">
-                                    Risk Acknowledgment Required
-                                </h4>
+                <div className="p-6 bg-white border border-yellow-200 rounded-xl shadow-md">
+                    <div className="flex items-start gap-4">
+                        <AlertTriangle className="text-yellow-500 h-8 w-8 shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                                Risk Acknowledgment Required
+                            </h4>
 
-                                <label className="flex items-center gap-3 cursor-pointer p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                                    <input
-                                        type="checkbox"
-                                        checked={riskAccepted}
-                                        onChange={handleRiskAcceptance}
-                                        className="w-5 h-5 text-primary rounded"
-                                    />
-                                    <span className="text-base font-medium text-gray-800">
-                                        The information provided above is
-                                        accurate to the best of my knowledge and
-                                        has the necessary agreement/legal
-                                        confirmation. However, if any
-                                        discrepancies or non-compliance with
-                                        policies are identified in the future, I
-                                        acknowledge that the associated risks
-                                        and responsibilities
-                                        will be taken by me.
-                                    </span>
-                                </label>
-                            </div>
+                            <label className="flex items-center gap-3 cursor-pointer p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                                <input
+                                    type="checkbox"
+                                    checked={riskAccepted}
+                                    onChange={handleRiskAcceptance}
+                                    className="w-5 h-5 text-primary rounded"
+                                />
+                                <span className="text-base font-medium text-gray-800">
+                                    The information provided above is accurate
+                                    to the best of my knowledge and has the
+                                    necessary agreement/legal confirmation.
+                                    However, if any discrepancies or
+                                    non-compliance with policies are identified
+                                    in the future, I acknowledge that the
+                                    associated risks and responsibilities will
+                                    be taken by me.
+                                </span>
+                            </label>
                         </div>
                     </div>
-                )}
+                </div>
 
                 <div className="flex justify-between pt-4 mb-8">
                     <button
@@ -737,11 +721,9 @@ const AgreementCompliances = ({
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={
-                            (hasDeviations && !riskAccepted) || savingData
-                        }
+                        disabled={!riskAccepted || savingData}
                         className={`px-5 py-3 bg-primary text-white font-medium rounded-lg shadow-md flex items-center gap-2 ${
-                            (hasDeviations && !riskAccepted) || savingData
+                            !riskAccepted || savingData
                                 ? "opacity-50 cursor-not-allowed"
                                 : "hover:bg-primary/90"
                         }`}

@@ -2481,7 +2481,7 @@ const sendNudgeNotification = async (req, res) => {
 
 const getReports = async (req, res) => {
   try {
-    const reqData = await CreateNewReq.find({isCompleted:true});
+    const reqData = await CreateNewReq.find({ isCompleted: true });
     console.log("ReqData", reqData);
 
     // Initialize counters
@@ -2491,8 +2491,8 @@ const getReports = async (req, res) => {
     let approvedRequests = 0;
     let holdRequests = 0;
     let departmentBudgetByCurrency = 0;
-    let poPendingRequest=0
-    let invoicePending = 0
+    let poPendingRequest = 0;
+    let invoicePending = 0;
 
     // Loop through the data and count based on the 'status'
     reqData.forEach((request) => {
@@ -2505,11 +2505,11 @@ const getReports = async (req, res) => {
       } else if (request.status === "Hold") {
         holdRequests++;
       } else if (request.status === "Approved") {
-        approvedRequests++
-      }else if(request.status === "PO-Pending"){
-        poPendingRequest++
-      }else if(request.status === "Invoice-Pending"){
-        invoicePending++
+        approvedRequests++;
+      } else if (request.status === "PO-Pending") {
+        poPendingRequest++;
+      } else if (request.status === "Invoice-Pending") {
+        invoicePending++;
       }
     });
 
@@ -2536,7 +2536,7 @@ const getReports = async (req, res) => {
       approvedRequests,
       poPendingRequest,
       approvedRequests,
-      holdRequests
+      holdRequests,
     });
   } catch (err) {
     console.log("Error in getting the reports", err);
@@ -2690,14 +2690,20 @@ const editSendRequestMail = async (req, res) => {
 const uploadPoDocuments = async (req, res) => {
   try {
     console.log("Welcome to upload documets");
+  
     const { reqId, empId } = req.params;
     const { link } = req.body;
     const oldReqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { approvals: 1 }
+      { approvals: 1, userId: 1,reqid:1 }
     );
-    const { approvals } = oldReqData;
+    const { approvals, userId,reqid } = oldReqData;
     const latestApproval = approvals[approvals.length - 1];
+
+    const requesterData = await empModel.findOne(
+      { employee_id: userId },
+      { full_name: 1, company_email_id: 1 }
+    );
 
     // Fetch employee data
     const empData =
@@ -2748,6 +2754,18 @@ const uploadPoDocuments = async (req, res) => {
         },
       },
       { new: true }
+    );
+
+    await sendEmail(
+      requesterData.company_email_id,
+      "poUploadedNotificationTemplate",
+      {
+        reqId:reqid,
+        requestorName: requesterData.full_name,
+        employeeName: latestApproval.approverName,
+        department: latestApproval.departmentName,
+        pdfLink: link,
+      }
     );
 
     if (!updatedRequest) {
@@ -4101,7 +4119,7 @@ const saveAggrementData = async (req, res) => {
     }
 
     let departmentDeviations = new Map();
-    let riskAccepted = false;
+    let riskAccepted = true;
 
     complinces.forEach(({ department, answer, expectedAnswer }) => {
       if (answer !== expectedAnswer) {
@@ -5081,6 +5099,16 @@ const tagMessageToEmployee = async (req, res) => {
           company_email_id: hodData.firstLevelApproval.hodEmail,
         });
       }
+    } else if (role === "Requestor") {
+      const requstorData = await CreateNewReq.findOne(
+        { _id: reqId },
+        { userId: 1 }
+      );
+      const reqData = await empModel.findOne(
+        { employee_id: requstorData.userId },
+        { full_name: 1, company_email_id: 1, employee_id: 1 }
+      );
+      empData.push(reqData);
     } else {
       empData = await addPanelUsers.find(
         { role: role },
@@ -5111,7 +5139,7 @@ const getSearchedData = async (req, res) => {
     console.log("Welcome to searched data", data);
 
     const { entity, department, status, fromDate, toDate } = data;
-    
+
     // Build the dynamic match query (only include fields that are passed)
     const matchQuery = { isCompleted: true };
 
@@ -5120,7 +5148,10 @@ const getSearchedData = async (req, res) => {
     if (status) matchQuery.status = status;
 
     if (fromDate && toDate) {
-      matchQuery.createdAt = { $gte: new Date(fromDate), $lte: new Date(toDate) };
+      matchQuery.createdAt = {
+        $gte: new Date(fromDate),
+        $lte: new Date(toDate),
+      };
     } else if (fromDate) {
       matchQuery.createdAt = { $gte: new Date(fromDate) };
     } else if (toDate) {
@@ -5129,7 +5160,7 @@ const getSearchedData = async (req, res) => {
 
     // Fetch the data using aggregation
     const reqData = await CreateNewReq.aggregate([
-      { $match: matchQuery },  // Apply dynamic filters
+      { $match: matchQuery }, // Apply dynamic filters
       {
         $group: {
           _id: {
@@ -5138,24 +5169,66 @@ const getSearchedData = async (req, res) => {
             currency: "$supplies.selectedCurrency",
           },
           totalRequests: { $sum: 1 },
-          pendingRequests: { 
-            $sum: { $cond: [{ $in: ["$status", ["Pending", "Invoice-Pending", "PO-Pending"]] }, 1, 0] } 
+          pendingRequests: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    "$status",
+                    ["Pending", "Invoice-Pending", "PO-Pending"],
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
           },
-          approvedRequest:{ $sum: { $cond: [{ $eq: ["$status", "Approved"] }, 1, 0] } },
-          holdRequests: { $sum: { $cond: [{ $eq: ["$status", "Hold"] }, 1, 0] } },
-          rejectedRequests: { $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] } },
+          approvedRequest: {
+            $sum: { $cond: [{ $eq: ["$status", "Approved"] }, 1, 0] },
+          },
+          holdRequests: {
+            $sum: { $cond: [{ $eq: ["$status", "Hold"] }, 1, 0] },
+          },
+          rejectedRequests: {
+            $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] },
+          },
           totalFund: { $sum: "$supplies.totalValue" },
-          pendingFund: { 
-            $sum: { $cond: [{ $in: ["$status", ["Pending", "Invoice-Pending", "PO-Pending"]] }, "$supplies.totalValue", 0] } 
+          pendingFund: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    "$status",
+                    ["Pending", "Invoice-Pending", "PO-Pending"],
+                  ],
+                },
+                "$supplies.totalValue",
+                0,
+              ],
+            },
           },
-          rejectedFund: { 
-            $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, "$supplies.totalValue", 0] } 
+          rejectedFund: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "Rejected"] },
+                "$supplies.totalValue",
+                0,
+              ],
+            },
           },
-          approvedFund: { 
-            $sum: { $cond: [{ $eq: ["$status", "Approved"] }, "$supplies.totalValue", 0] } 
+          approvedFund: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "Approved"] },
+                "$supplies.totalValue",
+                0,
+              ],
+            },
           },
-          holdFund: { 
-            $sum: { $cond: [{ $eq: ["$status", "Hold"] }, "$supplies.totalValue", 0] } 
+          holdFund: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Hold"] }, "$supplies.totalValue", 0],
+            },
           },
         },
       },
@@ -5181,31 +5254,11 @@ const getSearchedData = async (req, res) => {
 
     console.log("Aggregated Data:", reqData);
     res.status(200).json({ success: true, data: reqData });
-
   } catch (err) {
     console.log("Error in getting the data", err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = {
   getSearchedData,

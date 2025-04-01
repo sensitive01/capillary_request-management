@@ -38,6 +38,7 @@ const ChatComments = ({ reqId, reqid }) => {
         "Legal Team",
         "Info Security",
         "Head of Finance",
+        "Requestor"
     ];
 
     const scrollToBottom = () => {
