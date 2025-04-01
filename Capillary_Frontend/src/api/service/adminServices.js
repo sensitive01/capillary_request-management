@@ -1115,6 +1115,15 @@ export const addNewApprover = async (data) => {
     return err;
   }
 };
-
+export const showFileUrl = async (presignedUrl) => {
+  try {
+    const response = await adminServices.post(
+      `/upload-s3/refresh-presigned-url`,{presignedUrl}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
 
 // ...............................................................................................

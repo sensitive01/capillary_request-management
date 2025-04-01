@@ -1,5 +1,6 @@
 import { FaFilePdf } from "react-icons/fa";
 import { formatDateToDDMMYY } from "../../../utils/dateFormat";
+import { showFileUrl } from "../../../api/service/adminServices.js";
 
 const DocumentsDisplay = ({ request }) => {
     const showDocuments = ["Invoice-Pending", "Approved"].includes(
@@ -20,6 +21,20 @@ const DocumentsDisplay = ({ request }) => {
         } catch (error) {
             console.error("Error parsing filename:", error);
             return "Document";
+        }
+    };
+
+    const handleShowFile = async (fileUrl) => {
+        try {
+            const response = await showFileUrl(fileUrl);
+            if (response.status===200) {
+       
+                window.open(response.data.presignedUrl, "_blank");
+            } else {
+                console.error("No presigned URL received");
+            }
+        } catch (error) {
+            console.error("Error fetching presigned URL:", error);
         }
     };
 
@@ -71,11 +86,9 @@ const DocumentsDisplay = ({ request }) => {
         showDivider = false,
     }) => (
         <div className={`${showDivider ? "border-b pb-6" : ""}`}>
-            <a
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200"
+            <div
+                onClick={() => handleShowFile(link)}
+                className="group flex items-center gap-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 cursor-pointer"
             >
                 <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
                     <FaFilePdf className="text-red-500 text-xl" />
@@ -83,7 +96,7 @@ const DocumentsDisplay = ({ request }) => {
                 <span className="text-gray-700 font-medium group-hover:text-primary transition-colors">
                     {getCleanFileName(link)}
                 </span>
-            </a>
+            </div>
             <div className="mt-3 px-4 space-y-1">
                 <div className="flex items-center gap-2">
                     <span className="text-gray-600 font-medium">

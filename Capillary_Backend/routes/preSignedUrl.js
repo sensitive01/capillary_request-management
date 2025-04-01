@@ -24,11 +24,11 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
     const date = new Date();
     let newReqId;
     const { reqId } = req.query;
-    
+
     console.log("Received ReqId:", reqId);
 
     // Generate new reqId if not provided
-    if (!reqId||reqId==="undefined") {
+    if (!reqId || reqId === "undefined") {
       const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
         date.getMonth() + 1
       ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
@@ -36,12 +36,10 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
       }`;
       newReqId = reqid;
       console.log("Using ReqId 1:", newReqId);
-
     } else {
       console.log("Using ReqId: 2", newReqId);
       newReqId = reqId;
     }
-
 
     // Ensure files are provided
     if (!files || files.length === 0) {
@@ -74,7 +72,7 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: result.Key,
-        Expires: 60 * 60 * 24 * 7, 
+        Expires: 60 * 60 * 24 * 7,
       };
 
       // Generate pre-signed URL for the uploaded file
@@ -86,16 +84,53 @@ s3Router.post("/upload", upload.array("files"), async (req, res) => {
     res.status(200).json({
       message: "Files uploaded successfully",
       fileUrls,
-      newReqId,  // Return the reqId used for this upload
+      newReqId, // Return the reqId used for this upload
     });
-
   } catch (error) {
     console.error("Error uploading files:", error);
     res.status(500).json({ error: "Failed to upload files" });
   }
 });
 
+function extractObjectKey(presignedUrl) {
+  const url = new URL(presignedUrl);
+  return decodeURIComponent(url.pathname.substring(1));
+}
 
+function generatePresignedUrl(bucket, key, expiresInSeconds = 604800) {
+  const params = {
+    Bucket: bucket,
+    Key: key,
+    Expires: expiresInSeconds,
+  };
+  return s3.getSignedUrl("getObject", params);
+}
 
+s3Router.post("/refresh-presigned-url",
+  async (req, res) => {
+    try {
+      const { presignedUrl } = req.body;
+      console.log("welcome to oreseigned url",presignedUrl)
+
+      if (!presignedUrl) {
+        return res.status(400).json({ error: "No pre-signed URL provided" });
+      }
+
+      const objectKey = extractObjectKey(presignedUrl);
+
+      const bucketName = process.env.S3_BUCKET_NAME;
+
+      const newPresignedUrl = generatePresignedUrl(bucketName, objectKey);
+      console.log("newPresignedUrl",newPresignedUrl)
+
+      res.status(200).json({
+        message: "New pre-signed URL generated successfully",
+        presignedUrl: newPresignedUrl,
+      });
+    } catch (error) {
+      console.error("Error generating pre-signed URL:", error);
+      res.status(500).json({ error: "Failed to generate pre-signed URL" });
+    }
+  });
 
 module.exports = s3Router;
