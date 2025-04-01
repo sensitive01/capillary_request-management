@@ -66,21 +66,28 @@ const AgreementCompliances = ({
                     initialDeptDeviations[dept] = false;
                 });
 
-                // Start with existing compliances or an empty object
-                const existingCompliances = formData.complinces || {};
-                const updatedCompliances = { ...existingCompliances };
+                // Initialize array for compliances if it doesn't exist or is empty
+                const updatedCompliances =
+                    Array.isArray(formData.complinces) &&
+                    formData.complinces.length > 0
+                        ? [...formData.complinces]
+                        : new Array(questionData.length).fill(null);
 
                 // Process each question
-                questionData.forEach((q) => {
+                questionData.forEach((q, index) => {
                     const dept = q.createdBy.department;
                     const qId = q._id;
 
-                    // Check if this question already exists in formData
-                    if (existingCompliances[qId]) {
+                    // Check if this question already has compliance data
+                    if (updatedCompliances[index]) {
+                        console.log(
+                            "Using existing compliance data for index",
+                            index
+                        );
                         // Use existing form data
-                        const existingData = existingCompliances[qId];
-                        initialAnswers[qId] = existingData.answer;
-                        initialDeviations[qId] = existingData.deviation || {
+                        const existingData = updatedCompliances[index];
+                        initialAnswers[index] = existingData.answer;
+                        initialDeviations[index] = existingData.deviation || {
                             reason: "",
                             attachments: [],
                         };
@@ -89,19 +96,20 @@ const AgreementCompliances = ({
                         if (existingData.answer !== q.expectedAnswer) {
                             initialDeptDeviations[dept] = true;
                         }
-
-                        // Make sure the question is in updated compliances
-                        updatedCompliances[qId] = existingData;
                     } else {
+                        console.log(
+                            "Creating new compliance data for index",
+                            index
+                        );
                         // Create new compliance data for this question
-                        initialAnswers[qId] = q.expectedAnswer;
-                        initialDeviations[qId] = {
+                        initialAnswers[index] = q.expectedAnswer;
+                        initialDeviations[index] = {
                             reason: "",
                             attachments: [],
                         };
 
                         // Add this question to compliances with default values
-                        updatedCompliances[qId] = {
+                        updatedCompliances[index] = {
                             questionId: qId,
                             question: q.question,
                             answer: q.expectedAnswer,
@@ -149,28 +157,28 @@ const AgreementCompliances = ({
         }));
     };
 
-    const handleAnswerChange = (questionId, value) => {
-        const question = questions.find((q) => q._id === questionId);
+    const handleAnswerChange = (index, value) => {
+        const question = questions[index];
         const dept = question?.createdBy.department;
         const isDeviation = value !== question?.expectedAnswer;
 
         // Update answers
         setAnswers((prev) => ({
             ...prev,
-            [questionId]: value,
+            [index]: value,
         }));
 
         setFormData((prev) => {
-            // Create a copy of existing compliances (as an object)
-            const updatedCompliances = { ...(prev.complinces || {}) };
+            // Create a copy of existing compliances (as an array)
+            const updatedCompliances = [...(prev.complinces || [])];
 
             // Update the compliance
-            updatedCompliances[questionId] = {
-                questionId,
+            updatedCompliances[index] = {
+                questionId: question._id,
                 question: question.question,
                 answer: value,
                 department: dept,
-                deviation: isDeviation ? deviations[questionId] : null,
+                deviation: isDeviation ? deviations[index] : null,
                 expectedAnswer: question.expectedAnswer,
                 description: question.description,
             };
@@ -181,16 +189,17 @@ const AgreementCompliances = ({
             };
 
             // Find all questions in this department
-            const departmentQuestions = questions.filter(
-                (q) => q.createdBy.department === dept
-            );
+            const departmentQuestionIndices = questions
+                .map((q, idx) => (q.createdBy.department === dept ? idx : null))
+                .filter((idx) => idx !== null);
 
             // Check if any questions in this department now have deviations
-            const hasDepartmentDeviation = departmentQuestions.some((q) => {
-                const currentAnswer =
-                    q._id === questionId ? value : answers[q._id];
-                return currentAnswer !== q.expectedAnswer;
-            });
+            const hasDepartmentDeviation = departmentQuestionIndices.some(
+                (idx) => {
+                    const currentAnswer = idx === index ? value : answers[idx];
+                    return currentAnswer !== questions[idx].expectedAnswer;
+                }
+            );
 
             // Update the department's deviation status
             updatedDepartmentDeviations[dept] = hasDepartmentDeviation;
@@ -208,30 +217,33 @@ const AgreementCompliances = ({
         });
     };
 
-    const handleDeviationChange = (questionId, field, value) => {
+    const handleDeviationChange = (index, field, value) => {
         const updatedDeviation = {
-            ...deviations[questionId],
+            ...deviations[index],
             [field]: value,
         };
 
         setDeviations((prev) => ({
             ...prev,
-            [questionId]: updatedDeviation,
+            [index]: updatedDeviation,
         }));
 
-        setFormData((prev) => ({
-            ...prev,
-            complinces: {
-                ...prev.complinces,
-                [questionId]: {
-                    ...prev.complinces[questionId],
-                    deviation: updatedDeviation,
-                },
-            },
-        }));
+        setFormData((prev) => {
+            const updatedCompliances = [...prev.complinces];
+
+            updatedCompliances[index] = {
+                ...updatedCompliances[index],
+                deviation: updatedDeviation,
+            };
+
+            return {
+                ...prev,
+                complinces: updatedCompliances,
+            };
+        });
     };
 
-    const handleFileUpload = async (questionId, files) => {
+    const handleFileUpload = async (index, files) => {
         try {
             const uploadPromises = Array.from(files).map((file) =>
                 uploadFiles(file, "compliances", reqId)
@@ -242,25 +254,21 @@ const AgreementCompliances = ({
                 (response) => response.data.fileUrls[0]
             );
             const updatedAttachments = [
-                ...(deviations[questionId]?.attachments || []),
+                ...(deviations[index]?.attachments || []),
                 ...fileUrls,
             ];
 
-            handleDeviationChange(
-                questionId,
-                "attachments",
-                updatedAttachments
-            );
+            handleDeviationChange(index, "attachments", updatedAttachments);
         } catch (error) {
             console.error("Upload error:", error);
         }
     };
 
-    const handleRemoveFile = (questionId, fileUrl) => {
-        const updatedAttachments = deviations[questionId]?.attachments.filter(
+    const handleRemoveFile = (index, fileUrl) => {
+        const updatedAttachments = deviations[index]?.attachments.filter(
             (url) => url !== fileUrl
         );
-        handleDeviationChange(questionId, "attachments", updatedAttachments);
+        handleDeviationChange(index, "attachments", updatedAttachments);
     };
 
     const showInfo = (title, description) => {
@@ -288,7 +296,7 @@ const AgreementCompliances = ({
             // Make sure we're saving the complete updated form data
             const dataToSave = {
                 ...formData,
-                complinces: { ...formData.complinces },
+                complinces: [...formData.complinces],
                 hasDeviations: Object.values(departmentDeviations).some(
                     (v) => v
                 )
@@ -334,10 +342,8 @@ const AgreementCompliances = ({
         return acc;
     }, {});
 
-    console.log("hasDeviations", questions);
-
     const hasDeviations = questions.some(
-        (q) => answers[q._id] !== q.expectedAnswer
+        (q, idx) => answers[idx] !== q.expectedAnswer
     );
 
     if (isLoading) {
@@ -452,11 +458,23 @@ const AgreementCompliances = ({
                                                 <span className="text-sm font-medium text-red-600">
                                                     {
                                                         deptQuestions.filter(
-                                                            (q) =>
-                                                                answers[
-                                                                    q._id
-                                                                ] !==
-                                                                q.expectedAnswer
+                                                            (q, qIndex) => {
+                                                                // Find the overall index for this question
+                                                                const overallIndex =
+                                                                    questions.findIndex(
+                                                                        (
+                                                                            question
+                                                                        ) =>
+                                                                            question._id ===
+                                                                            q._id
+                                                                    );
+                                                                return (
+                                                                    answers[
+                                                                        overallIndex
+                                                                    ] !==
+                                                                    q.expectedAnswer
+                                                                );
+                                                            }
                                                         ).length
                                                     }{" "}
                                                     Deviation(s)
@@ -474,10 +492,17 @@ const AgreementCompliances = ({
                                 {isExpanded && (
                                     <div className="divide-y divide-gray-100">
                                         {deptQuestions.map((question) => {
+                                            // Find the overall index for this question
+                                            const questionIndex =
+                                                questions.findIndex(
+                                                    (q) =>
+                                                        q._id === question._id
+                                                );
+
                                             const existingAnswer =
-                                                answers[question._id];
+                                                answers[questionIndex];
                                             const existingDeviation =
-                                                deviations[question._id];
+                                                deviations[questionIndex];
                                             const isDeviation =
                                                 existingAnswer !==
                                                 question.expectedAnswer;
@@ -546,7 +571,7 @@ const AgreementCompliances = ({
                                                                         }
                                                                         onChange={() =>
                                                                             handleAnswerChange(
-                                                                                question._id,
+                                                                                questionIndex,
                                                                                 true
                                                                             )
                                                                         }
@@ -568,7 +593,7 @@ const AgreementCompliances = ({
                                                                         }
                                                                         onChange={() =>
                                                                             handleAnswerChange(
-                                                                                question._id,
+                                                                                questionIndex,
                                                                                 false
                                                                             )
                                                                         }
@@ -600,7 +625,7 @@ const AgreementCompliances = ({
                                                                 }
                                                                 onChange={(e) =>
                                                                     handleDeviationChange(
-                                                                        question._id,
+                                                                        questionIndex,
                                                                         "reason",
                                                                         e.target
                                                                             .value
@@ -632,7 +657,7 @@ const AgreementCompliances = ({
                                                                                 e
                                                                             ) =>
                                                                                 handleFileUpload(
-                                                                                    question._id,
+                                                                                    questionIndex,
                                                                                     e
                                                                                         .target
                                                                                         .files
@@ -662,7 +687,7 @@ const AgreementCompliances = ({
                                                                             fileUrl
                                                                         ) =>
                                                                             handleRemoveFile(
-                                                                                question._id,
+                                                                                questionIndex,
                                                                                 fileUrl
                                                                             )
                                                                         }
