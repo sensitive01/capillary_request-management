@@ -21,6 +21,7 @@ import {
     generatePDF,
     releseReqStatus,
     sendReminder,
+    showFileUrl,
 } from "../../../api/service/adminServices";
 import { toast, ToastContainer } from "react-toastify";
 import ChatComments from "./ChatComments";
@@ -913,6 +914,19 @@ const PreviewTheReq = () => {
         if (!uploadedFiles || uploadedFiles.length === 0) {
             return null;
         }
+           const handleShowFile = async (fileUrl) => {
+                try {
+                    const response = await showFileUrl(fileUrl);
+                    if (response.status===200) {
+               
+                        window.open(response.data.presignedUrl, "_blank");
+                    } else {
+                        console.error("No presigned URL received");
+                    }
+                } catch (error) {
+                    console.error("Error fetching presigned URL:", error);
+                }
+            };
 
         // Transform the data structure
         const fileCategories = uploadedFiles.reduce((acc, fileGroup) => {
@@ -940,10 +954,11 @@ const PreviewTheReq = () => {
                                         key={fileIndex}
                                         className="flex flex-col items-center bg-gray-50 rounded p-2"
                                     >
-                                        <a
-                                            href={file}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                        onClick={()=>handleShowFile(file)}
+                                            // href={file}
+                                            // target="_blank"
+                                            // rel="noopener noreferrer"
                                             className="text-xs text-primary hover:text-blue-800 truncate max-w-full text-center"
                                         >
                                             <img
@@ -956,7 +971,7 @@ const PreviewTheReq = () => {
                                             <span className="block">
                                                 File {fileIndex + 1}
                                             </span>
-                                        </a>
+                                        </button>
                                     </div>
                                 ))}
                             </div>

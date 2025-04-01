@@ -36,31 +36,24 @@ const postComments = async (req, res) => {
   try {
     const { id } = req.params;
     const { data } = req.body;
-
     console.log("id, data", id, data);
+
     const { taggedEmployeeEmail } = data;
-    console.log("taggedEmployeeId", taggedEmployeeEmail);
 
-    const taggedEmployee = await empModel.findOne(
-      { company_email_id: taggedEmployeeEmail },
-      { full_name: 1, company_email_id: 1, employee_id: 1 }
-    );
-    console.log("taggedEmployee", taggedEmployee);
+    // Fetch employee data in parallel
+    const [taggedEmployee, empDataFromModel, empDataFromPanel] = await Promise.all([
+      taggedEmployeeEmail
+        ? empModel.findOne({ company_email_id: taggedEmployeeEmail }, { full_name: 1, company_email_id: 1, employee_id: 1 })
+        : Promise.resolve(null),
+      empModel.findOne({ employee_id: data.senderId }, { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }).lean(),
+      addPanelUsers.findOne({ employee_id: data.senderId }).lean(),
+    ]);
 
-    let empData =
-      (await empModel
-        .findOne(
-          { employee_id: data.senderId },
-          {
-            full_name: 1,
-            employee_id: 1,
-            department: 1,
-            hod: 1,
-            hod_email_id: 1,
-          }
-        )
-        .lean()) ||
-      (await addPanelUsers.findOne({ employee_id: data.senderId }).lean());
+    const empData = empDataFromModel || empDataFromPanel;
+
+    if (!empData) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
 
     const commentData = {
       senderId: data.senderId,
@@ -72,32 +65,37 @@ const postComments = async (req, res) => {
     };
 
     const updatedRequest = await CreateNewReq.findByIdAndUpdate(
-      { _id: id },
+      id,
       { $push: { commentLogs: commentData } },
       { new: true }
     );
-    await sendEmail(taggedEmployeeEmail, "chatNotificationTemplate", {
-      senderName: empData.full_name,
-      topic: data.message,
-      employeeName: data.taggedEmployeeName,
-      reqId: updatedRequest.reqid,
-      senderDepartment: empData.department,
+
+    if (!updatedRequest) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    // Send email asynchronously (does not block response)
+    if (taggedEmployeeEmail) {
+      sendEmail(taggedEmployeeEmail, "chatNotificationTemplate", {
+        senderName: empData.full_name,
+        topic: data.message,
+        employeeName: data.taggedEmployeeName,
+        reqId: updatedRequest.reqid,
+        senderDepartment: empData.department,
+        attachmentUrl:data?.attachmentUrl?data?.attachmentUrl:""
+      }).catch((err) => console.error("Email sending failed:", err));
+    }
+
+    res.status(200).json({
+      message: "Comment added successfully",
+      updatedRequest,
     });
 
-    if (updatedRequest) {
-      res.status(200).json({
-        message: "Comment added successfully",
-        updatedRequest,
-      });
-    } else {
-      res.status(404).json({ message: "Request not found" });
-    }
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error in posting the comments", error: err.message });
+    res.status(500).json({ message: "Error in posting the comments", error: err.message });
   }
 };
+
 
 const getAllChats = async (req, res) => {
   try {
@@ -2690,14 +2688,14 @@ const editSendRequestMail = async (req, res) => {
 const uploadPoDocuments = async (req, res) => {
   try {
     console.log("Welcome to upload documets");
-  
+
     const { reqId, empId } = req.params;
     const { link } = req.body;
     const oldReqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { approvals: 1, userId: 1,reqid:1 }
+      { approvals: 1, userId: 1, reqid: 1 }
     );
-    const { approvals, userId,reqid } = oldReqData;
+    const { approvals, userId, reqid } = oldReqData;
     const latestApproval = approvals[approvals.length - 1];
 
     const requesterData = await empModel.findOne(
@@ -2760,7 +2758,7 @@ const uploadPoDocuments = async (req, res) => {
       requesterData.company_email_id,
       "poUploadedNotificationTemplate",
       {
-        reqId:reqid,
+        reqId: reqid,
         requestorName: requesterData.full_name,
         employeeName: latestApproval.approverName,
         department: latestApproval.departmentName,
@@ -5091,13 +5089,12 @@ const tagMessageToEmployee = async (req, res) => {
         { firstLevelApproval: 1 }
       );
 
-      console.log(hodData);
-
       if (hodData && hodData.firstLevelApproval) {
-        empData.push({
-          full_name: hodData.firstLevelApproval.hodName,
-          company_email_id: hodData.firstLevelApproval.hodEmail,
-        });
+        const hodEmplData = await empModel.findOne(
+          { company_email_id: hodData.firstLevelApproval.hodEmail },
+          { full_name: 1, company_email_id: 1, employee_id: 1 }
+        );
+        empData.push(hodEmplData);
       }
     } else if (role === "Requestor") {
       const requstorData = await CreateNewReq.findOne(

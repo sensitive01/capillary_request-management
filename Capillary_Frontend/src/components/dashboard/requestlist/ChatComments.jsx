@@ -6,13 +6,16 @@ import {
     Image,
     File,
     Download,
-    Loader2, // Added Loader icon for spinning
+    Loader2,
+    Menu,
+    X,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import {
     fetcAllChats,
     fetchEmployeesByTopic,
     sendMessageComments,
+    showFileUrl,
 } from "../../../api/service/adminServices";
 import uploadFiles from "../../../utils/s3BucketConfig";
 
@@ -23,7 +26,8 @@ const ChatComments = ({ reqId, reqid }) => {
     const [activeChatTopic, setActiveChatTopic] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [isSendingMessage, setIsSendingMessage] = useState(false); // New state for loading
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(true);
     const fileInputRef = useRef(null);
     const messagesEndRef = useRef(null);
 
@@ -38,7 +42,7 @@ const ChatComments = ({ reqId, reqid }) => {
         "Legal Team",
         "Info Security",
         "Head of Finance",
-        "Requestor"
+        "Requestor",
     ];
 
     const scrollToBottom = () => {
@@ -93,6 +97,28 @@ const ChatComments = ({ reqId, reqid }) => {
         fetchEmployees();
     }, [activeChatTopic]);
 
+    // Close sidebar on mobile when a topic is selected
+    useEffect(() => {
+        const handleWindowResize = () => {
+            if (window.innerWidth < 768) {
+                setShowSidebar(false);
+            } else {
+                setShowSidebar(true);
+            }
+        };
+
+        // Set initial state based on screen size
+        handleWindowResize();
+
+        // Add event listener
+        window.addEventListener("resize", handleWindowResize);
+
+        // Cleanup
+        return () => {
+            window.removeEventListener("resize", handleWindowResize);
+        };
+    }, []);
+
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -133,11 +159,16 @@ const ChatComments = ({ reqId, reqid }) => {
     };
 
     const handleSendMessage = async () => {
-        if ((!newMessage.trim() && !selectedFile) || isUploading || isSendingMessage) return;
+        if (
+            (!newMessage.trim() && !selectedFile) ||
+            isUploading ||
+            isSendingMessage
+        )
+            return;
 
         try {
             setIsUploading(true);
-            setIsSendingMessage(true); // Set loading state
+            setIsSendingMessage(true);
             let attachmentUrl = null;
             let attachmentType = null;
             let attachmentName = null;
@@ -177,11 +208,14 @@ const ChatComments = ({ reqId, reqid }) => {
                 topic: activeChatTopic || "General Discussion",
                 // Add tagged employee information
                 taggedEmployeeId: selectedEmployee?._id || null,
-                taggedEmployeeName: selectedEmployee?.full_name || selectedEmployee?.hodName || null,
-                taggedEmployeeEmail: selectedEmployee?.company_email_id || selectedEmployee?.hodEmail
+                taggedEmployeeName:
+                    selectedEmployee?.full_name ||
+                    selectedEmployee?.hodName ||
+                    null,
+                taggedEmployeeEmail:
+                    selectedEmployee?.company_email_id ||
+                    selectedEmployee?.hodEmail,
             };
-
-            console.log("New message", newMsg);
 
             const response = await sendMessageComments(newMsg);
             if (response.status === 200) {
@@ -203,7 +237,7 @@ const ChatComments = ({ reqId, reqid }) => {
             console.error("Error sending message:", error);
         } finally {
             setIsUploading(false);
-            setIsSendingMessage(false); // Reset loading state
+            setIsSendingMessage(false);
         }
     };
 
@@ -225,6 +259,20 @@ const ChatComments = ({ reqId, reqid }) => {
             await downloadFile(url, fileName);
         };
 
+        const handleShowFile = async (fileUrl) => {
+            try {
+                console.log("fileUrl", fileUrl);
+                const response = await showFileUrl(fileUrl);
+                if (response.status === 200) {
+                    window.open(response.data.presignedUrl, "_blank");
+                } else {
+                    console.error("No presigned URL received");
+                }
+            } catch (error) {
+                console.error("Error fetching presigned URL:", error);
+            }
+        };
+
         const downloadButton = (
             <button
                 onClick={handleDownload}
@@ -240,11 +288,22 @@ const ChatComments = ({ reqId, reqid }) => {
         if (isImage) {
             return (
                 <div className="max-w-xs bg-gray-50 p-2 rounded-lg">
-                    <img
-                        src={url}
-                        alt={displayName}
-                        className="max-w-full max-h-48 rounded-lg object-contain"
-                    />
+                    <div className="overflow-hidden rounded-lg">
+                        <button onClick={() => handleShowFile(url)}>
+                            <img
+                                src={url}
+                                alt={displayName}
+                                className="max-w-full max-h-48 rounded-lg object-contain bg-white"
+                                onError={(e) => {
+                                    console.error("Image failed to load:", url);
+                                    e.target.src =
+                                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E";
+                                    e.target.className =
+                                        "w-12 h-12 mx-auto text-gray-400";
+                                }}
+                            />
+                        </button>
+                    </div>
                     <div className="mt-2">
                         <div className="text-sm text-gray-600 truncate">
                             {displayName}
@@ -265,13 +324,15 @@ const ChatComments = ({ reqId, reqid }) => {
                                 {displayName}
                             </span>
                         </div>
-                        <iframe
-                            src={url}
-                            className="w-full h-48"
-                            title="PDF Preview"
-                        >
-                            <p>PDF preview not available</p>
-                        </iframe>
+                        <div className="w-full h-48 bg-gray-100 rounded flex items-center justify-center">
+                            <button
+                                onClick={() => handleShowFile(url)}
+                                className="text-primary hover:underline flex items-center"
+                            >
+                                <FileText className="mr-1" size={20} />
+                                View PDF
+                            </button>
+                        </div>
                     </div>
                     {downloadButton}
                 </div>
@@ -295,15 +356,41 @@ const ChatComments = ({ reqId, reqid }) => {
         ? chatMessages.filter((msg) => msg.topic === activeChatTopic)
         : chatMessages;
 
+    const handleTopicClick = (topic) => {
+        setActiveChatTopic(topic);
+        // On mobile, close the sidebar after selecting a topic
+        if (window.innerWidth < 768) {
+            setShowSidebar(false);
+        }
+    };
+
     return (
-        <div className="flex h-screen">
-            <div className="w-1/4 bg-gray-100 border-r p-4 overflow-y-auto">
-                <h3 className="text-xl font-semibold text-primary mb-4">
+        <div className="flex flex-col md:flex-row h-screen relative">
+            {/* Mobile header with menu button */}
+            <div className="md:hidden bg-primary text-white p-4 flex justify-between items-center">
+                <h3 className="text-lg font-semibold">
+                    {activeChatTopic || "All Discussions"}
+                </h3>
+                <button
+                    onClick={() => setShowSidebar(!showSidebar)}
+                    className="p-1 rounded-lg"
+                >
+                    {showSidebar ? <X size={24} /> : <Menu size={24} />}
+                </button>
+            </div>
+
+            {/* Sidebar */}
+            <div
+                className={`${
+                    showSidebar ? "block" : "hidden"
+                } md:block bg-gray-100 border-r p-4 overflow-y-auto w-full md:w-1/4 lg:w-1/5 absolute md:relative z-10 h-[calc(100%-4rem)] md:h-full`}
+            >
+                <h3 className="text-xl font-semibold text-primary mb-4 hidden md:block">
                     Chat Topics
                 </h3>
                 <div className="space-y-2">
                     <div
-                        onClick={() => setActiveChatTopic(null)}
+                        onClick={() => handleTopicClick(null)}
                         className={`p-3 rounded-lg cursor-pointer ${
                             activeChatTopic === null
                                 ? "bg-primary text-white"
@@ -315,7 +402,7 @@ const ChatComments = ({ reqId, reqid }) => {
                     {chatTopics.map((topic, index) => (
                         <div
                             key={index}
-                            onClick={() => setActiveChatTopic(topic)}
+                            onClick={() => handleTopicClick(topic)}
                             className={`p-3 rounded-lg cursor-pointer ${
                                 activeChatTopic === topic
                                     ? "bg-primary text-white"
@@ -328,7 +415,13 @@ const ChatComments = ({ reqId, reqid }) => {
                 </div>
             </div>
 
-            <div className="w-3/4 flex flex-col h-full">
+            {/* Main chat area */}
+            <div
+                className={`${
+                    showSidebar ? "hidden md:flex" : "flex"
+                } flex-col flex-1 h-[calc(100%-4rem)] md:h-full`}
+            >
+                {/* Chat messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {filteredMessages.map((msg, index) => (
                         <div key={index} className="flex items-start space-x-3">
@@ -342,7 +435,7 @@ const ChatComments = ({ reqId, reqid }) => {
                                 <UserCircle2 className="w-10 h-10 text-gray-400" />
                             )}
                             <div className="flex-1">
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center flex-wrap">
                                     <span className="font-semibold">
                                         {msg.senderName}
                                     </span>
@@ -353,7 +446,7 @@ const ChatComments = ({ reqId, reqid }) => {
                                     </span>
                                 </div>
                                 <div className="bg-gray-100 p-3 rounded-lg mt-1">
-                                    <p>{msg.message}</p>
+                                    <p className="break-words">{msg.message}</p>
                                     {msg.attachmentUrl && (
                                         <div className="mt-2">
                                             {renderAttachment(
@@ -380,91 +473,122 @@ const ChatComments = ({ reqId, reqid }) => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="border-t p-4 bg-white">
-                    <div className="flex items-center space-x-3">
-                        <input
-                            id="message"
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Type your message..."
-                            className="flex-1 p-2 border rounded-lg"
-                            autoComplete="off"
-                        />
-
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileSelect}
-                            className="hidden"
-                            id="file-upload"
-                        />
-                        <label
-                            htmlFor="file-upload"
-                            className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg"
-                        >
-                            <Paperclip
-                                size={20}
-                                className={`${
-                                    selectedFile
-                                        ? "text-primary"
-                                        : "text-gray-500"
-                                } ${isUploading ? "animate-pulse" : ""}`}
+                {/* Message input */}
+                <div className="border-t p-2 md:p-4 bg-white">
+                    <div className="flex flex-col space-y-2 md:space-y-0 md:flex-row md:items-center">
+                        {/* Message input and attachment */}
+                        <div className="flex flex-1 items-center space-x-2">
+                            <input
+                                id="message"
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Type your message..."
+                                className="flex-1 p-2 border rounded-lg"
+                                autoComplete="off"
                             />
-                        </label>
-                        {selectedFile && (
-                            <span className="text-xs text-gray-500 truncate max-w-[100px]">
-                                {selectedFile.name}
-                            </span>
-                        )}
 
-                        {activeChatTopic && topicEmployees.length > 0 && (
-                            <select
-                                value={selectedEmployee?._id || ""}
-                                onChange={(e) => {
-                                    const selectedEmp = topicEmployees.find(
-                                        (emp) => (emp._id === e.target.value || emp.company_email_id === e.target.value)
-                                    );
-                                    setSelectedEmployee(selectedEmp || null);
-                                }}
-                                className="p-2 border rounded-lg"
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileSelect}
+                                className="hidden"
+                                id="file-upload"
+                            />
+                            <label
+                                htmlFor="file-upload"
+                                className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg"
                             >
-                                <option value="">Tag Employee</option>
-                                {topicEmployees.map((employee) => (
-                                    <option
-                                        key={employee._id || employee.company_email_id}
-                                        value={employee._id || employee.company_email_id}
-                                    >
-                                        {employee.full_name}
-                                    </option>
-                                ))}
-                            </select>
+                                <Paperclip
+                                    size={20}
+                                    className={`${
+                                        selectedFile
+                                            ? "text-primary"
+                                            : "text-gray-500"
+                                    } ${isUploading ? "animate-pulse" : ""}`}
+                                />
+                            </label>
+                        </div>
+
+                        {/* File name display */}
+                        {selectedFile && (
+                            <div className="md:hidden px-2">
+                                <span className="text-xs text-gray-500 truncate block">
+                                    {selectedFile.name}
+                                </span>
+                            </div>
                         )}
 
-                        <button
-                            onClick={handleSendMessage}
-                            disabled={
-                                isUploading ||
-                                isSendingMessage ||
-                                (!newMessage.trim() && !selectedFile)
-                            }
-                            className={`${
-                                isUploading ||
-                                isSendingMessage ||
-                                (!newMessage.trim() && !selectedFile)
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-primary hover:bg-primary/90"
-                            } text-white p-2 rounded-lg flex items-center justify-center`}
-                        >
-                            {isSendingMessage ? (
-                                <Loader2 
-                                    size={20} 
-                                    className="animate-spin" 
-                                />
-                            ) : (
-                                <Send size={20} />
+                        {/* Bottom row with tag and send */}
+                        <div className="flex items-center space-x-2">
+                            {/* Tag employee dropdown - moved before send button */}
+                            {activeChatTopic && topicEmployees.length > 0 && (
+                                <select
+                                    value={selectedEmployee?._id || ""}
+                                    onChange={(e) => {
+                                        const selectedEmp = topicEmployees.find(
+                                            (emp) =>
+                                                emp._id === e.target.value ||
+                                                emp.company_email_id ===
+                                                    e.target.value
+                                        );
+                                        setSelectedEmployee(
+                                            selectedEmp || null
+                                        );
+                                    }}
+                                    className="p-2 border rounded-lg text-sm w-full md:w-auto"
+                                >
+                                    <option value="">Tag Employee</option>
+                                    {topicEmployees.map((employee) => (
+                                        <option
+                                            key={
+                                                employee._id ||
+                                                employee.company_email_id
+                                            }
+                                            value={
+                                                employee._id ||
+                                                employee.company_email_id
+                                            }
+                                        >
+                                            {employee.full_name}
+                                        </option>
+                                    ))}
+                                </select>
                             )}
-                        </button>
+
+                            {/* Selected file name (desktop only) */}
+                            {selectedFile && (
+                                <span className="hidden md:inline text-xs text-gray-500 truncate max-w-[150px]">
+                                    {selectedFile.name}
+                                </span>
+                            )}
+
+                            {/* Send button */}
+                            <button
+                                onClick={handleSendMessage}
+                                disabled={
+                                    isUploading ||
+                                    isSendingMessage ||
+                                    (!newMessage.trim() && !selectedFile)
+                                }
+                                className={`${
+                                    isUploading ||
+                                    isSendingMessage ||
+                                    (!newMessage.trim() && !selectedFile)
+                                        ? "bg-gray-400 cursor-not-allowed"
+                                        : "bg-primary hover:bg-primary/90"
+                                } text-white p-2 rounded-lg flex items-center justify-center`}
+                            >
+                                {isSendingMessage ? (
+                                    <Loader2
+                                        size={20}
+                                        className="animate-spin"
+                                    />
+                                ) : (
+                                    <Send size={20} />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

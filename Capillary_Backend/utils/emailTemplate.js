@@ -222,28 +222,34 @@ const emailTemplates = {
   chatNotificationTemplate: {
     subject: "New Chat Message Received",
     html: `
-    <!DOCTYPE html>
-    <html>
-    <body>
-      <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
-        <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-          <div style="background-color: #007bff; color: #ffffff; padding: 20px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-            <h1>New Chat Notification</h1>
-          </div>
-          <div style="padding: 20px; color: #333; text-align: left;">
-            <p>Dear {{employeeName}},</p>
-            <p>You have received a new chat message related to request <strong>{{reqId}}</strong>.</p>
-            <p><strong>Sender:</strong> {{senderName}} ({{senderDepartment}})</p>
-            <p><strong>Message:</strong> {{topic}}</p>
-            <p>To respond, please check the chat section in your dashboard.</p>
-            <p>If you have any issues, feel free to reach out.</p>
-            <p>Best Regards,</p>
-            <p><strong>Capillary Finance </strong></p>
-          </div>
-        </div>
+   <!DOCTYPE html>
+<html>
+<body>
+  <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+    <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+      <div style="background-color: #007bff; color: #ffffff; padding: 20px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+        <h1>New Chat Notification</h1>
       </div>
-    </body>
-    </html>
+      <div style="padding: 20px; color: #333; text-align: left;">
+        <p>Dear {{employeeName}},</p>
+        <p>You have received a new chat message related to request <strong>{{reqId}}</strong>.</p>
+        <p><strong>Sender:</strong> {{senderName}} ({{senderDepartment}})</p>
+        <p><strong>Message:</strong> {{topic}}</p>
+        <p>To respond, please check the chat section in your dashboard.</p>
+        <p>If you have any issues, feel free to reach out.</p>
+        <p>Best Regards,</p>
+        <p><strong>Capillary Finance</strong></p>
+        {{#if attachmentUrl}}
+        <p>
+          <a href="{{attachmentUrl}}" style="display: inline-block; padding: 10px 20px; margin-top: 20px; font-size: 16px; color: #ffffff; background-color: #28a745; border-radius: 5px; text-decoration: none;">Download Attachment</a>
+        </p>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
   `,
   },
 };
