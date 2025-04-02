@@ -25,6 +25,7 @@ export const fetchDateFilterStatistics = async (  empId, role, email,multipartRo
 
 export const getStatisticData = async (empId, role, email, multipartRole) => {
   try {
+    console.log(empId, role, email, multipartRole)
     const response = await adminServices.get(
       `/request/get-statistic-data/${empId}/${role}/${email}/${multipartRole}`
     );

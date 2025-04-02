@@ -209,7 +209,6 @@ const getNewNotifications = async (req, res) => {
 const getStatisticData = async (req, res) => {
   try {
     const { empId, role, email, multipartRole } = req.params;
-    console.log("ROLE", role);
 
     let consolidatedData;
 
@@ -260,7 +259,6 @@ const getStatisticData = async (req, res) => {
         };
       }
     }
-    console.log("consolidatedData", consolidatedData);
 
     if (!consolidatedData) {
       return res.status(404).json({ message: "Employee not found" });
@@ -280,15 +278,15 @@ const getStatisticData = async (req, res) => {
     let completedRequest = 0;
     let totalApprovals = 0;
 
-    const reqData = await CreateNewReq.find({ isCompleted: true });
+    const reqData = await CreateNewReq.find();
 
     if (role === "Admin" && consolidatedData.department === "Admin") {
       adminAllTotalRequests = reqData.length;
       adminAllPendingRequests = reqData.filter(
-        (req) => req.status === "Pending"
+        (req) => req.status != "Pending"
       ).length;
       adminAllCompletedRequests = reqData.filter(
-        (req) => req.status === "Approved"
+        (req) => req.status == "Approved"
       ).length;
 
       departmentBudgetByCurrency = reqData.reduce((acc, req) => {
@@ -318,15 +316,12 @@ const getStatisticData = async (req, res) => {
           req.firstLevelApproval?.hodEmail === consolidatedData.company_email_id
       );
 
-      console.log("reqDataStatics", reqDataStatics);
 
       totalApprovals = reqDataStatics.length;
 
       reqData.forEach((request) => {
-        console.log("request----", request);
 
         if (!request.approvals || request.approvals.length === 0) {
-          console.log("No approvals found for request ID:", request.reqid);
           return; // Skip this iteration if approvals are missing
         }
 
@@ -353,9 +348,7 @@ const getStatisticData = async (req, res) => {
           return isForEmployeeDept && isPending && hasPrevApproval;
         });
 
-        // pendingApprovals = pendingRequests.length;
 
-        console.log("pendingRequests--", pendingRequests);
 
         const approvalsForEmployee2 = request.approvals.filter((app) => {
           const isApprovedByEmp =
@@ -378,7 +371,7 @@ const getStatisticData = async (req, res) => {
       });
       const data = pendingApprovalsdata.map((req) => {
         const { approvals, firstLevelApproval, status } = req;
-        const lastLevelApprovals = approvals[approvals.length - 1];
+        let lastLevelApprovals = approvals[approvals.length - 1];
 
         if (
           firstLevelApproval.hodEmail === consolidatedData.company_email_id &&
@@ -386,7 +379,7 @@ const getStatisticData = async (req, res) => {
         ) {
           pendingCount++;
         } else if (lastLevelApprovals?.nextDepartment === role) {
-          lastLevelApprovals++;
+          pendingCount++;
         }
       });
 

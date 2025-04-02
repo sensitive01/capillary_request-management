@@ -616,7 +616,7 @@ const Dashboard = () => {
   const renderStatisticCards = () => {
     switch (role?.toLowerCase()) {
       case "admin":
-        if (department?.toLowerCase() === "admin") {
+        if (department?.toLowerCase() === "admin"||(role?.toLowerCase()==="admin"&&multipartRole===0)) {
           return renderAdminCards();
         }
         return renderHODCards();
