@@ -252,6 +252,32 @@ const emailTemplates = {
 
   `,
   },
+  requestApprovalNotificationTemplate: {
+    subject: "Request Submitted Successfully - Awaiting Approval",
+    html: `
+   <!DOCTYPE html>
+<html>
+<body>
+  <div style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+    <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+      <div style="background-color: #28a745; color: #ffffff; padding: 20px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+        <h1>Request Submission Successful</h1>
+      </div>
+      <div style="padding: 20px; color: #333; text-align: left;">
+        <p>Dear {{employeeName}},</p>
+        <p>Your request with Request ID <strong>{{reqId}}</strong> has been successfully submitted and is currently awaiting approval.</p>
+        <p>You will be notified once the request is approved.</p>
+        <p>If you have any questions, feel free to reach out.</p>
+        <p>Best Regards,</p>
+        <p><strong>Capillary Finance</strong></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `,
+}
+
 };
 
 module.exports = emailTemplates;

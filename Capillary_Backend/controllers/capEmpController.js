@@ -146,25 +146,20 @@ const createNewReq = async (req, res) => {
       });
     }
 
-    const panelMemberEmail = (
-      await addPanelUsers
-        .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
-        .lean()
-    ).map((member) => member.company_email_id);
-    panelMemberEmail.push(commercials.hodEmail);
+    // const panelMemberEmail = (
+    //   await addPanelUsers
+    //     .find({ role: { $ne: "Admin" } }, { company_email_id: 1, _id: 0 })
+    //     .lean()
+    // ).map((member) => member.company_email_id);
+    let panelMemberEmail = []
+    if(commercials?.hodEmail){
+
+      panelMemberEmail.push(commercials.hodEmail);
+    }
 
     let existingRequest = await CreateNewReq.findOne({ reqid: reqId });
     console.log("existingRequest", existingRequest,firstLevelApproval);
-    // const autoApprovalRecord = {
-    //   departmentName: requestorData.department,
-    //   status: "Pending",
-    //   approverName: reqDatas.full_name,
-    //   approvalId: reqDatas.userId ,
-    //   approvalDate:"" ,
-    //   remarks: "",
-    //   nextDepartment: firstLevelApproval.hodDepartment,
-    //   receivedOn:new Date()
-    // };
+
 
     if (existingRequest) {
       existingRequest.commercials = commercials;
@@ -184,6 +179,8 @@ const createNewReq = async (req, res) => {
             empData.department,
             reqId
           );
+          const reqEmail  = requestorData.company_email_id
+          await sendEmail(reqEmail, "requestApprovalNotificationTemplate", { reqId,employeeName:requestorData.full_name });
         } catch (emailError) {
           console.error("Error sending bulk emails:", emailError);
         }
@@ -276,6 +273,9 @@ const createNewReq = async (req, res) => {
             empData.department,
             reqId
           );
+          const reqEmail  = requestorData.company_email_id
+          await sendEmail(reqEmail, "requestApprovalNotificationTemplate", { reqId,employeeName:requestorData.full_name });
+
         } catch (emailError) {
           console.error("Error sending bulk emails:", emailError);
         }
