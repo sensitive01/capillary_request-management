@@ -50,7 +50,7 @@ const getAllRequestDataByStatus = async (req, res) => {
   try {
     console.log("Welcome to admin get data");
 
-    const { empEmail, secretKey, apiKey,status } = req.body;
+    const { empEmail, secretKey, apiKey, status } = req.body;
     console.log("Received credentials:", { empEmail, secretKey, apiKey });
 
     const existData = await apiCrediantails.findOne({ email: empEmail });
@@ -72,7 +72,13 @@ const getAllRequestDataByStatus = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: Invalid apiKey" });
     }
 
-    const reqList = await CreateNewReq.find({status:status}).sort({ createdAt: -1 }).lean();
+    if (!status) {
+      return res.status(401).json({ message: "Status is missing" });
+    }
+
+    const reqList = await CreateNewReq.find({ status: status })
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (reqList.length === 0) {
       return res.status(404).json({ message: "No requests found" });
@@ -91,12 +97,14 @@ const getAllRequestDataByStatus = async (req, res) => {
   }
 };
 
-
 const getAllRequestDataById = async (req, res) => {
   try {
-
     const { empEmail, secretKey, apiKey } = req.body;
-    const {reqId} = req.query
+    const { reqId } = req.query;
+
+    if (!reqId) {
+      return res.status(403).json({ message: "Request Id is required" });
+    }
     console.log("Received credentials:", { empEmail, secretKey, apiKey });
 
     const existData = await apiCrediantails.findOne({ email: empEmail });
@@ -118,7 +126,7 @@ const getAllRequestDataById = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: Invalid apiKey" });
     }
 
-    const reqList = await CreateNewReq.findOne({reqid:reqId});
+    const reqList = await CreateNewReq.findOne({ reqid: reqId });
 
     if (!reqList) {
       return res.status(404).json({ message: "No requests found" });
@@ -136,13 +144,16 @@ const getAllRequestDataById = async (req, res) => {
     });
   }
 };
-
 
 const getAllRequestOfEmployee = async (req, res) => {
   try {
-
     const { empEmail, secretKey, apiKey } = req.body;
-    const {empId} = req.query
+    const { empId } = req.query;
+    if (!empId) {
+      res
+        .status(401)
+        .json({ message: "Employee Id is required to fetch requests" });
+    }
     console.log("Received credentials:", { empEmail, secretKey, apiKey });
 
     const existData = await apiCrediantails.findOne({ email: empEmail });
@@ -155,7 +166,7 @@ const getAllRequestOfEmployee = async (req, res) => {
     }
 
     if (existData.secretKey !== secretKey) {
-      console.log(existData.secretKey !== secretKey)
+      console.log(existData.secretKey !== secretKey);
       return res
         .status(403)
         .json({ message: "Unauthorized: Invalid secretKey" });
@@ -165,7 +176,7 @@ const getAllRequestOfEmployee = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: Invalid apiKey" });
     }
 
-    const reqList = await CreateNewReq.find({userId:empId});
+    const reqList = await CreateNewReq.find({ userId: empId });
 
     if (!reqList) {
       return res.status(404).json({ message: "No requests found" });
@@ -183,14 +194,10 @@ const getAllRequestOfEmployee = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 module.exports = {
   getAllRequestData,
   getAllRequestDataByStatus,
   getAllRequestDataById,
-  getAllRequestOfEmployee
+  getAllRequestOfEmployee,
 };
