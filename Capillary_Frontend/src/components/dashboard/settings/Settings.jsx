@@ -43,7 +43,7 @@ const Settings = () => {
           bgColor: "bg-indigo-50",
           textColor: "text-indigo-600",
           description: "HR system integration",
-          path: "/settings/darwin-box",
+          path: "/settings/create-rest-api",
         },
         {
           title: "Email Notification",

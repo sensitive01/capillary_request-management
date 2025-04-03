@@ -119,7 +119,7 @@ function App() {
           <Route path="/settings" element={<Settings/>} />
           <Route path="/settings/google-sso" element={<GoogleSSO/>} />
           <Route path="/settings/smtp" element={<SmtpPage/>} />
-          <Route path="/settings/darwin-box" element={<RestApiPage/>} />
+          <Route path="/settings/create-rest-api" element={<RestApiPage/>} />
           <Route path="/settings/email-notification" element={<EmailNotificationSettings/>} />
           <Route path="/settings/approval-flow" element={<ApprovalFlowPage/>} />
           <Route path="/settings/approver-type" element={<ApproverType/>} />
