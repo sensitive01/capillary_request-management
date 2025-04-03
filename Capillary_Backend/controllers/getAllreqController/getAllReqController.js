@@ -96,7 +96,7 @@ const getAllRequestDataById = async (req, res) => {
   try {
 
     const { empEmail, secretKey, apiKey } = req.body;
-    const {reqId} = req.params
+    const {reqId} = req.query
     console.log("Received credentials:", { empEmail, secretKey, apiKey });
 
     const existData = await apiCrediantails.findOne({ email: empEmail });
@@ -142,7 +142,7 @@ const getAllRequestOfEmployee = async (req, res) => {
   try {
 
     const { empEmail, secretKey, apiKey } = req.body;
-    const {empId} = req.params
+    const {empId} = req.query
     console.log("Received credentials:", { empEmail, secretKey, apiKey });
 
     const existData = await apiCrediantails.findOne({ email: empEmail });

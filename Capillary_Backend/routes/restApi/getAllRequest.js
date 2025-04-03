@@ -5,8 +5,8 @@ const restApiController = require("../../controllers/getAllreqController/getAllR
 
 restApiRoute.post("/get-all-request",restApiController.getAllRequestData)
 restApiRoute.post("/get-all-request-by-status",restApiController.getAllRequestDataByStatus)
-restApiRoute.post("/get-request-by-id/:reqId",restApiController.getAllRequestDataById)
-restApiRoute.post("/get-request-by-emloyeeid/:empId",restApiController.getAllRequestOfEmployee)
+restApiRoute.post("/get-request-by-id",restApiController.getAllRequestDataById)
+restApiRoute.post("/get-request-by-emloyeeid",restApiController.getAllRequestOfEmployee)
 
 
 
