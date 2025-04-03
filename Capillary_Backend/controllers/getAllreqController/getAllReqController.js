@@ -148,8 +148,8 @@ const getAllRequestDataById = async (req, res) => {
 const getAllRequestOfEmployee = async (req, res) => {
   try {
     const { empEmail, secretKey, apiKey } = req.body;
-    const { empId } = req.query;
-    if (!empId) {
+    const { userId } = req.query;
+    if (!userId) {
       res
         .status(401)
         .json({ message: "Employee Id is required to fetch requests" });
@@ -176,7 +176,7 @@ const getAllRequestOfEmployee = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: Invalid apiKey" });
     }
 
-    const reqList = await CreateNewReq.find({ userId: empId });
+    const reqList = await CreateNewReq.find({ userId: userId });
 
     if (!reqList) {
       return res.status(404).json({ message: "No requests found" });
