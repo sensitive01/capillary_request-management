@@ -178,8 +178,8 @@ const getAllRequestOfEmployee = async (req, res) => {
 
     const reqList = await CreateNewReq.find({ userId: userId });
 
-    if (!reqList) {
-      return res.status(404).json({ message: "No requests found" });
+    if (!reqList.length<=0) {
+      return res.status(404).json({ message: "No requests found for this employee" });
     }
 
     return res.status(200).json({
