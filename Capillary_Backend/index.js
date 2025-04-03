@@ -15,6 +15,7 @@ const addReqRoutes = require("./routes/reqRoutes");
 const reqRoutes = require("./routes/reqRoutes");
 const s3Router = require("./routes/preSignedUrl");
 const crediantialRoute = require("./routes/crediantialsRoute")
+const restApiData = require("./routes/restApi/getAllRequest")
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use("/users", addReqRoutes);
 app.use("/request", reqRoutes);
 app.use("/upload-s3", s3Router);
 app.use("/credantials", crediantialRoute);
+app.use("/get-restapidata",restApiData)
 
 
 

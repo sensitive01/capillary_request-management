@@ -202,6 +202,28 @@ const approveRequest = async (req, res) => {
 
         reqData.approvals.push(approvalRecords);
         await reqData.save();
+
+        // await sendIndividualEmail(
+        //   "EMPLOYEE",
+        //   requesterData.company_email_id,
+        //   requesterData.full_name,
+        //   requesterData.department,
+        //   reqData.reqid,
+        //   approvalRecords
+        // );
+
+        // await sendIndividualEmail(
+        //   "AUTHORITY",
+        //   autoApproverData.company_email_id,
+        //   autoApproverData.full_name,
+        //   autoApproverData.department,
+        //   reqData.reqid,
+        //   approvalRecords
+        // );
+
+
+
+
       }
 
       if (isHeHod) {
@@ -210,6 +232,12 @@ const approveRequest = async (req, res) => {
         reqData.status = "Pending";
         reqData.approvals.push(approvalRecord);
         await reqData.save();
+
+    
+
+
+
+
       }
 
       // Business Finance Auto-approval flow
@@ -284,7 +312,7 @@ const approveRequest = async (req, res) => {
                   requesterData.company_email_id,
                   requesterData.full_name,
                   requesterData.department,
-                  reqId,
+                  reqData.reqid,
                   autoApprovalRecord
                 );
 
@@ -293,7 +321,7 @@ const approveRequest = async (req, res) => {
                   autoApproverData.company_email_id,
                   autoApproverData.full_name,
                   autoApproverData.department,
-                  reqId,
+                  reqData.reqid,
                   autoApprovalRecord
                 );
               } else {
@@ -361,7 +389,7 @@ const approveRequest = async (req, res) => {
                   requesterData.company_email_id,
                   requesterData.full_name,
                   requesterData.department,
-                  reqId,
+                  reqData.reqid,
                   autoApprovalRecord
                 );
 
@@ -370,7 +398,7 @@ const approveRequest = async (req, res) => {
                   autoApproverData.company_email_id,
                   autoApproverData.full_name,
                   autoApproverData.department,
-                  reqId,
+                  reqData.reqid,
                   autoApprovalRecord
                 );
               } else {
@@ -670,7 +698,7 @@ const approveRequest = async (req, res) => {
                 requesterData.company_email_id,
                 requesterData.full_name,
                 requesterData.department,
-                reqId,
+                reqData.reqid,
                 autoApprovalRecord
               );
 
@@ -679,7 +707,7 @@ const approveRequest = async (req, res) => {
                 autoApproverData.company_email_id,
                 autoApproverData.full_name,
                 autoApproverData.department,
-                reqId,
+                reqData.reqid,
                 autoApprovalRecord
               );
             } else {
@@ -753,7 +781,7 @@ const approveRequest = async (req, res) => {
                 requesterData.company_email_id,
                 requesterData.full_name,
                 requesterData.department,
-                reqId,
+                reqData.reqid,
                 autoApprovalRecord
               );
 
@@ -762,7 +790,7 @@ const approveRequest = async (req, res) => {
                 autoApproverData.company_email_id,
                 autoApproverData.full_name,
                 autoApproverData.department,
-                reqId,
+                reqData.reqid,
                 autoApprovalRecord
               );
             } else {
