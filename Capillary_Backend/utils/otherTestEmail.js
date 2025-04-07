@@ -110,7 +110,7 @@ const sendIndividualEmail = async (
   type,
   userEmail,
   empName,
-  department,
+  autoDepartment,
   reqId,
   approvalRecord
 ) => {
@@ -130,147 +130,311 @@ const sendIndividualEmail = async (
         subject = "Request Status Update";
         textContent = `Your request (ID: ${reqId}) has been ${approvalRecord.status} by ${approvalRecord.departmentName} department on ${approvalRecord.approvalDate}.`;
         htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              .email-container {
-                max-width: 600px;
-                margin: 0 auto;
-                font-family: Arial, sans-serif;
-                padding: 20px;
-              }
-              .header {
-                background-color: #f8f9fa;
-                padding: 20px;
-                border-radius: 5px;
-                margin-bottom: 20px;
-              }
-              .content {
-                line-height: 1.6;
-                color: #333;
-              }
-              .highlight {
-                color: #0056b3;
-                font-weight: bold;
-              }
-              .status-box {
-                background-color: #e8f4fd;
-                border-left: 4px solid #0056b3;
-                padding: 15px;
-                margin: 20px 0;
-              }
-              .footer {
-                margin-top: 30px;
-                padding-top: 20px;
-                border-top: 1px solid #eee;
-                font-size: 12px;
-                color: #666;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="email-container">
-              <div class="header">
-                <h2 style="margin: 0; color: #333;">Request Status Update</h2>
-              </div>
-              <div class="content">
-                <p>Dear ${empName},</p>
-                <div class="status-box">
-                  <p>Your request has been processed with the following status:</p>
-                  <ul style="list-style: none; padding-left: 0;">
-                    <li>📝 Request ID: <span class="highlight">${reqId}</span></li>
-                    <li>🔄 Status: <span class="highlight">${
-                      approvalRecord.status
-                    }</span></li>
-                    <li>✅ Processed by: <span class="highlight">${
-                      approvalRecord.departmentName
-                    } Department</span></li>
-                    <li>📅 Process Date: <span class="highlight">${
-                      approvalRecord.approvalDate
-                    }</span></li>
-                  </ul>
-                </div>
-              </div>
-              
-            </div>
-          </body>
-          </html>
+         <!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+    .header {
+      background-color: #4a5568;
+      color: white;
+      padding: 15px 25px;
+      border-bottom: 3px solid #38b2ac;
+    }
+    .header h2 {
+      margin: 0;
+      font-weight: 500;
+    }
+    .subheader {
+      background-color: #f9f9f9;
+      padding: 10px 25px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 14px;
+      color: #666;
+    }
+    .content {
+      padding: 25px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .highlight {
+      color: #38b2ac;
+      font-weight: 600;
+    }
+    .status-box {
+      background-color: #f0fff4;
+      border: 1px solid #c6f6d5;
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .status-item {
+      padding: 10px;
+      background-color: white;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .status-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #718096;
+      margin-bottom: 5px;
+    }
+    .status-value {
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .action-area {
+      background-color: #f9f9f9;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
+    .action-button {
+      display: inline-block;
+      background-color: #38b2ac;
+      color: white;
+      padding: 10px 24px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .action-button:hover {
+      background-color: #319795;
+    }
+    .footer {
+      padding: 15px 25px;
+      font-size: 12px;
+      color: #718096;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h2>Request Status Update</h2>
+    </div>
+    <div class="subheader">
+      Request ID: ${reqId}
+    </div>
+    <div class="content">
+      <p>Dear ${empName},</p>
+      
+      <p>We're writing to inform you that there has been an update to your request. Please review the current status below:</p>
+      
+      <div class="status-box">
+        <h3 style="margin-top: 0; color: #38b2ac;">Current Status: <span style="color: #2d3748;">${approvalRecord.status}</span></h3>
+        
+        <div class="status-grid">
+          <div class="status-item">
+            <div class="status-label">Department</div>
+            <div class="status-value">${approvalRecord.departmentName}</div>
+          </div>
+          
+          <div class="status-item">
+            <div class="status-label">Processing Date</div>
+            <div class="status-value">${approvalRecord.approvalDate}</div>
+          </div>
+        </div>
+      </div>
+      
+      <p>This status update has been recorded in our system and relevant departments have been notified. If you need further information, please use the button below to access your request details.</p>
+    </div>
+    
+
+    
+
+  </div>
+</body>
+</html>
         `;
         break;
 
       case "AUTHORITY": // Notification to next authority
         subject = "Request Pending Review";
-        textContent = `A request (ID: ${reqId}) from ${empName} in ${department} department has been ${approvalRecord.status} by ${approvalRecord.departmentName} department and requires your review.`;
+        textContent = `A request (ID: ${reqId}) from ${empName}  has been ${approvalRecord.status} by ${approvalRecord.departmentName} department and requires your review.`;
         htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              .email-container {
-                max-width: 600px;
-                margin: 0 auto;
-                font-family: Arial, sans-serif;
-                padding: 20px;
-              }
-              .header {
-                background-color: #f8f9fa;
-                padding: 20px;
-                border-radius: 5px;
-                margin-bottom: 20px;
-              }
-              .content {
-                line-height: 1.6;
-                color: #333;
-              }
-              .highlight {
-                color: #0056b3;
-                font-weight: bold;
-              }
-              .status-box {
-                background-color: #fff3e0;
-                border-left: 4px solid #ff9800;
-                padding: 15px;
-                margin: 20px 0;
-              }
-              .footer {
-                margin-top: 30px;
-                padding-top: 20px;
-                border-top: 1px solid #eee;
-                font-size: 12px;
-                color: #666;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="email-container">
-              <div class="header">
-                <h2 style="margin: 0; color: #333;">Request Pending Your Review</h2>
-              </div>
-              <div class="content">
-                <p>Dear Team,</p>
-                <div class="status-box">
-                  <p>A request requires your review with the following details:</p>
-                  <ul style="list-style: none; padding-left: 0;">
-                    <li>👤 Employee Name: <span class="highlight">${empName}</span></li>
-                    <li>🏢 Department: <span class="highlight">${department}</span></li>
-                    <li>📝 Request ID: <span class="highlight">${reqId}</span></li>
-                    <li>🔄 Status: <span class="highlight">${
-                      approvalRecord.status
-                    }</span></li>
-                    <li>✅ Processed by: <span class="highlight">${
-                      approvalRecord.departmentName
-                    } Department</span></li>
-                    <li>📅 Process Date: <span class="highlight">${
-                      approvalRecord.approvalDate
-                    }</span></li>
-                  </ul>
-                </div>
-              </div>
-             
-            </div>
-          </body>
-          </html>
+         <!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      font-family: Arial, sans-serif;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background-color: #ff9800;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h2 {
+      margin: 0;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .content {
+      padding: 25px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .highlight {
+      color: #ff9800;
+      font-weight: 600;
+    }
+    .status-box {
+      background-color: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .status-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .status-icon {
+      margin-right: 12px;
+      min-width: 24px;
+      font-size: 18px;
+    }
+    .status-text {
+      flex: 1;
+    }
+    .action-buttons {
+      text-align: center;
+      margin: 25px 0 10px;
+    }
+    .action-button {
+      display: inline-block;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      margin: 0 10px;
+      transition: background-color 0.2s;
+    }
+    .approve-button {
+      background-color: #4caf50;
+      color: white;
+    }
+    .approve-button:hover {
+      background-color: #3d8b40;
+    }
+    .reject-button {
+      background-color: #f44336;
+      color: white;
+    }
+    .reject-button:hover {
+      background-color: #d32f2f;
+    }
+    .priority {
+      display: inline-block;
+      background-color: #ff9800;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 20px;
+      padding: 15px 20px;
+      background-color: #f8f9fa;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h2>Request Pending For Your Review And Awaiting For Your Response</h2>
+    </div>
+    <div class="content">
+      <p>Dear Team,</p>
+      
+      <p>A new request has been submitted and requires your immediate attention. Please review the following details:</p>
+      
+      <div class="status-box">
+        <h3 style="margin-top: 0; margin-bottom: 15px;">Request Details <span class="priority">Pending</span></h3>
+        
+        <div class="status-item">
+          <div class="status-icon">👤</div>
+          <div class="status-text">Approver Name: <span class="highlight">${empName}</span></div>
+        </div>
+        
+
+        
+        <div class="status-item">
+          <div class="status-icon">📝</div>
+          <div class="status-text">Request ID: <span class="highlight">${reqId}</span></div>
+        </div>
+        
+        <div class="status-item">
+          <div class="status-icon">🔄</div>
+          <div class="status-text">Status: <span class="highlight">${
+            approvalRecord.status
+          } by ${autoDepartment}</span></div>
+        </div>
+        
+        <div class="status-item">
+          <div class="status-icon">✅</div>
+          <div class="status-text">Department: <span class="highlight">${
+            approvalRecord.departmentName || approvalRecord.department
+          } </span></div>
+        </div>
+        
+        <div class="status-item">
+          <div class="status-icon">📅</div>
+          <div class="status-text">Request Date: <span class="highlight">${
+            approvalRecord.approvalDate
+          }</span></div>
+        </div>
+      </div>
+      
+      <p>Please review this request at your earliest convenience. Your prompt attention to this matter is greatly appreciated.</p>
+      
+     
+    </div>
+ 
+  </div>
+</body>
+</html>
         `;
         break;
 

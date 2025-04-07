@@ -2550,15 +2550,16 @@ const uploadInvoiceDocuments = async (req, res) => {
 
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { reqid: 1, approvals: 1 }
+      { reqid: 1, approvals: 1 ,commercials:1,userId:1,poDocuments:1}
     );
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    const { approvals } = reqData;
+    const { approvals,commercials,userId,reqid } = reqData;
     const latestApproval = approvals[approvals.length - 1];
+    const requestorData = await empModel.findOne({employee_id:userId},{full_name:1,department:1})
 
     // Fetch employee data
     const empData =
@@ -2615,6 +2616,28 @@ const uploadInvoiceDocuments = async (req, res) => {
     if (!updatedRequest) {
       return res.status(404).json({ message: "Request not found" });
     }
+
+    const invoiceMail = await entityModel.findOne({_id:commercials?.entityId},{invoiceMailId:1})
+    console.log("Invoice mail id",invoiceMail)
+
+    const {invoiceMailId} = invoiceMail
+    await sendEmail(
+      invoiceMailId,
+      "invoiceUploadedEmail",
+      {
+        reqId: reqid,
+        employeeName: requestorData.full_name,
+        department: requestorData.department,
+        invoiceLink:link
+       
+        
+      }
+    );
+
+
+
+
+
 
     return res.status(200).json({
       message: "Invoice Document uploaded successfully",

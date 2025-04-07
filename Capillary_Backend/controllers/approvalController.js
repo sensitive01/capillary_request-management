@@ -203,27 +203,7 @@ const approveRequest = async (req, res) => {
         reqData.approvals.push(approvalRecords);
         await reqData.save();
 
-        // await sendIndividualEmail(
-        //   "EMPLOYEE",
-        //   requesterData.company_email_id,
-        //   requesterData.full_name,
-        //   requesterData.department,
-        //   reqData.reqid,
-        //   approvalRecords
-        // );
-
-        // await sendIndividualEmail(
-        //   "AUTHORITY",
-        //   autoApproverData.company_email_id,
-        //   autoApproverData.full_name,
-        //   autoApproverData.department,
-        //   reqData.reqid,
-        //   approvalRecords
-        // );
-
-
-
-
+       
       }
 
       if (isHeHod) {
@@ -232,12 +212,6 @@ const approveRequest = async (req, res) => {
         reqData.status = "Pending";
         reqData.approvals.push(approvalRecord);
         await reqData.save();
-
-    
-
-
-
-
       }
 
       // Business Finance Auto-approval flow
@@ -384,6 +358,32 @@ const approveRequest = async (req, res) => {
                   }
                 );
 
+                if (autoDepartment === "Info Security") {
+                  const entityEmail = await entityModel.findOne(
+                    { _id: reqData?.commercials?.entityId },
+                    { PoSVOK: 1 }
+                  );
+                  const emailString = entityEmail?.PoSVOK || "";
+                  const emailList = emailString
+                  .split(",")
+                  .map((email) => email.trim())
+                  .filter(Boolean);
+                  for(i=0;i<emailList.length;i++){
+                    await sendIndividualEmail(
+                      "AUTHORITY",
+                      emailList[i],
+                      autoApproverData.full_name,
+                      autoDepartment,
+                      reqData.reqid,
+                      autoApprovalRecord
+                    );
+  
+                  }
+                  
+                  console.log("Checking the entity email", emailList);
+                  break;
+                }
+
                 await sendIndividualEmail(
                   "EMPLOYEE",
                   requesterData.company_email_id,
@@ -439,12 +439,12 @@ const approveRequest = async (req, res) => {
 
             const autoApproverData = await panelUserData.findOne(
               { role: autoDepartment },
-              { full_name: 1, employee_id: 1, company_email_id: 1 }
+              { full_name: 1, employee_id: 1, company_email_id: 1,department:1 }
             );
 
             if (autoApproverData) {
               const autoApprovalRecord = {
-                departmentName: autoDepartment,
+                departmentName: autoApproverData.department,
                 status: "Approved",
                 approverName: autoApproverData.full_name,
                 approvalId: autoApproverData.employee_id,
@@ -454,16 +454,7 @@ const approveRequest = async (req, res) => {
                 receivedOn: lastLeveLApprovals.approvalDate,
               };
 
-              await CreateNewReq.updateOne(
-                { _id: reqId },
-                {
-                  $push: { approvals: autoApprovalRecord },
-                  $set: {
-                    currentStatus: "Approved",
-                    currentDepartment: nextAutoDepartment || autoDepartment,
-                  },
-                }
-              );
+             
 
               await sendIndividualEmail(
                 "EMPLOYEE",
@@ -478,24 +469,48 @@ const approveRequest = async (req, res) => {
                 "AUTHORITY",
                 autoApproverData.company_email_id,
                 autoApproverData.full_name,
-                autoApproverData.department,
+                autoDepartment,
                 reqData.reqid,
                 autoApprovalRecord
               );
 
-              console.log("autoDepartment", autoDepartment);
-
+              await CreateNewReq.updateOne(
+                { _id: reqId },
+                {
+                  $push: { approvals: autoApprovalRecord },
+                  $set: {
+                    currentStatus: "Approved",
+                    currentDepartment: nextAutoDepartment || autoDepartment,
+                  },
+                }
+              );
               if (autoDepartment === "Info Security") {
-                // await CreateNewReq.updateOne(
-                //   { _id: reqId },
-                //   {
-                //     $set: {
-                //       currentDepartment: "Head of Finance",
-                //     },
-                //   }
-                // );
+                const entityEmail = await entityModel.findOne(
+                  { _id: reqData?.commercials?.entityId },
+                  { PoSVOK: 1 }
+                );
+                const emailString = entityEmail?.PoSVOK || "";
+                const emailList = emailString
+                .split(",")
+                .map((email) => email.trim())
+                .filter(Boolean);
+                for(i=0;i<emailList.length;i++){
+                  await sendIndividualEmail(
+                    "AUTHORITY",
+                    emailList[i],
+                    autoApproverData.full_name,
+                    autoDepartment,
+                    reqData.reqid,
+                    autoApprovalRecord
+                  );
+
+                }
+                
+                console.log("Checking the entity email", emailList);
                 break;
               }
+
+              console.log("autoDepartment", autoDepartment);
             } else {
               console.error(
                 `No approver found for department: ${autoDepartment}`
@@ -617,14 +632,28 @@ const approveRequest = async (req, res) => {
             );
 
             if (autoDepartment === "Info Security") {
-              await CreateNewReq.updateOne(
-                { _id: reqId },
-                {
-                  $set: {
-                    currentDepartment: "Head of Finance",
-                  },
-                }
+              const entityEmail = await entityModel.findOne(
+                { _id: reqData?.commercials?.entityId },
+                { PoSVOK: 1 }
               );
+              const emailString = entityEmail?.PoSVOK || "";
+              const emailList = emailString
+              .split(",")
+              .map((email) => email.trim())
+              .filter(Boolean);
+              for(i=0;i<emailList.length;i++){
+                await sendIndividualEmail(
+                  "AUTHORITY",
+                  emailList[i],
+                  autoApproverData.full_name,
+                  autoDepartment,
+                  reqData.reqid,
+                  autoApprovalRecord
+                );
+
+              }
+              
+              console.log("Checking the entity email", emailList);
               break;
             }
           } else {
@@ -878,14 +907,28 @@ const approveRequest = async (req, res) => {
               );
 
               if (autoDepartment === "Info Security") {
-                await CreateNewReq.updateOne(
-                  { _id: reqId },
-                  {
-                    $set: {
-                      currentDepartment: "Head of Finance",
-                    },
-                  }
+                const entityEmail = await entityModel.findOne(
+                  { _id: reqData?.commercials?.entityId },
+                  { PoSVOK: 1 }
                 );
+                const emailString = entityEmail?.PoSVOK || "";
+                const emailList = emailString
+                .split(",")
+                .map((email) => email.trim())
+                .filter(Boolean);
+                for(i=0;i<emailList.length;i++){
+                  await sendIndividualEmail(
+                    "AUTHORITY",
+                    emailList[i],
+                    autoApproverData.full_name,
+                    autoDepartment,
+                    reqData.reqid,
+                    autoApprovalRecord
+                  );
+
+                }
+                
+                console.log("Checking the entity email", emailList);
                 break;
               }
             } else {
@@ -927,6 +970,7 @@ const approveRequest = async (req, res) => {
         if (entityMail?.poMailId) {
           await sendEmail(entityMail.poMailId, "financeApprovalEmail", {
             reqid: reqData.reqid,
+            reqId
           });
         }
       } else {

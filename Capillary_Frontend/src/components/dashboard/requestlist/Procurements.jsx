@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
     deleteFileFromAwsS3,
     fetchAllVendorData,
-    savePocurementsData
+    savePocurementsData,
 } from "../../../api/service/adminServices";
 import { FaFilePdf, FaSearch } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -171,6 +171,17 @@ const Procurements = ({
         // Service Period validation
         if (!formData.servicePeriod) {
             tempErrors.servicePeriod = "Service period is required";
+            isValid = false;
+        }
+        const hasUploadedFiles =
+            formData.uploadedFiles &&
+            Object.keys(formData.uploadedFiles).length > 0 &&
+            Object.values(formData.uploadedFiles).some(
+                (files) => files.length > 0
+            );
+
+        if (!hasUploadedFiles) {
+            tempErrors.documents = "At least one document must be uploaded";
             isValid = false;
         }
 
@@ -501,7 +512,7 @@ const Procurements = ({
     };
     const handleSubmit = async () => {
         if (validateFields()) {
-            const response = await savePocurementsData(formData,reqId);
+            const response = await savePocurementsData(formData, reqId);
             if (response.status === 200) {
                 onNext();
             }
@@ -512,13 +523,13 @@ const Procurements = ({
 
     const renderVendorSearch = () => {
         const filteredVendors = getFilteredVendors();
-    
+
         return (
             <div className="relative" ref={searchRef}>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Choose Vendor<span className="text-red-500">*</span>
                 </label>
-    
+
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaSearch className="text-gray-400" />
@@ -535,7 +546,7 @@ const Procurements = ({
                         className="w-full pl-10 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
                     />
                 </div>
-    
+
                 {showResults && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         {filteredVendors.length > 0 ? (
@@ -570,24 +581,24 @@ const Procurements = ({
             </div>
         );
     };
-    
+
     // Render uploaded files for a specific row
     const renderUploadedFiles = (rowIndex) => {
         const fileData = filesData[rowIndex];
         const fileType = getEffectiveFileType(fileData);
-    
+
         if (!fileType || !fileData.urls.length) return null;
-    
+
         const displayType =
             fileData.fileType === "Other"
                 ? fileData.otherType
                 : fileData.fileType;
-    
+
         return (
             <div className="flex flex-col gap-4">
                 <div>
                     <h3 className="font-semibold mb-2">{displayType}</h3>
-    
+
                     <div className="flex flex-wrap gap-2">
                         {fileData.urls.map((url, fileIndex) => (
                             <div
@@ -627,12 +638,12 @@ const Procurements = ({
             </div>
         );
     };
-    
+
     const ErrorMessage = ({ error }) => {
         if (!error) return null;
         return <p className="text-red-500 text-sm mt-1">{error}</p>;
     };
-    
+
     return (
         <div className="mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-primary to-primary p-4 md:p-6">
@@ -640,7 +651,7 @@ const Procurements = ({
                     Procurement Details
                 </h2>
             </div>
-    
+
             <div className="p-4 md:p-8 space-y-6">
                 <div className="grid grid-cols-1 gap-6">
                     {/* First row - Vendor and dates */}
@@ -674,7 +685,7 @@ const Procurements = ({
                             />
                         </div>
                     </div>
-    
+
                     {/* Service Period row */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         <div>
@@ -701,7 +712,7 @@ const Procurements = ({
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
-    
+
                         {formData.servicePeriod === "custom" && (
                             <>
                                 <div>
@@ -732,7 +743,7 @@ const Procurements = ({
                             </>
                         )}
                     </div>
-    
+
                     {/* Project and Client row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div>
@@ -760,13 +771,18 @@ const Procurements = ({
                             />
                         </div>
                     </div>
-    
+
                     {/* Document Upload section */}
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold text-gray-700 mb-2">
                             Upload Documents
                         </h3>
-    
+                        {errors.documents && (
+                            <p className="text-red-500 text-sm mt-1 mb-2">
+                                {errors.documents}
+                            </p>
+                        )}
+
                         <div className="overflow-x-auto">
                             <div className="md:hidden">
                                 {/* Mobile view - cards instead of table */}
@@ -782,7 +798,10 @@ const Procurements = ({
                                             <select
                                                 value={fileData.fileType}
                                                 onChange={(e) =>
-                                                    handleFileTypeChange(e, index)
+                                                    handleFileTypeChange(
+                                                        e,
+                                                        index
+                                                    )
                                                 }
                                                 className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                                             >
@@ -808,7 +827,7 @@ const Procurements = ({
                                                     Other
                                                 </option>
                                             </select>
-    
+
                                             {fileData.fileType === "Other" && (
                                                 <input
                                                     type="text"
@@ -824,7 +843,7 @@ const Procurements = ({
                                                 />
                                             )}
                                         </div>
-    
+
                                         <div className="mb-3">
                                             <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">
                                                 Upload File
@@ -832,21 +851,24 @@ const Procurements = ({
                                             <input
                                                 type="file"
                                                 onChange={(e) =>
-                                                    handleMultiFileChange(e, index)
+                                                    handleMultiFileChange(
+                                                        e,
+                                                        index
+                                                    )
                                                 }
                                                 className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                                                 multiple
                                                 disabled={!fileData.fileType}
                                             />
                                         </div>
-    
+
                                         <div className="mb-3">
                                             <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">
                                                 Uploaded Files
                                             </label>
                                             {renderUploadedFiles(index)}
                                         </div>
-    
+
                                         <div className="flex justify-end">
                                             <button
                                                 onClick={() =>
@@ -865,7 +887,7 @@ const Procurements = ({
                                     </div>
                                 ))}
                             </div>
-    
+
                             {/* Desktop view - table */}
                             <div className="hidden md:block">
                                 <table className="w-full table-auto border-collapse">
@@ -893,7 +915,9 @@ const Procurements = ({
                                             >
                                                 <td className="px-4 py-3">
                                                     <select
-                                                        value={fileData.fileType}
+                                                        value={
+                                                            fileData.fileType
+                                                        }
                                                         onChange={(e) =>
                                                             handleFileTypeChange(
                                                                 e,
@@ -915,16 +939,18 @@ const Procurements = ({
                                                             Agreement
                                                         </option>
                                                         <option value="engagementwork">
-                                                            Engagement Letter(EL)
+                                                            Engagement
+                                                            Letter(EL)
                                                         </option>
                                                         <option value="statementofwork">
-                                                            Statement Of Work (SOW)
+                                                            Statement Of Work
+                                                            (SOW)
                                                         </option>
                                                         <option value="Other">
                                                             Other
                                                         </option>
                                                     </select>
-    
+
                                                     {fileData.fileType ===
                                                         "Other" && (
                                                         <input
@@ -943,7 +969,7 @@ const Procurements = ({
                                                         />
                                                     )}
                                                 </td>
-    
+
                                                 <td className="px-4 py-3">
                                                     <input
                                                         type="file"
@@ -960,15 +986,17 @@ const Procurements = ({
                                                         }
                                                     />
                                                 </td>
-    
+
                                                 <td className="px-4 py-3">
                                                     {renderUploadedFiles(index)}
                                                 </td>
-    
+
                                                 <td className="px-4 py-3 text-right">
                                                     <button
                                                         onClick={() =>
-                                                            handleRemoveRow(index)
+                                                            handleRemoveRow(
+                                                                index
+                                                            )
                                                         }
                                                         className={`bg-red-500 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300 ${
                                                             index === 0
@@ -986,7 +1014,7 @@ const Procurements = ({
                                 </table>
                             </div>
                         </div>
-    
+
                         <div className="mt-4 flex justify-start">
                             <button
                                 onClick={handleAddRow}
@@ -996,7 +1024,7 @@ const Procurements = ({
                             </button>
                         </div>
                     </div>
-    
+
                     <div className="mt-8 flex flex-col sm:flex-row justify-between gap-4">
                         <button
                             onClick={onBack}
@@ -1011,7 +1039,7 @@ const Procurements = ({
                             Next
                         </button>
                     </div>
-    
+
                     {/* Add Vendor Modal */}
                     {showModal && (
                         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
@@ -1021,7 +1049,7 @@ const Procurements = ({
                                         Add New Vendor
                                     </h3>
                                 </div>
-    
+
                                 <div className="p-4 md:p-8 space-y-4 md:space-y-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1040,7 +1068,7 @@ const Procurements = ({
                                             }
                                         />
                                     </div>
-    
+
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Vendor Email
@@ -1058,7 +1086,7 @@ const Procurements = ({
                                             }
                                         />
                                     </div>
-    
+
                                     <div className="flex flex-col sm:flex-row gap-4 sm:space-x-4">
                                         <button
                                             onClick={() => setShowModal(false)}

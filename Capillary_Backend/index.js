@@ -17,6 +17,10 @@ const s3Router = require("./routes/preSignedUrl");
 const crediantialRoute = require("./routes/crediantialsRoute")
 const restApiData = require("./routes/restApi/getAllRequest")
 
+const newKeyData = require("./routes/restApi/ssoRoute")
+
+
+
 dotenv.config();
 
 const app = express();
@@ -48,6 +52,8 @@ app.use("/request", reqRoutes);
 app.use("/upload-s3", s3Router);
 app.use("/credantials", crediantialRoute);
 app.use("/get-restapidata",restApiData)
+app.use("/create-key",newKeyData)
+
 
 
 

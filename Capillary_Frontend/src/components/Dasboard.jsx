@@ -91,6 +91,8 @@ const Dashboard = () => {
     fetchDashboardStats();
   }, [empId]);
 
+
+
   const formatCurrency = (value, currencyCode) => {
     if (!value) return "N/A";
     const currency = currencies.find((c) => c.code === currencyCode);

@@ -255,7 +255,7 @@ const SidebarLayout = () => {
         {/* Main Content */}
         <div
           className={`flex-1 ${
-            isMobile ? "ml-0" : "ml-32"
+            isMobile ? "ml-0" : "ml-28"
           } scrollbar-none overflow-y-scroll bg-gray-50 pt-4`}
         >
           <div className="p-2 sm:p-8">

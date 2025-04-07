@@ -115,7 +115,8 @@ const emailTemplates = {
               <p>The request is now awaiting PO upload. Please proceed with the next steps.</p>
               
               <div style="text-align: center; margin-top: 20px;">
-                <a href="https://porequests.corp.capillarytech.com" style="background-color: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Upload PO</a>
+            <a href="https://porequests.corp.capillarytech.com/req-list-table/preview-one-req/{{reqId}}" 
+style="background-color: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Upload PO</a>
               </div>
             </div>
           </div>
@@ -200,7 +201,7 @@ const emailTemplates = {
               <p>The PO for your request <strong>{{reqId}}</strong> has been uploaded by <strong>{{employeeName}}</strong> from the <strong>{{department}}</strong> department.</p>
               <p>Next Steps:</p>
               <ul>
-                <li>Please ensure that the invoice is uploaded to proceed with further processing.</li>
+                <li>Please ensure that the invoice is uploaded within 7 days to proceed with further processing.</li>
                 <li>Verify the details of the PO before proceeding.</li>
               </ul>
               <p>Click below to view or download the PO:</p>
@@ -276,7 +277,32 @@ const emailTemplates = {
 </body>
 </html>
     `,
-}
+},
+invoiceUploadedEmail: {
+  subject: `Invoice Upload Notification`,
+  html: `
+    <!DOCTYPE html>
+    <html>
+      <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; text-align: center;">
+        <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+          <div style="background-color: #28a745; color: #ffffff; padding: 20px;">
+            <h1>Invoice Upload Notification</h1>
+          </div>
+          <div style="padding: 20px; color: #333;">
+            <p>Dear Team,</p>
+            <p><strong>{{employeeName}}</strong> from the <strong>{{department}}</strong> department has successfully uploaded the invoice for request ID <strong>{{reqId}}</strong>.</p>
+            <p>The invoice has been submitted and is now available for review.</p>
+            
+            <div style="text-align: center; margin-top: 20px;">
+              <a href="{{invoiceLink}}" 
+              style="background-color: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">View Invoice</a>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `,
+},
 
 };
 

@@ -42,7 +42,7 @@ const Settings = () => {
           icon: Building2,
           bgColor: "bg-indigo-50",
           textColor: "text-indigo-600",
-          description: "HR system integration",
+          description: "Create Api keys",
           path: "/settings/create-rest-api",
         },
         {

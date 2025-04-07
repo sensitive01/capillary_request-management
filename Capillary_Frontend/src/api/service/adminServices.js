@@ -1127,4 +1127,38 @@ export const showFileUrl = async (presignedUrl) => {
   }
 };
 
+
+export const saveNewSSoKey = async (key) => {
+  try {
+    const response = await adminServices.post(
+      `/create-key/save-new-sso-key`,{key}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getSSOKey = async () => {
+  try {
+    const response = await adminServices.get(
+      `/create-key/get-saved-sso-key`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const deleteSSOKey = async () => {
+  try {
+    const response = await adminServices.delete(
+      `/create-key/delete-saved-sso-key`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 // ...............................................................................................

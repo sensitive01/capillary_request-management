@@ -367,13 +367,16 @@ const LegalQuestions = () => {
         >
           {item.status ? "Disable" : "Enable"}
         </button>
-        <button
-          onClick={() => handleDeleteQuestion(item._id)}
-          className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-        >
-          <Trash2 size={12} className="mr-1" />
-          Delete
-        </button>
+
+        {role === "Admin" && (
+          <button
+            onClick={() => handleDeleteQuestion(item._id)}
+            className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+          >
+            <Trash2 size={12} className="mr-1" />
+            Delete
+          </button>
+        )}
       </div>
     </div>
   );
@@ -492,13 +495,15 @@ const LegalQuestions = () => {
                     >
                       {item.status ? "Disable" : "Enable"}
                     </button>
-                    <button
-                      onClick={() => handleDeleteQuestion(item._id)}
-                      className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                    >
-                      <Trash2 size={12} className="mr-1" />
-                      Delete
-                    </button>
+                    {role === "Admin" && (
+                      <button
+                        onClick={() => handleDeleteQuestion(item._id)}
+                        className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                      >
+                        <Trash2 size={12} className="mr-1" />
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -105,7 +105,7 @@ const EmailNotificationSettings = () => {
             <thead>
               <tr className="bg-gray-100">
                 <th className="p-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">
-                  ID
+                  SNo
                 </th>
                 <th className="p-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">
                   Notification Name
@@ -119,12 +119,12 @@ const EmailNotificationSettings = () => {
               </tr>
             </thead>
             <tbody>
-              {emailSettings.map((email) => (
+              {emailSettings.map((email,index) => (
                 <tr
                   key={email.emailId}
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td className="p-3">{email.emailId}</td>
+                  <td className="p-3">{index+1}</td>
                   <td className="p-3">{email.label}</td>
                   <td className="p-3">
                     <span
