@@ -182,6 +182,14 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
             tempErrors.vendor = "Vendor selection is required";
             isValid = false;
         }
+        const hasUploadedFiles =
+        formData?.procurements?.uploadedFiles &&
+        Object.keys(formData?.procurements?.uploadedFiles).length > 0 
+     
+        if (!hasUploadedFiles) {
+            tempErrors.documents = "At least one document must be uploaded";
+            isValid = false;
+        }
 
         // Service Period validation
         if (!formData?.servicePeriod) {
@@ -837,6 +845,11 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
                     <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
                         Upload Documents
                     </h3>
+                    {errors.documents && (
+                            <p className="text-red-500 text-sm mt-1 mb-2">
+                                {errors.documents}
+                            </p>
+                        )}
     
                     <div className="overflow-x-auto">
                         <table className="w-full table-auto border-collapse">
