@@ -9,6 +9,7 @@ import {
 import uploadFiles from "../../../../utils/s3BucketConfig.js";
 
 const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
+    console.log("Procurements", formData);
     const [vendors, setVendors] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -182,10 +183,16 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
             tempErrors.vendor = "Vendor selection is required";
             isValid = false;
         }
+
+        const uploadedFileValues = formData?.uploadedFiles
+            ? Object.values(formData.uploadedFiles)
+            : [];
+            console.log(formData?.uploadedFiles)
+
         const hasUploadedFiles =
-        formData?.procurements?.uploadedFiles &&
-        Object.keys(formData?.procurements?.uploadedFiles).length > 0 
-     
+            uploadedFileValues.some((fileArray) => fileArray?.length > 0) ||
+            formData?.updatedFiles?.length > 0;
+
         if (!hasUploadedFiles) {
             tempErrors.documents = "At least one document must be uploaded";
             isValid = false;
@@ -702,363 +709,368 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
 
     return (
         <div className="mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden max-w-full">
-        <div className="bg-gradient-to-r from-primary to-primary p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white text-center">
-                Procurement Details
-            </h2>
-        </div>
-    
-        <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                {/* Vendor Search and Date Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="sm:col-span-1 w-full">
-                        {renderVendorSearch()}
+            <div className="bg-gradient-to-r from-primary to-primary p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white text-center">
+                    Procurement Details
+                </h2>
+            </div>
+
+            <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                    {/* Vendor Search and Date Inputs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-1 w-full">
+                            {renderVendorSearch()}
+                        </div>
+                        <div className="w-full">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                Quotation Date
+                            </label>
+                            <input
+                                type="date"
+                                name="quotationDate"
+                                value={formatDateForInput(
+                                    formData?.quotationDate || ""
+                                )}
+                                onChange={handleInputChange}
+                                min={getDateRange().min}
+                                max={getDateRange().max}
+                                className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                Quotation Number
+                            </label>
+                            <input
+                                type="text"
+                                name="quotationNumber"
+                                value={formData?.quotationNumber || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                                placeholder="Enter Quotation Number"
+                            />
+                        </div>
                     </div>
-                    <div className="w-full">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            Quotation Date
-                        </label>
-                        <input
-                            type="date"
-                            name="quotationDate"
-                            value={formatDateForInput(
-                                formData?.quotationDate || ""
-                            )}
-                            onChange={handleInputChange}
-                            min={getDateRange().min}
-                            max={getDateRange().max}
-                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        />
-                    </div>
-                    <div className="w-full">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            Quotation Number
-                        </label>
-                        <input
-                            type="text"
-                            name="quotationNumber"
-                            value={formData?.quotationNumber || ""}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                            placeholder="Enter Quotation Number"
-                        />
-                    </div>
-                </div>
-    
-                {/* Service Period Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <div className="w-full">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            Service Period
-                            <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="servicePeriod"
-                            value={formData?.servicePeriod || "oneTime"}
-                            onChange={(e) => {
-                                handleInputChange(e);
-                                if (e.target.value === "oneTime") {
-                                    setFormData((prevData) => ({
-                                        ...prevData,
-                                        poValidFrom: "",
-                                        poValidTo: "",
-                                    }));
-                                }
-                            }}
-                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        >
-                            <option value="oneTime">One Time</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-    
-                    {formData?.servicePeriod === "custom" && (
-                        <>
-                            <div className="w-full">
-                                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                                    Service Valid From
-                                </label>
-                                <input
-                                    type="date"
-                                    name="poValidFrom"
-                                    value={
-                                        formatDateForInput(
-                                            formData?.poValidFrom
-                                        ) || ""
+
+                    {/* Service Period Inputs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                        <div className="w-full">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                Service Period
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="servicePeriod"
+                                value={formData?.servicePeriod || "oneTime"}
+                                onChange={(e) => {
+                                    handleInputChange(e);
+                                    if (e.target.value === "oneTime") {
+                                        setFormData((prevData) => ({
+                                            ...prevData,
+                                            poValidFrom: "",
+                                            poValidTo: "",
+                                        }));
                                     }
-                                    onChange={handleInputChange}
-                                    min={getDateRange().min}
-                                    className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                                />
-                            </div>
-                            <div className="w-full">
-                                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                                    Service Valid To
-                                </label>
-                                <input
-                                    type="date"
-                                    name="poValidTo"
-                                    value={
-                                        formatDateForInput(
-                                            formData?.poValidTo
-                                        ) || ""
-                                    }
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                                />
-                            </div>
-                        </>
-                    )}
-                </div>
-    
-                {/* Project and Client Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="w-full">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            Project Code
-                        </label>
-                        <input
-                            type="text"
-                            name="projectCode"
-                            value={formData?.projectCode || ""}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        />
+                                }}
+                                className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            >
+                                <option value="oneTime">One Time</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+
+                        {formData?.servicePeriod === "custom" && (
+                            <>
+                                <div className="w-full">
+                                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                        Service Valid From
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="poValidFrom"
+                                        value={
+                                            formatDateForInput(
+                                                formData?.poValidFrom
+                                            ) || ""
+                                        }
+                                        onChange={handleInputChange}
+                                        min={getDateRange().min}
+                                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                                    />
+                                </div>
+                                <div className="w-full">
+                                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                        Service Valid To
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="poValidTo"
+                                        value={
+                                            formatDateForInput(
+                                                formData?.poValidTo
+                                            ) || ""
+                                        }
+                                        onChange={handleInputChange}
+                                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
-                    <div className="w-full">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            Client Name
-                        </label>
-                        <input
-                            type="text"
-                            name="clientName"
-                            value={formData?.clientName || ""}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
-                        />
+
+                    {/* Project and Client Inputs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="w-full">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                Project Code
+                            </label>
+                            <input
+                                type="text"
+                                name="projectCode"
+                                value={formData?.projectCode || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                                Client Name
+                            </label>
+                            <input
+                                type="text"
+                                name="clientName"
+                                value={formData?.clientName || ""}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-300"
+                            />
+                        </div>
                     </div>
-                </div>
-    
-                {/* Document Upload Section */}
-                <div className="space-y-4">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
-                        Upload Documents
-                    </h3>
-                    {errors.documents && (
+
+                    {/* Document Upload Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+                            Upload Documents
+                        </h3>
+                        {errors.documents && (
                             <p className="text-red-500 text-sm mt-1 mb-2">
                                 {errors.documents}
                             </p>
                         )}
-    
-                    <div className="overflow-x-auto">
-                        <table className="w-full table-auto border-collapse">
-                            <thead>
-                                <tr className="bg-gray-100 border-b-2 border-gray-200">
-                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        File Type
-                                    </th>
-                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Upload File
-                                    </th>
-                                    <th className="hidden sm:table-cell px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Uploaded Files
-                                    </th>
-                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filesData?.map((fileData, index) => (
-                                    <tr
-                                        key={fileData.id}
-                                        className="border-b hover:bg-gray-50 transition duration-200"
-                                    >
-                                        <td className="px-2 py-2 sm:px-4 sm:py-3">
-                                            <select
-                                                value={fileData?.fileType}
-                                                onChange={(e) =>
-                                                    handleFileTypeChange(
-                                                        e,
-                                                        index
-                                                    )
-                                                }
-                                                className="w-full px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                                            >
-                                                <option value="">
-                                                    Select File Type
-                                                </option>
-                                                <option value="finalQuotation">
-                                                    Final Quotation
-                                                </option>
-                                                <option value="competitive">
-                                                    Competitive
-                                                </option>
-                                                <option value="agreement">
-                                                    Agreement
-                                                </option>
-                                                <option value="engagementwork">
-                                                    Engagement Letter(EL)
-                                                </option>
-                                                <option value="statementofwork">
-                                                    Statement Of Work (SOW)
-                                                </option>
-                                                <option value="Other">
-                                                    Other
-                                                </option>
-                                            </select>
-    
-                                            {fileData.fileType === "Other" && (
-                                                <input
-                                                    type="text"
-                                                    placeholder="Enter other file type"
-                                                    value={fileData?.otherType}
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full table-auto border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-100 border-b-2 border-gray-200">
+                                        <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            File Type
+                                        </th>
+                                        <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Upload File
+                                        </th>
+                                        <th className="hidden sm:table-cell px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Uploaded Files
+                                        </th>
+                                        <th className="px-2 py-2 sm:px-4 sm:py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filesData?.map((fileData, index) => (
+                                        <tr
+                                            key={fileData.id}
+                                            className="border-b hover:bg-gray-50 transition duration-200"
+                                        >
+                                            <td className="px-2 py-2 sm:px-4 sm:py-3">
+                                                <select
+                                                    value={fileData?.fileType}
                                                     onChange={(e) =>
-                                                        handleOtherTypeChange(
+                                                        handleFileTypeChange(
                                                             e,
                                                             index
                                                         )
                                                     }
-                                                    className="mt-2 w-full px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                    className="w-full px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                >
+                                                    <option value="">
+                                                        Select File Type
+                                                    </option>
+                                                    <option value="finalQuotation">
+                                                        Final Quotation
+                                                    </option>
+                                                    <option value="competitive">
+                                                        Competitive
+                                                    </option>
+                                                    <option value="agreement">
+                                                        Agreement
+                                                    </option>
+                                                    <option value="engagementwork">
+                                                        Engagement Letter(EL)
+                                                    </option>
+                                                    <option value="statementofwork">
+                                                        Statement Of Work (SOW)
+                                                    </option>
+                                                    <option value="Other">
+                                                        Other
+                                                    </option>
+                                                </select>
+
+                                                {fileData.fileType ===
+                                                    "Other" && (
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter other file type"
+                                                        value={
+                                                            fileData?.otherType
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleOtherTypeChange(
+                                                                e,
+                                                                index
+                                                            )
+                                                        }
+                                                        className="mt-2 w-full px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                    />
+                                                )}
+                                            </td>
+
+                                            <td className="px-2 py-2 sm:px-4 sm:py-3">
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) =>
+                                                        handleMultiFileChange(
+                                                            e,
+                                                            index
+                                                        )
+                                                    }
+                                                    className="w-full px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                                                    multiple
+                                                    disabled={
+                                                        !fileData.fileType
+                                                    }
                                                 />
-                                            )}
-                                        </td>
-    
-                                        <td className="px-2 py-2 sm:px-4 sm:py-3">
-                                            <input
-                                                type="file"
-                                                onChange={(e) =>
-                                                    handleMultiFileChange(
-                                                        e,
-                                                        index
-                                                    )
-                                                }
-                                                className="w-full px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                                                multiple
-                                                disabled={!fileData.fileType}
-                                            />
-                                        </td>
-    
-                                        <td className="hidden sm:table-cell px-2 py-2 sm:px-4 sm:py-3">
-                                            {renderUploadedFiles(index)}
-                                        </td>
-    
-                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right">
-                                            <button
-                                                onClick={() =>
-                                                    handleRemoveRow(index)
-                                                }
-                                                className={`bg-red-500 text-white hover:bg-red-700 px-2 py-1 sm:px-4 sm:py-2 rounded-lg transition duration-300 text-xs sm:text-sm ${
-                                                    index === 0
-                                                        ? "cursor-not-allowed opacity-50"
-                                                        : ""
-                                                }`}
-                                                disabled={index === 0}
-                                            >
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            </td>
+
+                                            <td className="hidden sm:table-cell px-2 py-2 sm:px-4 sm:py-3">
+                                                {renderUploadedFiles(index)}
+                                            </td>
+
+                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right">
+                                                <button
+                                                    onClick={() =>
+                                                        handleRemoveRow(index)
+                                                    }
+                                                    className={`bg-red-500 text-white hover:bg-red-700 px-2 py-1 sm:px-4 sm:py-2 rounded-lg transition duration-300 text-xs sm:text-sm ${
+                                                        index === 0
+                                                            ? "cursor-not-allowed opacity-50"
+                                                            : ""
+                                                    }`}
+                                                    disabled={index === 0}
+                                                >
+                                                    Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="mt-4 flex justify-start">
+                            <button
+                                onClick={handleAddRow}
+                                className="bg-primary text-white flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:bg-primary-dark transition duration-300 text-xs sm:text-sm"
+                            >
+                                Add Row
+                            </button>
+                        </div>
                     </div>
-    
-                    <div className="mt-4 flex justify-start">
+
+                    {/* Navigation Buttons */}
+                    <div className="mt-6 sm:mt-8 flex justify-between space-x-4">
                         <button
-                            onClick={handleAddRow}
-                            className="bg-primary text-white flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:bg-primary-dark transition duration-300 text-xs sm:text-sm"
+                            onClick={onBack}
+                            className="px-4 py-2 sm:px-6 sm:py-2 w-1/2 sm:w-40 text-xs sm:text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary"
                         >
-                            Add Row
+                            Back
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            className="px-4 py-2 sm:px-6 sm:py-2 w-1/2 sm:w-40 text-xs sm:text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark"
+                        >
+                            Next
                         </button>
                     </div>
-                </div>
-    
-                {/* Navigation Buttons */}
-                <div className="mt-6 sm:mt-8 flex justify-between space-x-4">
-                    <button
-                        onClick={onBack}
-                        className="px-4 py-2 sm:px-6 sm:py-2 w-1/2 sm:w-40 text-xs sm:text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary"
-                    >
-                        Back
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        className="px-4 py-2 sm:px-6 sm:py-2 w-1/2 sm:w-40 text-xs sm:text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark"
-                    >
-                        Next
-                    </button>
-                </div>
-    
-                {/* Modal for Adding New Vendor */}
-                {showModal && (
-                    <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
-                        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out">
-                            <div className="bg-primary text-white p-4 sm:p-6 rounded-t-2xl">
-                                <h3 className="text-xl sm:text-2xl font-bold text-center">
-                                    Add New Vendor
-                                </h3>
-                            </div>
-    
-                            <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                                        Vendor Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                        placeholder="Enter vendor name"
-                                        value={newVendor.name}
-                                        onChange={(e) =>
-                                            setNewVendor({
-                                                ...newVendor,
-                                                name: e.target.value,
-                                            })
-                                        }
-                                    />
+
+                    {/* Modal for Adding New Vendor */}
+                    {showModal && (
+                        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
+                            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all duration-300 ease-in-out">
+                                <div className="bg-primary text-white p-4 sm:p-6 rounded-t-2xl">
+                                    <h3 className="text-xl sm:text-2xl font-bold text-center">
+                                        Add New Vendor
+                                    </h3>
                                 </div>
-    
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                                        Vendor Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                        placeholder="Enter vendor email"
-                                        value={newVendor.email}
-                                        onChange={(e) =>
-                                            setNewVendor({
-                                                ...newVendor,
-                                                email: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-    
-                                <div className="flex space-x-4">
-                                    <button
-                                        onClick={() => setShowModal(false)}
-                                        className="w-full px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleAddVendor}
-                                        className="w-full px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition duration-300"
-                                    >
-                                        Add Vendor
-                                    </button>
+
+                                <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+                                    <div>
+                                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                            Vendor Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            placeholder="Enter vendor name"
+                                            value={newVendor.name}
+                                            onChange={(e) =>
+                                                setNewVendor({
+                                                    ...newVendor,
+                                                    name: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                            Vendor Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            placeholder="Enter vendor email"
+                                            value={newVendor.email}
+                                            onChange={(e) =>
+                                                setNewVendor({
+                                                    ...newVendor,
+                                                    email: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="flex space-x-4">
+                                        <button
+                                            onClick={() => setShowModal(false)}
+                                            className="w-full px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleAddVendor}
+                                            className="w-full px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition duration-300"
+                                        >
+                                            Add Vendor
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
-    </div>
     );
 };
 
