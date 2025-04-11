@@ -9,7 +9,6 @@ import {
 import uploadFiles from "../../../../utils/s3BucketConfig.js";
 
 const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
-    console.log("Procurements", formData);
     const [vendors, setVendors] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -180,6 +179,7 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
 
         // Vendor validation
         if (!formData?.vendor) {
+            console.log("1")
             tempErrors.vendor = "Vendor selection is required";
             isValid = false;
         }
@@ -187,25 +187,31 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
         const uploadedFileValues = formData?.uploadedFiles
             ? Object.values(formData.uploadedFiles)
             : [];
-            console.log(formData?.uploadedFiles)
 
         const hasUploadedFiles =
-            uploadedFileValues.some((fileArray) => fileArray?.length > 0) ||
-            formData?.updatedFiles?.length > 0;
+            (uploadedFileValues.some((fileArray) => fileArray?.length > 0) ||
+            formData?.uploadedFiles?.length > 0);
+            console.log("hasUploadedFiles",formData?.uploadedFiles)
+
 
         if (!hasUploadedFiles) {
+
             tempErrors.documents = "At least one document must be uploaded";
             isValid = false;
         }
 
         // Service Period validation
         if (!formData?.servicePeriod) {
+            console.log("2")
+
             tempErrors.servicePeriod = "Service period is required";
             isValid = false;
         }
 
         // Custom period validation
         if (formData?.servicePeriod === "custom") {
+            console.log("3")
+
             if (!formData?.poValidFrom) {
                 tempErrors.poValidFrom = "Valid from date is required";
                 isValid = false;
@@ -227,6 +233,8 @@ const Procurements = ({ formData, setFormData, onBack, onNext, reqId }) => {
 
         // Quotation date validation
         if (!formData?.quotationDate) {
+            console.log("4")
+
             tempErrors.quotationDate = "Quotation date is required";
             isValid = false;
         }

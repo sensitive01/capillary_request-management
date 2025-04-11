@@ -141,7 +141,7 @@ const PreviewTheReq = () => {
             setIsGeneratingPDF(true);
 
             // Define margins (in mm)
-            const margin = 20; // Increased from 15mm to 20mm for better spacing
+            const margin = 15; // Reduced slightly to give more content space
 
             // Create a PDF document
             const pdf = new jsPDF({
@@ -163,27 +163,27 @@ const PreviewTheReq = () => {
                 { id: "procurement-details", title: "Procurement Details" },
                 { id: "supplies-details", title: "Product/Services Details" },
                 { id: "compliance-details", title: "Compliance Details" },
-                { id: "approval-logs", title: "Approval Logs" }, // Added logs section
+                { id: "approval-logs", title: "Approval Logs" },
             ];
 
             // Create a temporary container for the content
             const tempContainer = document.createElement("div");
             tempContainer.style.position = "absolute";
             tempContainer.style.left = "-9999px";
-            tempContainer.style.width = contentWidth + "mm"; // Content width accounting for margins
+            tempContainer.style.width = contentWidth * 3.779528 + "px"; // Convert mm to px (1mm ≈ 3.779528px)
             tempContainer.style.padding = "0";
             tempContainer.style.boxSizing = "border-box";
+            tempContainer.style.fontSize = "10px"; // Set a base font size
             document.body.appendChild(tempContainer);
 
-            // Center alignment for requestor information
+            // Cover page content (Center alignment for requestor information)
             const centerX = pdfWidth / 2;
-            const startY = pdfHeight / 2 - 40; // Start position for centered content
+            const startY = pdfHeight / 2 - 40;
 
             // Title (if available)
             if (request.title) {
                 pdf.setFontSize(18);
                 pdf.setFont("helvetica", "bold");
-                // Calculate text width to center it
                 const titleWidth =
                     (pdf.getStringUnitWidth(request.title) * 18) /
                     pdf.internal.scaleFactor;
@@ -227,14 +227,14 @@ const PreviewTheReq = () => {
             pdf.setFont("helvetica", "normal");
             pdf.setTextColor(100, 100, 100);
             pdf.text(
-                `Generated on: ${new Date().toLocaleDateString()}`,
+                `Generated: ${new Date().toLocaleDateString()}`,
                 centerX,
                 pdfHeight - margin,
                 { align: "center" }
             );
 
             // Add divider line above footer
-            pdf.setDrawColor(128, 194, 66); // Theme color for divider
+            pdf.setDrawColor(128, 194, 66);
             pdf.setLineWidth(0.5);
             pdf.line(
                 margin,
@@ -251,45 +251,85 @@ const PreviewTheReq = () => {
                 pdf.addPage();
 
                 // Add section header with styling
-                pdf.setFillColor(128, 194, 66); // Theme color #80c242
+                pdf.setFillColor(128, 194, 66);
                 pdf.rect(0, 0, pdfWidth, 25, "F");
 
                 pdf.setFont("helvetica", "bold");
                 pdf.setFontSize(16);
-                pdf.setTextColor(255, 255, 255); // White text on green background
+                pdf.setTextColor(255, 255, 255);
                 pdf.text(section.title, margin, margin);
+
+                // Reset text color for content
+                pdf.setTextColor(0, 0, 0);
 
                 // Create content for this section
                 tempContainer.innerHTML = "";
-                tempContainer.innerHTML = generateSectionHTML(
+
+                // Special handling for supplies-details section
+                if (section.id === "supplies-details") {
+                    // Adjust container width specifically for table
+                    tempContainer.style.width = contentWidth * 3.779528 + "px";
+
+                    // Custom styling for the supplies section table
+                    const customStyle = document.createElement("style");
+                    customStyle.textContent = `
+                        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }
+                        th, td { border: 1px solid #ddd; padding: 4px; overflow: hidden; text-overflow: ellipsis; }
+                        th { background-color: rgba(128, 194, 66, 0.1); }
+                        td { word-break: break-word; }
+                    `;
+                    tempContainer.appendChild(customStyle);
+                }
+
+                tempContainer.innerHTML += generateSectionHTML(
                     section.id,
                     section.title
                 );
 
-                // Convert this section to canvas
+                // Find any tables in this section and adjust them
+                const tables = tempContainer.querySelectorAll("table");
+                tables.forEach((table) => {
+                    table.style.fontSize = "9px";
+                    table.style.width = "100%";
+                    table.style.tableLayout = "fixed";
+
+                    // Adjust cell content to prevent overflow
+                    const cells = table.querySelectorAll("td");
+                    cells.forEach((cell) => {
+                        cell.style.maxWidth = "100%";
+                        cell.style.overflow = "hidden";
+                        cell.style.textOverflow = "ellipsis";
+                        cell.style.wordWrap = "break-word";
+                    });
+                });
+
+                // Convert this section to canvas with a higher resolution
                 const canvas = await html2canvas(tempContainer, {
-                    scale: 2,
+                    scale: 3, // Higher scale for better quality
                     useCORS: true,
                     allowTaint: true,
                     backgroundColor: "#ffffff",
+                    logging: false,
+                    letterRendering: true,
                 });
 
-                // Add the image to the PDF with proper margins
-                const imgData = canvas.toDataURL("image/jpeg", 1.0);
+                // Calculate scaling ratio to fit within content area
                 const imgWidth = canvas.width;
                 const imgHeight = canvas.height;
                 const ratio = Math.min(
-                    contentWidth / imgWidth,
-                    (contentHeight - 30) / imgHeight // Subtract header height
+                    contentWidth / (imgWidth / 3), // Compensate for the higher scale
+                    (contentHeight - 30) / (imgHeight / 3) // Subtract header height
                 );
 
+                // Add the image to the PDF with proper scaling
+                const imgData = canvas.toDataURL("image/jpeg", 1.0);
                 pdf.addImage(
                     imgData,
                     "JPEG",
                     margin,
                     margin + 20, // Add content below the header
-                    imgWidth * ratio,
-                    imgHeight * ratio
+                    (imgWidth / 3) * ratio,
+                    (imgHeight / 3) * ratio
                 );
 
                 // Add page number and footer
@@ -297,13 +337,13 @@ const PreviewTheReq = () => {
                 pdf.setFont("helvetica", "normal");
                 pdf.setTextColor(100, 100, 100);
                 pdf.text(
-                    `Page ${i + 1} of ${sections.length}`,
+                    `Page ${i + 2} of ${sections.length + 1}`, // +1 for cover page
                     pdfWidth - margin - 30,
                     pdfHeight - margin
                 );
 
                 // Add divider line above footer
-                pdf.setDrawColor(128, 194, 66); // Theme color for divider
+                pdf.setDrawColor(128, 194, 66);
                 pdf.setLineWidth(0.5);
                 pdf.line(
                     margin,
@@ -342,7 +382,7 @@ const PreviewTheReq = () => {
         // Base styles for all sections - updated with theme color and better spacing
         const styles = `
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 25px; }
+            body { font-family: Arial, sans-serif; margin: 0; padding: 5px; }
             .section-container { max-width: 210mm; margin: 0 auto; }
             .header { display: flex; justify-content: space-between; border-bottom: 2px solid #80c242; padding-bottom: 15px; margin-bottom: 25px; }
             h1 { color: #80c242; font-size: 24px; margin: 0; }
@@ -424,18 +464,18 @@ const PreviewTheReq = () => {
                 </div>
             </div>`;
         }
-
+    
         const calculateDuration = (startDate, endDate) => {
             if (!startDate || !endDate)
                 return { days: "-", hours: "-", minutes: "-" };
-
+    
             const start = new Date(startDate);
             const end = new Date(endDate);
-
+    
             const diffInMs = end - start;
-
+    
             if (diffInMs < 0) return { days: "-", hours: "-", minutes: "-" };
-
+    
             const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
             const hours = Math.floor(
                 (diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -443,44 +483,45 @@ const PreviewTheReq = () => {
             const minutes = Math.floor(
                 (diffInMs % (1000 * 60 * 60)) / (1000 * 60)
             );
-
+    
             return { days, hours, minutes };
         };
-
+    
         const formatDuration = (duration) => {
             if (duration.days === "-") return "Pending";
-
+    
             const parts = [];
             if (duration.days > 0) parts.push(`${duration.days}d`);
             if (duration.hours > 0) parts.push(`${duration.hours}h`);
             if (duration.minutes > 0) parts.push(`${duration.minutes}m`);
-
-            return parts.length > 0 ? parts.join(" ") : "Less than 1m";
+    
+            return parts.length > 0 ? parts.join(" ") : "< 1m";
         };
-
-        const getStatusStyleClass = (status) => {
-            if (!status) return "status-pending";
-
+    
+        // Simplified status style for PDF
+        const getStatusStyle = (status) => {
+            if (!status) return "background-color: #f0f0f0; color: #666;";
+    
             switch (status.toLowerCase()) {
                 case "approved":
-                    return "status-approved";
+                    return "background-color: #e6f7e6; color: #2c7a2c;";
                 case "rejected":
-                    return "status-rejected";
+                    return "background-color: #fde8e8; color: #c53030;";
                 case "pending":
-                    return "status-pending";
+                    return "background-color: #f0f0f0; color: #666;";
                 default:
-                    return "status-pending";
+                    return "background-color: #f0f0f0; color: #666;";
             }
         };
-
-        // Format the date/time
+    
+        // Format the date/time in a more compact way
         const formatDateTime = (dateTimeStr) => {
             if (!dateTimeStr) return { date: "N/A", time: "N/A" };
-
+    
             try {
                 const date = new Date(dateTimeStr);
                 return {
-                    date: date.toLocaleDateString(),
+                    date: date.toLocaleDateString(undefined, {month: "2-digit", day: "2-digit", year: "2-digit"}),
                     time: date.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -490,25 +531,32 @@ const PreviewTheReq = () => {
                 return { date: "N/A", time: "N/A" };
             }
         };
-
+    
+        // Truncate text function
+        const truncateText = (text, maxLength = 25) => {
+            if (!text) return "N/A";
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        };
+    
         let logsHTML = `
         <div class="section-content" style="width: 100%;">
             <h2>Approval Timeline</h2>
-            <table style="width: 100%;">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">#</th>
-                        <th style="width: 20%;">Approver</th>
-                        <th style="width: 20%;">Status & Remarks</th>
-                        <th style="width: 15%;">Received On</th>
-                        <th style="width: 15%;">Updated On</th>
-                        <th style="width: 10%;">Turn Around Time</th>
-                        <th style="width: 20%;">Proceeded To</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div style="width: 100%; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px;">
+                    <thead>
+                        <tr style="background-color: rgba(128, 194, 66, 0.1);">
+                            <th style="width: 5%; padding: 6px; border: 1px solid #ddd; text-align: center;">#</th>
+                            <th style="width: 18%; padding: 6px; border: 1px solid #ddd; text-align: left;">Approver</th>
+                            <th style="width: 18%; padding: 6px; border: 1px solid #ddd; text-align: left;">Status & Remarks</th>
+                            <th style="width: 14%; padding: 6px; border: 1px solid #ddd; text-align: left;">Received On</th>
+                            <th style="width: 14%; padding: 6px; border: 1px solid #ddd; text-align: left;">Updated On</th>
+                            <th style="width: 12%; padding: 6px; border: 1px solid #ddd; text-align: center;">Turn Around</th>
+                            <th style="width: 19%; padding: 6px; border: 1px solid #ddd; text-align: left;">Proceeded To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
-
+    
         request.approvals.forEach((log, index) => {
             const receivedDateTime = formatDateTime(log.receivedOn);
             const approvalDateTime = formatDateTime(log.approvalDate);
@@ -517,63 +565,47 @@ const PreviewTheReq = () => {
                 log.approvalDate
             );
             const formattedDuration = formatDuration(duration);
-
+    
             logsHTML += `
-            <tr>
-                <td>${index + 1}</td>
-                <td>
-                    <div>
-                        <div style="font-weight: 600;">${
-                            log.approverName || "N/A"
-                        }</div>
-                        <div style="font-size: 12px; color: #6b7280;">${
-                            log.departmentName || "N/A"
-                        }</div>
-                        <div style="font-size: 12px; color: #6b7280;">${
-                            log.approvalId || "N/A"
-                        }</div>
-                    </div>
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${index + 1}</td>
+                <td style="padding: 6px; border: 1px solid #ddd; word-wrap: break-word; overflow-wrap: break-word;">
+                    <div style="font-weight: 600;">${truncateText(log.approverName, 20) || "N/A"}</div>
+                    <div style="font-size: 8px; color: #6b7280;">${truncateText(log.departmentName, 20) || "N/A"}</div>
+                    <div style="font-size: 8px; color: #6b7280;">${truncateText(log.approvalId, 18) || "N/A"}</div>
                 </td>
-                <td>
+                <td style="padding: 6px; border: 1px solid #ddd; word-wrap: break-word; overflow-wrap: break-word;">
                     <div>
-                        <span class="${getStatusStyleClass(log.status)}">${
-                log.status || "Pending"
-            }</span>
+                        <span style="padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 600; ${getStatusStyle(log.status)}">${
+                        log.status || "Pending"
+                    }</span>
                         ${
                             log.remarks
-                                ? `<div class="remarks-box">${log.remarks}</div>`
+                                ? `<div style="margin-top: 4px; padding: 3px; background-color: #f7f7f7; border-radius: 3px; font-size: 8px;">${truncateText(log.remarks, 35)}</div>`
                                 : ""
                         }
                     </div>
                 </td>
-                <td>
-                    <div style="font-weight: 500;">${
-                        receivedDateTime.date
-                    }</div>
-                    <div style="font-size: 12px; color: #6b7280;">${
-                        receivedDateTime.time
-                    }</div>
+                <td style="padding: 6px; border: 1px solid #ddd;">
+                    <div style="font-weight: 500;">${receivedDateTime.date}</div>
+                    <div style="font-size: 8px; color: #6b7280;">${receivedDateTime.time}</div>
                 </td>
-                <td>
-                    <div style="font-weight: 500;">${
-                        approvalDateTime.date
-                    }</div>
-                    <div style="font-size: 12px; color: #6b7280;">${
-                        approvalDateTime.time
-                    }</div>
+                <td style="padding: 6px; border: 1px solid #ddd;">
+                    <div style="font-weight: 500;">${approvalDateTime.date}</div>
+                    <div style="font-size: 8px; color: #6b7280;">${approvalDateTime.time}</div>
                 </td>
-                <td style="font-weight: 500;">${formattedDuration}</td>
-                <td>${log.nextDepartment || "N/A"}</td>
+                <td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${formattedDuration}</td>
+                <td style="padding: 6px; border: 1px solid #ddd; word-wrap: break-word; overflow-wrap: break-word;">${truncateText(log.nextDepartment, 25) || "N/A"}</td>
             </tr>
             `;
         });
-
+    
         logsHTML += `
                 </tbody>
             </table>
             
-            <div style="margin-top: 25px; font-size: 12px; color: #6b7280; font-style: italic; background-color: #f8f9fa; padding: 10px; border-radius: 6px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: text-bottom; margin-right: 4px;">
+            <div style="margin-top: 15px; font-size: 8px; color: #6b7280; font-style: italic; background-color: #f8f9fa; padding: 6px; border-radius: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: text-bottom; margin-right: 2px;">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -582,7 +614,7 @@ const PreviewTheReq = () => {
             </div>
         </div>
         `;
-
+    
         return logsHTML;
     };
 
@@ -730,73 +762,134 @@ const PreviewTheReq = () => {
         if (!request || !request.supplies)
             return "<p>No product/services details available</p>";
 
-        let suppliesHTML = `<div class="section-content">`;
+        let suppliesHTML = `<div class="section-content" style="max-width: 100%; margin: 0;">`;
 
         // Add services table if available
         if (request.supplies?.services?.length > 0) {
             suppliesHTML += `
             <h2>Products and Services</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product Name</th>
-                  <th>Description</th>
-                  <th>Purpose</th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Tax (%)</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${request.supplies.services
-                    .map((service) => {
-                        const quantity = parseFloat(service.quantity) || 0;
-                        const price = parseFloat(service.price) || 0;
-                        const tax = parseFloat(service.tax) || 0;
-                        const total = quantity * price * (1 + tax / 100);
+            <div style="width: 100%;">
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px;">
+                    <thead>
+                        <tr style="background-color: rgba(128, 194, 66, 0.1);">
+                            <th style="padding: 6px; text-align: left; width: 13%; border: 1px solid #ddd;">Product Name</th>
+                            <th style="padding: 6px; text-align: left; width: 22%; border: 1px solid #ddd;">Description</th>
+                            <th style="padding: 6px; text-align: left; width: 13%; border: 1px solid #ddd;">Purpose</th>
+                            <th style="padding: 6px; text-align: center; width: 8%; border: 1px solid #ddd;">Quantity</th>
+                            <th style="padding: 6px; text-align: right; width: 10%; border: 1px solid #ddd;">Price</th>
+                            <th style="padding: 6px; text-align: center; width: 7%; border: 1px solid #ddd;">Tax (%)</th>
+                            <th style="padding: 6px; text-align: right; width: 12%; border: 1px solid #ddd;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${request.supplies.services
+                            .map((service) => {
+                                const quantity =
+                                    parseFloat(service.quantity) || 0;
+                                const price = parseFloat(service.price) || 0;
+                                const tax = parseFloat(service.tax) || 0;
+                                const total =
+                                    quantity * price * (1 + tax / 100);
 
-                        return `
-                    <tr>
-                      <td>${service.productName || "N/A"}</td>
-                      <td>${service.productDescription || "N/A"}</td>
-                      <td>${service.productPurpose || "N/A"}</td>
-                      <td>${service.quantity}</td>
-                      <td>${formatCurrency(service.price)}</td>
-                      <td>${service.tax || "N/A"}</td>
-                      <td>${formatCurrency(total)}</td>
-                    </tr>
-                  `;
-                    })
-                    .join("")}
-              </tbody>
-            </table>
-          `;
+                                // Function to truncate text
+                                const truncateText = (text, maxLength = 60) => {
+                                    if (!text) return "N/A";
+                                    return text.length > maxLength
+                                        ? text.substring(0, maxLength) + "..."
+                                        : text;
+                                };
+
+                                return `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 6px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; border: 1px solid #ddd;">
+                                    ${
+                                        truncateText(service.productName, 40) ||
+                                        "N/A"
+                                    }
+                                </td>
+                                <td style="padding: 6px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; border: 1px solid #ddd;">
+                                    ${
+                                        truncateText(
+                                            service.productDescription,
+                                            80
+                                        ) || "N/A"
+                                    }
+                                </td>
+                                <td style="padding: 6px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; border: 1px solid #ddd;">
+                                    ${
+                                        truncateText(
+                                            service.productPurpose,
+                                            40
+                                        ) || "N/A"
+                                    }
+                                </td>
+                                <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">
+                                    ${service.quantity}
+                                </td>
+                                <td style="padding: 6px; text-align: right; border: 1px solid #ddd;">
+                                    ${formatCurrency(service.price)}
+                                </td>
+                                <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">
+                                    ${service.tax || "0"}
+                                </td>
+                                <td style="padding: 6px; text-align: right; font-weight: 600; border: 1px solid #ddd;">
+                                    ${formatCurrency(total)}
+                                </td>
+                            </tr>
+                            `;
+                            })
+                            .join("")}
+                    </tbody>
+                </table>
+            </div>
+            `;
         }
 
         // Add total value if available
         if (request.supplies?.totalValue !== undefined) {
             suppliesHTML += `
-            <div class="info-box" style="margin-top: 20px; font-weight: bold; background-color: #eef7e6; border-left: 4px solid #80c242;">
-              <div class="info-label" style="color: #3d611f;">Total Value</div>
-              <div class="info-value" style="font-size: 18px; color: #3d611f;">${formatCurrency(
-                  request.supplies.totalValue
-              )}</div>
+            <div style="margin-top: 20px; font-weight: bold; background-color: #eef7e6; border-left: 4px solid #80c242; padding: 10px;">
+                <div style="color: #3d611f;">Total Value</div>
+                <div style="font-size: 18px; color: #3d611f;">${formatCurrency(
+                    request.supplies.totalValue
+                )}</div>
             </div>
-          `;
+            `;
         }
 
         // Add remarks if available
         if (request.supplies?.remarks) {
             suppliesHTML += `
             <h2>Remarks</h2>
-            <div class="info-box">
-              <p style="margin: 0;">${request.supplies.remarks}</p>
+            <div style="padding: 10px; border: 1px solid #eee; background-color: #f9f9f9;">
+                <p style="margin: 0;">${request.supplies.remarks}</p>
             </div>
-          `;
+            `;
         }
 
-        suppliesHTML += "</div>";
+        suppliesHTML += `
+        <style type="text/css" media="print">
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+            body {
+                width: 190mm;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            table {
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+            thead {
+                display: table-header-group;
+            }
+        </style>
+        </div>`;
+
         return suppliesHTML;
     };
 
@@ -1376,29 +1469,29 @@ const PreviewTheReq = () => {
                     </h2>
                     {request.supplies?.services?.length > 0 && (
                         <div className="mt-6">
-                            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                                <table className="w-full">
+                            <div className="overflow-x-auto w-full">
+                                <table className="min-w-full bg-white shadow-md rounded-lg">
                                     <thead className="bg-primary/10">
                                         <tr>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-40">
                                                 Product Names
                                             </th>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-48">
                                                 Description
                                             </th>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-40">
                                                 Purpose
                                             </th>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-24">
                                                 Quantity
                                             </th>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-24">
                                                 Price
                                             </th>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-20">
                                                 Tax (%)
                                             </th>
-                                            <th className="p-3 text-left text-primary">
+                                            <th className="p-3 text-left text-primary min-w-24">
                                                 Total
                                             </th>
                                         </tr>
@@ -1427,16 +1520,22 @@ const PreviewTheReq = () => {
                                                         className="border-b hover:bg-gray-50"
                                                     >
                                                         <td className="p-3">
-                                                            {service.productName ||
-                                                                "N/A"}
+                                                            <div className="whitespace-normal break-words max-w-40">
+                                                                {service.productName ||
+                                                                    "N/A"}
+                                                            </div>
                                                         </td>
                                                         <td className="p-3">
-                                                            {service.productDescription ||
-                                                                "N/A"}
+                                                            <div className="whitespace-normal break-words max-w-48">
+                                                                {service.productDescription ||
+                                                                    "N/A"}
+                                                            </div>
                                                         </td>
                                                         <td className="p-3">
-                                                            {service.productPurpose ||
-                                                                "N/A"}
+                                                            <div className="whitespace-normal break-words max-w-40">
+                                                                {service.productPurpose ||
+                                                                    "N/A"}
+                                                            </div>
                                                         </td>
                                                         <td className="p-3">
                                                             {service.quantity}
@@ -1587,7 +1686,9 @@ const PreviewTheReq = () => {
                                                                             handleShowFile(
                                                                                 attachment
                                                                                     .data
-                                                                                    .fileUrls[i]
+                                                                                    .fileUrls[
+                                                                                    i
+                                                                                ]
                                                                             )
                                                                         }
                                                                         className="text-red-600 hover:text-red-800 underline"

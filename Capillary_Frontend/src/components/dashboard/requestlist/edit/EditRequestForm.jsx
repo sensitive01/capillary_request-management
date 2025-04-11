@@ -46,7 +46,7 @@ const EditRequestForm = () => {
             if (response.status === 200) {
                 toast.success(" Request is updated");
                 setTimeout(() => {
-                    navigate("/req-list-table");
+                    navigate(`/req-list-table/preview-one-req/${id}`);
                 }, 1500);
             }
         } catch (err) {
