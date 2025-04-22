@@ -25,6 +25,7 @@ const ChatComments = ({ reqId, reqid }) => {
     const [newMessage, setNewMessage] = useState("");
     const [activeChatTopic, setActiveChatTopic] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [fileBase64, setFileBase64] = useState(null); // New state for base64 data
     const [isUploading, setIsUploading] = useState(false);
     const [isSendingMessage, setIsSendingMessage] = useState(false);
     const [showSidebar, setShowSidebar] = useState(true);
@@ -119,15 +120,38 @@ const ChatComments = ({ reqId, reqid }) => {
         };
     }, []);
 
-    const handleFileSelect = (e) => {
+    // Convert file to base64 function
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const handleFileSelect = async (e) => {
         const file = e.target.files[0];
         if (file) {
             setSelectedFile(file);
+
+            // Convert selected file to base64
+            try {
+                const base64Data = await fileToBase64(file);
+                setFileBase64(base64Data);
+            } catch (error) {
+                console.error("Error converting file to base64:", error);
+            }
         }
     };
 
     const convertUrlToBase64 = async (url) => {
         try {
+            // Check if the URL is already a base64 string
+            if (url.startsWith("data:")) {
+                return url;
+            }
+
             const response = await fetch(url);
             const blob = await response.blob();
 
@@ -172,9 +196,16 @@ const ChatComments = ({ reqId, reqid }) => {
             let attachmentUrl = null;
             let attachmentType = null;
             let attachmentName = null;
+            let attachmentBase64 = null; // Add base64 data
 
             if (selectedFile) {
                 try {
+                    // Store the base64 data before uploading
+                    attachmentBase64 = fileBase64;
+                    attachmentType = selectedFile.type;
+                    attachmentName = selectedFile.name;
+
+                    // Upload to S3 as before
                     const uploadResponse = await uploadFiles(
                         selectedFile,
                         "chat",
@@ -182,8 +213,6 @@ const ChatComments = ({ reqId, reqid }) => {
                     );
                     if (uploadResponse && uploadResponse.data.fileUrls[0]) {
                         attachmentUrl = uploadResponse.data.fileUrls[0];
-                        attachmentType = selectedFile.type;
-                        attachmentName = selectedFile.name;
                     } else {
                         throw new Error("Upload response is invalid");
                     }
@@ -204,6 +233,7 @@ const ChatComments = ({ reqId, reqid }) => {
                 attachmentUrl,
                 attachmentType,
                 attachmentName,
+                attachmentBase64, // Add base64 data to the message
                 timestamp: new Date().toISOString(),
                 topic: activeChatTopic || "General Discussion",
                 // Add tagged employee information
@@ -229,6 +259,7 @@ const ChatComments = ({ reqId, reqid }) => {
 
                 setNewMessage("");
                 setSelectedFile(null);
+                setFileBase64(null); // Reset the base64 data
                 if (fileInputRef.current) {
                     fileInputRef.current.value = "";
                 }
@@ -248,7 +279,9 @@ const ChatComments = ({ reqId, reqid }) => {
         return File;
     };
 
-    const renderAttachment = (url, fileType, fileName) => {
+    const renderAttachment = (url, fileType, fileName, base64Data) => {
+        // Determine which source to use - base64 data has priority if available
+        const fileSource = base64Data || url;
         const isImage = fileType?.startsWith("image/");
         const isPDF = fileType?.includes("pdf");
         const FileIcon = getFileIcon(fileType);
@@ -256,20 +289,43 @@ const ChatComments = ({ reqId, reqid }) => {
 
         const handleDownload = async (e) => {
             e.preventDefault();
-            await downloadFile(url, fileName);
+            await downloadFile(fileSource, fileName);
         };
 
-        const handleShowFile = async (fileUrl) => {
+        const handleShowFile = async (fileSource) => {
             try {
-                console.log("fileUrl", fileUrl);
-                const response = await showFileUrl(fileUrl);
-                if (response.status === 200) {
-                    window.open(response.data.presignedUrl, "_blank");
+                // If it's already base64, just open it in a new window
+                if (fileSource.startsWith("data:")) {
+                    const newWindow = window.open();
+                    if (newWindow) {
+                        if (isImage) {
+                            newWindow.document.write(
+                                `<img src="${fileSource}" alt="${displayName}" style="max-width:100%; max-height:100%;">`
+                            );
+                        } else if (
+                            isPDF &&
+                            fileSource.startsWith("data:application/pdf")
+                        ) {
+                            newWindow.document.write(
+                                `<iframe src="${fileSource}" width="100%" height="100%" style="border:none;"></iframe>`
+                            );
+                        } else {
+                            newWindow.document.write(
+                                `<a href="${fileSource}" download="${displayName}">Download ${displayName}</a>`
+                            );
+                        }
+                    }
                 } else {
-                    console.error("No presigned URL received");
+                    // For URL, get a presigned URL
+                    const response = await showFileUrl(fileSource);
+                    if (response.status === 200) {
+                        window.open(response.data.presignedUrl, "_blank");
+                    } else {
+                        console.error("No presigned URL received");
+                    }
                 }
             } catch (error) {
-                console.error("Error fetching presigned URL:", error);
+                console.error("Error displaying file:", error);
             }
         };
 
@@ -289,13 +345,16 @@ const ChatComments = ({ reqId, reqid }) => {
             return (
                 <div className="max-w-xs bg-gray-50 p-2 rounded-lg">
                     <div className="overflow-hidden rounded-lg">
-                        <button onClick={() => handleShowFile(url)}>
+                        <button onClick={() => handleShowFile(fileSource)}>
                             <img
-                                src={url}
+                                src={fileSource}
                                 alt={displayName}
                                 className="max-w-full max-h-48 rounded-lg object-contain bg-white"
                                 onError={(e) => {
-                                    console.error("Image failed to load:", url);
+                                    console.error(
+                                        "Image failed to load:",
+                                        fileSource
+                                    );
                                     e.target.src =
                                         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E";
                                     e.target.className =
@@ -326,7 +385,7 @@ const ChatComments = ({ reqId, reqid }) => {
                         </div>
                         <div className="w-full h-48 bg-gray-100 rounded flex items-center justify-center">
                             <button
-                                onClick={() => handleShowFile(url)}
+                                onClick={() => handleShowFile(fileSource)}
                                 className="text-primary hover:underline flex items-center"
                             >
                                 <FileText className="mr-1" size={20} />
@@ -347,6 +406,13 @@ const ChatComments = ({ reqId, reqid }) => {
                         {displayName}
                     </span>
                 </div>
+                <button
+                    onClick={() => handleShowFile(fileSource)}
+                    className="flex items-center space-x-2 text-primary hover:text-primary/80 mt-2 mr-4"
+                >
+                    <FileText size={16} />
+                    <span className="text-sm">View File</span>
+                </button>
                 {downloadButton}
             </div>
         );
@@ -447,12 +513,14 @@ const ChatComments = ({ reqId, reqid }) => {
                                 </div>
                                 <div className="bg-gray-100 p-3 rounded-lg mt-1">
                                     <p className="break-words">{msg.message}</p>
-                                    {msg.attachmentUrl && (
+                                    {(msg.attachmentUrl ||
+                                        msg.attachmentBase64) && (
                                         <div className="mt-2">
                                             {renderAttachment(
                                                 msg.attachmentUrl,
                                                 msg.attachmentType,
-                                                msg.attachmentName
+                                                msg.attachmentName,
+                                                msg.attachmentBase64
                                             )}
                                         </div>
                                     )}
