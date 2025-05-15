@@ -28,7 +28,9 @@ const {
   checkDarwinStatus,
   updateDarwinStatus,
   getAllEmployeeData,
-  addNewApproverData
+  addNewApproverData,
+  editApproverData,
+  deleteApproverData
 
 } = require("../controllers/empController");
 
@@ -92,6 +94,7 @@ router.post("/add-new-approver-data", addNewApproverData);
 
 
 
+
 router.post("/upload-csv-file", upload.single("file"), uploadApproverExcel);
 
 router.post("/verify-person", capEmpController.verifyUser);
@@ -105,6 +108,12 @@ router.post("/create-new-employee", createEmployee);
 router.post("/add-new-panels", addNewPanelsMembers);
 
 router.post("/sync-emp-data", syncEmployeeData);
+
+router.put("/edit-approver-data", editApproverData);
+router.put("/delete-approver-data", deleteApproverData);
+
+
+
 
 router.put("/update/:id", updateEmployee);
 router.put("/update-many", updateManyEmployees);

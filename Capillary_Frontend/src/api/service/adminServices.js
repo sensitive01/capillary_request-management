@@ -1116,6 +1116,27 @@ export const addNewApprover = async (data) => {
     return err;
   }
 };
+
+export const editApprover = async (data) => {
+  try {
+    const response = await adminServices.put(
+      `/employees/edit-approver-data`,{data}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+export const deleteApproverData = async (data) => {
+  try {
+    const response = await adminServices.put(
+      `/employees/delete-approver-data`,{data}
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
 export const showFileUrl = async (presignedUrl) => {
   try {
     const response = await adminServices.post(

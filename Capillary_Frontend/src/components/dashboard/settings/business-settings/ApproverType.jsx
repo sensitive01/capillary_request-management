@@ -5,7 +5,9 @@ import {
   getAllApprovalData,
   uploadCSVFile,
   updateDarwinStatus,
-  addNewApprover
+  addNewApprover,
+  editApprover,
+  deleteApproverData,
 } from "../../../../api/service/adminServices";
 
 const ApproverManagement = () => {
@@ -14,6 +16,7 @@ const ApproverManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteData, setDeleteData] = useState(null);
   const [newApprover, setNewApprover] = useState({
     businessUnit: "",
     department: "",
@@ -25,6 +28,14 @@ const ApproverManagement = () => {
 
   const [importedFile, setImportedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // New state for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [approverToDelete, setApproverToDelete] = useState(null);
+
+  // New state for edit mode
+  const [editMode, setEditMode] = useState(false);
+  const [approverToEdit, setApproverToEdit] = useState(null);
 
   const itemsPerPage = 5;
 
@@ -135,32 +146,175 @@ const ApproverManagement = () => {
     }
   };
 
-  const handleAddApprover = async(e) => {
+  const handleAddApprover = async (e) => {
     e.preventDefault();
-    const newEntry = {
-      businessUnit: newApprover.businessUnit,
-      departmentName: newApprover.department,
-      approvers: [
-        {
-          approverId: newApprover.approverId,
-          approverName: newApprover.approverName,
-          approverEmail: newApprover.approverEmail,
-        },
-      ],
+
+    // Convert business unit to uppercase
+    const formattedApprover = {
+      ...newApprover,
+      businessUnit: newApprover.businessUnit.toUpperCase(),
     };
 
-    setApprovalData((prev) => [newEntry, ...prev]);
-    const response = await addNewApprover(newEntry);
+    if (editMode && approverToEdit) {
+      // Display all data in console when editing
+      console.log("Editing approver - Full data:", {
+        originalData: approverToEdit,
+        newData: formattedApprover,
+      });
+
+      // Update the approvalData state with edited values
+      setApprovalData((prev) =>
+        prev.map((entry) => {
+          if (
+            entry.businessUnit === approverToEdit.originalBusinessUnit &&
+            entry.departmentName === approverToEdit.originalDepartmentName
+          ) {
+            return {
+              ...entry,
+              businessUnit: formattedApprover.businessUnit,
+              departmentName: formattedApprover.department,
+              approvers: entry.approvers.map((approver) => {
+                if (approver.approverId === approverToEdit.originalApproverId) {
+                  return {
+                    approverId: formattedApprover.approverId,
+                    approverName: formattedApprover.approverName,
+                    approverEmail: formattedApprover.approverEmail,
+                    role: formattedApprover.role || "Approver",
+                  };
+                }
+                return approver;
+              }),
+            };
+          }
+          return entry;
+        })
+      );
+
+      try {
+        // Call API to update the approver
+        await editApprover({
+          originalData: {
+            businessUnit: approverToEdit.originalBusinessUnit,
+            departmentName: approverToEdit.originalDepartmentName,
+            approverId: approverToEdit.originalApproverId,
+          },
+          newData: {
+            businessUnit: formattedApprover.businessUnit,
+            departmentName: formattedApprover.department,
+            approverName: formattedApprover.approverName,
+            approverId: formattedApprover.approverId,
+            approverEmail: formattedApprover.approverEmail,
+            role: formattedApprover.role,
+          },
+        });
+      } catch (error) {
+        console.error("Error updating approver:", error);
+      }
+
+      // Reset form and exit edit mode
+      setEditMode(false);
+      setApproverToEdit(null);
+    } else {
+      // Handle add new approver
+      console.log("Adding new approver:", formattedApprover);
+
+      const newEntry = {
+        businessUnit: formattedApprover.businessUnit,
+        departmentName: formattedApprover.department,
+        approvers: [
+          {
+            approverId: formattedApprover.approverId,
+            approverName: formattedApprover.approverName,
+            approverEmail: formattedApprover.approverEmail,
+            role: formattedApprover.role || "Approver",
+          },
+        ],
+      };
+
+      setApprovalData((prev) => [newEntry, ...prev]);
+
+      try {
+        const response = await addNewApprover(newEntry);
+        console.log("Add approver response:", response);
+      } catch (error) {
+        console.error("Error adding approver:", error);
+      }
+    }
+
+    // Reset form state
     setNewApprover({
       businessUnit: "",
       department: "",
       approverName: "",
       approverId: "",
       approverEmail: "",
+      role: "Approver",
     });
   };
 
-  const handleDeleteApprover = async(businessUnit, departmentName, approverId) => {
+  const handleEditClick = (item) => {
+    // Display all data in console when clicking edit
+    console.log("Editing approver - Current data:", item);
+
+    setEditMode(true);
+    setApproverToEdit({
+      originalBusinessUnit: item.businessUnit,
+      originalDepartmentName: item.departmentName,
+      originalApproverId: item.approverId,
+    });
+    setNewApprover({
+      businessUnit: item.businessUnit,
+      department: item.departmentName,
+      approverName: item.approverName,
+      approverId: item.approverId,
+      approverEmail: item.approverEmail,
+      role: item.role || "Approver",
+    });
+  };
+
+  const handleDeleteClick = async (
+    businessUnit,
+    departmentName,
+    approverId
+  ) => {
+    // Find the full approver object to delete
+    const approverData = flattenedData.find(
+      (item) =>
+        item.businessUnit === businessUnit &&
+        item.departmentName === departmentName &&
+        item.approverId === approverId
+    );
+
+    // Display all data in console when clicking delete
+    console.log("Deleting approver - Full data:", approverData);
+    setDeleteData(approverData);
+
+    setApproverToDelete({ businessUnit, departmentName, approverId });
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!approverToDelete) return;
+
+    const { businessUnit, departmentName, approverId } = approverToDelete;
+
+    const response = await deleteApproverData(deleteData);
+
+    // Log complete information about the approver being deleted
+    console.log("Confirming deletion of approver:", {
+      businessUnit,
+      departmentName,
+      approverId,
+      // Find the full data of the approver being deleted
+      fullData: flattenedData.find(
+        (item) =>
+          item.businessUnit === businessUnit &&
+          item.departmentName === departmentName &&
+          item.approverId === approverId
+      ),
+    });
+
+    // Update state to remove the approver
     setApprovalData((prev) =>
       prev
         .map((entry) => {
@@ -179,6 +333,33 @@ const ApproverManagement = () => {
         })
         .filter((entry) => entry.approvers.length > 0)
     );
+
+    // Here you would typically call an API to delete the approver
+    try {
+      // Example API call (commented out as it wasn't in the original code)
+      // await deleteApprover({ businessUnit, departmentName, approverId });
+      console.log("Approver successfully deleted from UI state");
+    } catch (error) {
+      console.error("Error deleting approver:", error);
+    }
+
+    // Close modal and reset state
+    setShowDeleteModal(false);
+    setApproverToDelete(null);
+  };
+
+  const handleCancelEdit = () => {
+    console.log("Edit canceled");
+    setEditMode(false);
+    setApproverToEdit(null);
+    setNewApprover({
+      businessUnit: "",
+      department: "",
+      approverName: "",
+      approverId: "",
+      approverEmail: "",
+      role: "Approver",
+    });
   };
 
   return (
@@ -288,10 +469,37 @@ const ApproverManagement = () => {
             </div>
           )}
 
-          {/* Add New Approver Form */}
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+                <p className="mb-4">
+                  Are you sure you want to delete this approver? This action
+                  cannot be undone.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteConfirm}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add/Edit Approver Form */}
           <form
             onSubmit={handleAddApprover}
-            className="grid grid-cols-7 gap-4 mb-6"
+            className="grid grid-cols-6 gap-4 mb-6"
           >
             <input
               type="text"
@@ -358,13 +566,25 @@ const ApproverManagement = () => {
               className="p-2 border rounded-md"
               required
             />
-         
-            <button
-              type="submit"
-              className="bg-primary text-white p-2 rounded-md hover:bg-primary/90"
-            >
-              Add Approver
-            </button>
+
+            <div className="flex space-x-2">
+              <button
+                type="submit"
+                className="bg-primary text-white p-2 rounded-md hover:bg-primary/90"
+              >
+                {editMode ? "Update " : "Add Approver"}
+              </button>
+
+              {editMode && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="bg-gray-200 text-gray-800 p-2 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
 
           {/* Approver Table */}
@@ -397,7 +617,7 @@ const ApproverManagement = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() =>
-                            handleDeleteApprover(
+                            handleDeleteClick(
                               item.businessUnit,
                               item.departmentName,
                               item.approverId
@@ -407,7 +627,10 @@ const ApproverManagement = () => {
                         >
                           Delete
                         </button>
-                        <button className="text-blue-600 hover:text-blue-800 px-2 py-1 rounded">
+                        <button
+                          onClick={() => handleEditClick(item)}
+                          className="text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
+                        >
                           Edit
                         </button>
                       </div>

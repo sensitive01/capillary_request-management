@@ -764,14 +764,12 @@ exports.getAllApprovalDatas = async (req, res) => {
 
     const approvalData = await Approver.find().sort({ createdAt: -1 });
 
-    console.log("ApprovalData", approvalData);
     res.status(200).json({ success: true, approvalData });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 exports.addNewApproverData = async (req, res) => {
   try {
@@ -806,13 +804,11 @@ exports.addNewApproverData = async (req, res) => {
       });
 
       await approverData.save();
-      return res
-        .status(201)
-        .json({
-          success: true,
-          message: "New Business Unit created",
-          data: approverData,
-        });
+      return res.status(201).json({
+        success: true,
+        message: "New Business Unit created",
+        data: approverData,
+      });
     }
 
     // If business unit exists, check if the department exists
@@ -834,13 +830,11 @@ exports.addNewApproverData = async (req, res) => {
     // Save the updated data
     await approverData.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Approver data updated successfully",
-        data: approverData,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Approver data updated successfully",
+      data: approverData,
+    });
   } catch (err) {
     console.error("Error adding approver data:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -983,6 +977,170 @@ exports.getAllEmployeeData = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.editApproverData = async (req, res) => {
+  try {
+    console.log("Welcome to edit approver data", req.body);
+
+    const { originalData, newData } = req.body.data;
+
+    const {
+      businessUnit: originalBU,
+      departmentName: originalDept,
+      approverId,
+    } = originalData;
+
+    const {
+      businessUnit: newBU,
+      departmentName: newDept,
+      approverName,
+      approverEmail,
+      role,
+    } = newData;
+
+    // Step 1: Find the original business unit
+    const originalBUData = await Approver.findOne({ businessUnit: originalBU });
+
+    if (!originalBUData) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Original business unit not found" });
+    }
+
+    // Step 2: Find the original department
+    const originalDepartment = originalBUData.departments.find(
+      (dept) => dept.name.trim() === originalDept.trim()
+    );
+
+    if (!originalDepartment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Original department not found" });
+    }
+
+    // Step 3: Find the approver and remove from original location
+    const approverIndex = originalDepartment.approvers.findIndex(
+      (app) => app.approverId === approverId
+    );
+
+    if (approverIndex === -1) {
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "Approver not found in original location",
+        });
+    }
+
+    // Remove approver from original location
+    const [removedApprover] = originalDepartment.approvers.splice(
+      approverIndex,
+      1
+    );
+
+    await originalBUData.save(); // Save after removal
+
+    // Step 4: Prepare updated approver
+    const updatedApprover = {
+      approverId,
+      approverName,
+      approverEmail,
+      role,
+    };
+
+    // Step 5: Add to new BU and department
+    let newBUData = await Approver.findOne({ businessUnit: newBU });
+
+    if (!newBUData) {
+      // Create new business unit if it doesn't exist
+      newBUData = new Approver({
+        businessUnit: newBU,
+        departments: [
+          {
+            name: newDept.trim(),
+            approvers: [updatedApprover],
+          },
+        ],
+      });
+    } else {
+      // Check if department exists
+      let newDepartment = newBUData.departments.find(
+        (dept) => dept.name.trim() === newDept.trim()
+      );
+
+      if (!newDepartment) {
+        // Create new department
+        newBUData.departments.push({
+          name: newDept.trim(),
+          approvers: [updatedApprover],
+        });
+      } else {
+        // Add to existing department
+        newDepartment.approvers.push(updatedApprover);
+      }
+    }
+
+    await newBUData.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Approver updated and moved successfully",
+      data: newBUData,
+    });
+  } catch (err) {
+    console.error("Error editing approver data:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+exports.deleteApproverData = async (req, res) => {
+  try {
+    console.log("Welcome to delete approver data", req.body);
+
+    const { businessUnit, departmentName, approverId } = req.body.data;
+
+    // Step 1: Find the business unit
+    const approverData = await Approver.findOne({ businessUnit });
+
+    if (!approverData) {
+      return res.status(404).json({ success: false, message: "Business unit not found" });
+    }
+
+    // Step 2: Find the department
+    const department = approverData.departments.find(
+      (dept) => dept.name.trim() === departmentName.trim()
+    );
+
+    if (!department) {
+      return res.status(404).json({ success: false, message: "Department not found" });
+    }
+
+    // Step 3: Remove the approver from the department
+    const initialLength = department.approvers.length;
+
+    department.approvers = department.approvers.filter(
+      (app) => app.approverId !== approverId
+    );
+
+    if (department.approvers.length === initialLength) {
+      return res.status(404).json({ success: false, message: "Approver not found" });
+    }
+
+    // Step 4: Save the updated data
+    await approverData.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Approver deleted successfully",
+      data: approverData
+    });
+
+  } catch (err) {
+    console.error("Error deleting approver data:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
