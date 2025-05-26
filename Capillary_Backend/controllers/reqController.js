@@ -521,7 +521,7 @@ const getStatisticData = async (req, res) => {
         ) {
           pendingCount++;
         } else if (lastLevelApprovals?.nextDepartment === role) {
-          lastLevelApprovals++;
+          pendingCount++;
         }
       });
 
