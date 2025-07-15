@@ -37,7 +37,8 @@ app.use((req, res, next) => {
 
 // Basic middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '100mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
 app.use(express.static(path.join(__dirname, "dist")));
 
 // Routes
