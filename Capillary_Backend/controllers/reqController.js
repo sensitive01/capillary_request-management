@@ -41,13 +41,28 @@ const postComments = async (req, res) => {
     const { taggedEmployeeEmail } = data;
 
     // Fetch employee data in parallel
-    const [taggedEmployee, empDataFromModel, empDataFromPanel] = await Promise.all([
-      taggedEmployeeEmail
-        ? empModel.findOne({ company_email_id: taggedEmployeeEmail }, { full_name: 1, company_email_id: 1, employee_id: 1 })
-        : Promise.resolve(null),
-      empModel.findOne({ employee_id: data.senderId }, { full_name: 1, employee_id: 1, department: 1, hod: 1, hod_email_id: 1 }).lean(),
-      addPanelUsers.findOne({ employee_id: data.senderId }).lean(),
-    ]);
+    const [taggedEmployee, empDataFromModel, empDataFromPanel] =
+      await Promise.all([
+        taggedEmployeeEmail
+          ? empModel.findOne(
+              { company_email_id: taggedEmployeeEmail },
+              { full_name: 1, company_email_id: 1, employee_id: 1 }
+            )
+          : Promise.resolve(null),
+        empModel
+          .findOne(
+            { employee_id: data.senderId },
+            {
+              full_name: 1,
+              employee_id: 1,
+              department: 1,
+              hod: 1,
+              hod_email_id: 1,
+            }
+          )
+          .lean(),
+        addPanelUsers.findOne({ employee_id: data.senderId }).lean(),
+      ]);
 
     const empData = empDataFromModel || empDataFromPanel;
 
@@ -82,7 +97,7 @@ const postComments = async (req, res) => {
         employeeName: data.taggedEmployeeName,
         reqId: updatedRequest.reqid,
         senderDepartment: empData.department,
-        attachmentUrl:data?.attachmentUrl?data?.attachmentUrl:""
+        attachmentUrl: data?.attachmentUrl ? data?.attachmentUrl : "",
       }).catch((err) => console.error("Email sending failed:", err));
     }
 
@@ -90,12 +105,12 @@ const postComments = async (req, res) => {
       message: "Comment added successfully",
       updatedRequest,
     });
-
   } catch (err) {
-    res.status(500).json({ message: "Error in posting the comments", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error in posting the comments", error: err.message });
   }
 };
-
 
 const getAllChats = async (req, res) => {
   try {
@@ -278,7 +293,7 @@ const getStatisticData = async (req, res) => {
     let completedRequest = 0;
     let totalApprovals = 0;
 
-    const reqData = await CreateNewReq.find({isCompleted:true});
+    const reqData = await CreateNewReq.find({ isCompleted: true });
 
     if (role === "Admin" && consolidatedData.department === "Admin") {
       adminAllTotalRequests = reqData.length;
@@ -316,11 +331,9 @@ const getStatisticData = async (req, res) => {
           req.firstLevelApproval?.hodEmail === consolidatedData.company_email_id
       );
 
-
       totalApprovals = reqDataStatics.length;
 
       reqData.forEach((request) => {
-
         if (!request.approvals || request.approvals.length === 0) {
           return; // Skip this iteration if approvals are missing
         }
@@ -347,8 +360,6 @@ const getStatisticData = async (req, res) => {
 
           return isForEmployeeDept && isPending && hasPrevApproval;
         });
-
-
 
         const approvalsForEmployee2 = request.approvals.filter((app) => {
           const isApprovedByEmp =
@@ -584,7 +595,6 @@ const getStatisticData = async (req, res) => {
     res.status(500).json({ message: "Error in getting the statistics" });
   }
 };
-
 
 const filterByDateStatitics = async (req, res) => {
   try {
@@ -2550,16 +2560,19 @@ const uploadInvoiceDocuments = async (req, res) => {
 
     const reqData = await CreateNewReq.findOne(
       { _id: reqId },
-      { reqid: 1, approvals: 1 ,commercials:1,userId:1,poDocuments:1}
+      { reqid: 1, approvals: 1, commercials: 1, userId: 1, poDocuments: 1 }
     );
 
     if (!reqData) {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    const { approvals,commercials,userId,reqid } = reqData;
+    const { approvals, commercials, userId, reqid } = reqData;
     const latestApproval = approvals[approvals.length - 1];
-    const requestorData = await empModel.findOne({employee_id:userId},{full_name:1,department:1})
+    const requestorData = await empModel.findOne(
+      { employee_id: userId },
+      { full_name: 1, department: 1 }
+    );
 
     // Fetch employee data
     const empData =
@@ -2617,27 +2630,19 @@ const uploadInvoiceDocuments = async (req, res) => {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    const invoiceMail = await entityModel.findOne({_id:commercials?.entityId},{invoiceMailId:1})
-    console.log("Invoice mail id",invoiceMail)
-
-    const {invoiceMailId} = invoiceMail
-    await sendEmail(
-      invoiceMailId,
-      "invoiceUploadedEmail",
-      {
-        reqId: reqid,
-        employeeName: requestorData.full_name,
-        department: requestorData.department,
-        invoiceLink:link
-       
-        
-      }
+    const invoiceMail = await entityModel.findOne(
+      { _id: commercials?.entityId },
+      { invoiceMailId: 1 }
     );
+    console.log("Invoice mail id", invoiceMail);
 
-
-
-
-
+    const { invoiceMailId } = invoiceMail;
+    await sendEmail(invoiceMailId, "invoiceUploadedEmail", {
+      reqId: reqid,
+      employeeName: requestorData.full_name,
+      department: requestorData.department,
+      invoiceLink: link,
+    });
 
     return res.status(200).json({
       message: "Invoice Document uploaded successfully",
@@ -3597,14 +3602,6 @@ const saveCommercialData = async (req, res) => {
     console.log("empId", empId, "formData", formData);
 
     const { newReqId } = formData;
-    const date = new Date();
-
-    const reqid = `INBH${String(date.getDate()).padStart(2, "0")}${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}${
-      Math.floor(Math.random() * 100) + 1
-    }`;
-    console.log(reqid);
 
     let empData = await empModel
       .findOne(
@@ -3633,6 +3630,7 @@ const saveCommercialData = async (req, res) => {
     let updatedRequest;
 
     if (newReqId) {
+      // Update logic
       updatedRequest = await CreateNewReq.findOneAndUpdate(
         { reqid: newReqId },
         { $set: { commercials: formData } },
@@ -3647,23 +3645,63 @@ const saveCommercialData = async (req, res) => {
 
       responseMessage = "Commercial data updated successfully.";
     } else {
-      updatedRequest = new CreateNewReq({
-        reqid: reqid,
-        userId: empData.employee_id,
-        userName: empData.full_name,
-        empDepartment: empData.department,
-        commercials: formData,
-        firstLevelApproval: {
-          hodName: formData.hod,
-          hodEmail: formData.hodEmail,
-          hodDepartment: formData.department,
-          status: "Pending",
-          approved: false,
-        },
-      });
+      // Save new request with unique reqid
+      const generateReqid = (digitLength = 2) => {
+        const date = new Date();
+        const prefix = `INBH${String(date.getDate()).padStart(2, "0")}${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}`;
+        const randomDigits = Math.floor(
+          Math.random() * Math.pow(10, digitLength)
+        )
+          .toString()
+          .padStart(digitLength, "0");
+        return `${prefix}${randomDigits}`;
+      };
 
-      await updatedRequest.save();
-      responseMessage = "Commercial data saved successfully.";
+      let digitLength = 2;
+      let reqid;
+      let saved = false;
+      let retryCount = 0;
+      const maxRetries = 5;
+
+      while (!saved) {
+        try {
+          reqid = generateReqid(digitLength);
+
+          updatedRequest = new CreateNewReq({
+            reqid: reqid,
+            userId: empData.employee_id,
+            userName: empData.full_name,
+            empDepartment: empData.department,
+            commercials: formData,
+            firstLevelApproval: {
+              hodName: formData.hod,
+              hodEmail: formData.hodEmail,
+              hodDepartment: formData.department,
+              status: "Pending",
+              approved: false,
+            },
+          });
+
+          await updatedRequest.save();
+          saved = true;
+          responseMessage = "Commercial data saved successfully.";
+        } catch (err) {
+          if (err.code === 11000) {
+            // Duplicate key error – try again with longer digits
+            retryCount++;
+            digitLength++;
+            if (retryCount >= maxRetries) {
+              throw new Error(
+                "Failed to generate a unique request ID after multiple attempts."
+              );
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
     }
 
     return res.status(201).json({
